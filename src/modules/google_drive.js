@@ -17,7 +17,7 @@ const Table = require("cli-table3")
 
 // MARK: Functions
 
-function getNewAccessToken() {
+function getNewAccessToken(instanceName) {
   return new Promise((resolve, reject) => {
     const tokenURL = "https://oauth2.googleapis.com/token"
     axios.post(tokenURL, null, {
@@ -33,8 +33,8 @@ function getNewAccessToken() {
       store.set(`instances.${instanceName}.access_token`, access_token)
       store.set(`instances.${instanceName}.last_refresh_time`, Math.floor(Date.now() / 1000))
       store.set(`instances.${instanceName}.token_expires_in`, expires_in)
-      console.log(chalk.blue(`Created ${instanceName}: successfully!`))
-      resolve(instanceName)
+      console.log(chalk.blue(`Refreshed access token successfully!`))
+      resolve()
     })
     .catch(err => {
       error(err.message)
@@ -211,11 +211,11 @@ class GoogleDriveClient extends Client {
     // Get the last time it was refreshed
     const lastRefreshTime = store.get(`instances.${currentInstance}.last_refresh_time`)
     // Get the expiry time in seconds from the last refresh time
-    const expiry = store.get(`instances.${currentInstance}.expires_in`)
+    const expiry = store.get(`instances.${currentInstance}.token_expires_in`)
     // Check if we are overdue
-    if (lastRefreshTime + expiry >= Math.floor(Date.now() / 1000)) {
+    if (lastRefreshTime + expiry <= Math.floor(Date.now() / 1000)) {
       // If so, refresh the access token
-      await getNewAccessToken()
+      await getNewAccessToken(currentInstance)
     }
     // Get the access token and put it in the header
     const accessToken = store.get(`instances.${currentInstance}.access_token`)
@@ -289,11 +289,11 @@ class GoogleDriveClient extends Client {
     // Get the last time it was refreshed
     const lastRefreshTime = store.get(`instances.${currentInstance}.last_refresh_time`)
     // Get the expiry time in seconds from the last refresh time
-    const expiry = store.get(`instances.${currentInstance}.expires_in`)
+    const expiry = store.get(`instances.${currentInstance}.token_expires_in`)
     // Check if we are overdue
-    if (lastRefreshTime + expiry >= Math.floor(Date.now() / 1000)) {
+    if (lastRefreshTime + expiry <= Math.floor(Date.now() / 1000)) {
       // If so, refresh the access token
-      await getNewAccessToken()
+      await getNewAccessToken(currentInstance)
     }
     // Get the access token and put it in the header
     const accessToken = store.get(`instances.${currentInstance}.access_token`)
@@ -367,11 +367,11 @@ class GoogleDriveClient extends Client {
     // Get the last time it was refreshed
     const lastRefreshTime = store.get(`instances.${currentInstance}.last_refresh_time`)
     // Get the expiry time in seconds from the last refresh time
-    const expiry = store.get(`instances.${currentInstance}.expires_in`)
+    const expiry = store.get(`instances.${currentInstance}.token_expires_in`)
     // Check if we are overdue
-    if (lastRefreshTime + expiry >= Math.floor(Date.now() / 1000)) {
+    if (lastRefreshTime + expiry <= Math.floor(Date.now() / 1000)) {
       // If so, refresh the access token
-      await getNewAccessToken()
+      await getNewAccessToken(currentInstance)
     }
     // Get the access token and put it in the header
     const accessToken = store.get(`instances.${currentInstance}.access_token`)

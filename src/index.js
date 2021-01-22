@@ -20,10 +20,10 @@ async function configureClientForProvider(providerId) {
 // Create an instance based on the user's command
 async function createInstance(input) {
   // Parse the command for the provider ID
-  const providerId = replaceAll(input.toLowerCase(), {"::": "", " ": "_"})
+  const providerId = replaceAll(input.toLowerCase(), {"::": ""})
   if (providerId) {
     // Create an instace for that provider
-    configureClientForProvider(providerId)
+    await configureClientForProvider(providerId)
   } else {
     // Else error out
     error(`Invalid provider ID ${providerId}. Try checking for a typo.`)

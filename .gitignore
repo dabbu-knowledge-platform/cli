@@ -1,3 +1,4 @@
 node_modules/
 creds/
 src/config/dabbu_cli_config.json
+src/config/dabbu_cli_history.json
