@@ -72,7 +72,7 @@ class GoogleDriveClient extends Client {
           initial: "g"
         }))
         .then(instanceName => {
-          store.set("current_instance_id", instanceName)
+          store.set("current_instance_id", instanceName.toLowerCase())
           store.set(`instances.${instanceName}.provider_id`, "google_drive")
           resolve(instanceName)
         })

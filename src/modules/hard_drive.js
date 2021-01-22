@@ -36,7 +36,7 @@ class HardDriveClient extends Client {
           initial: "c"
         }))
         .then(instanceName => {
-          store.set("current_instance_id", instanceName)
+          store.set("current_instance_id", instanceName.toLowerCase())
           store.set(`instances.${instanceName}.provider_id`, "hard_drive")
           resolve(instanceName)
         })

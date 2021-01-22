@@ -33,7 +33,7 @@ async function createInstance(input) {
 // Switch to an existing instance
 async function switchInstance(input) {
   // Parse the instance ID from the command
-  const instanceId = replaceAll(input, {":": "", " ": ""})
+  const instanceId = replaceAll(input, {":": ""}).toLowerCase()
   // Get the provider ID of that instance
   const providerId = store.get(`instances.${instanceId}.provider_id`)
   if (providerId) {
@@ -51,8 +51,8 @@ async function switchInstance(input) {
 async function help() {
   return [
     chalk.green("Welcome to Dabbu CLI v1.0.0! Here are a few tips to make your experience better:"),
-    chalk.blue("  To move into a drive, just type in the drive name followed by a :"),
-    chalk.blue("  To create a new drive, just type in :: <hard_drive OR google_drive>"),
+    chalk.blue("  To move into a drive, just type in the drive name followed by a :, e.g. c:"),
+    chalk.blue("  To create a new drive, just type in ::<hard_drive OR google_drive>"),
     chalk.blue("  To move into a directory, use cd <relative_directory_path>"),
     chalk.blue("  To check your current directory, use pwd"),
     chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
