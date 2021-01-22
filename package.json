@@ -1,0 +1,33 @@
+{
+  "name": "dabbu-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "clear && node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gamemaker1/dabbu-cli.git"
+  },
+  "author": "gamemaker1",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/gamemaker1/dabbu-cli/issues"
+  },
+  "homepage": "https://github.com/gamemaker1/dabbu-cli#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "chalk": "^4.1.0",
+    "cli-table3": "^0.6.0",
+    "data-store": "^4.0.3",
+    "dot-prop": "^6.0.1",
+    "enquirer": "^2.3.6",
+    "figlet": "^1.5.0",
+    "fs-extra": "^9.0.1",
+    "nanoid": "^3.1.20",
+    "ora": "^5.2.0",
+    "terminal-link": "^2.1.1"
+  }
+}

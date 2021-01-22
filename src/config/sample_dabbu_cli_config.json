@@ -1,0 +1,12 @@
+{
+  "server_address": "http://localhost:8080",
+  "current_provider_id": "hard_drive",
+  "current_instance_id": "hd",
+  "instances": {
+    "hd": {
+      "provider_id": "hard_drive",
+      "base_path": "/home/user",
+      "current_path": "/Test"
+    }
+  }
+}
