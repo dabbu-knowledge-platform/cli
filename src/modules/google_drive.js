@@ -301,11 +301,11 @@ class GoogleDriveClient extends Client {
     // Parse the command for the relative path
     const inputPath = replaceAll(input, {"cat ": "", "cat": "", "//": "/"})
     // Get an array of folder names from the path
-    const folderPath = inputPath
+    const folderPath = inputPath.split("/")
     // Get the file name
     const fileName = folderPath.pop()
     // Now parse the folder path to get an absolute one
-    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath)
+    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath.join("/"))
     // Show a loading indicator
     const spinner = ora(`Fetching ${chalk.blue(fileName)}`).start()
 
@@ -379,11 +379,11 @@ class GoogleDriveClient extends Client {
     // Parse the command for the relative path
     const inputPath = replaceAll(input, {"rm ": "", "rm": "", "//": "/"})
     // Get an array of folder names from the path
-    const folderPath = inputPath
+    const folderPath = inputPath.split("/")
     // Get the file name
     const fileName = folderPath.pop()
     // Now parse the folder path to get an absolute one
-    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath)
+    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath.join("/"))
     // Show a loading indicator
     const spinner = ora(`Deleting ${chalk.blue(fileName)}`).start()
 
