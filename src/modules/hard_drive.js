@@ -62,7 +62,7 @@ class HardDriveClient extends Client {
             "In Dabbu, the root of your drive need not be the root path of your computer.",
             "Each drive can point to any folder on your hard drive. The path to the folder",
             "on your computer is called the base path by Dabbu."
-          ],join("\n"))
+          ].join("\n"))
         )
         ask(new Input({
           name: "basePath",
