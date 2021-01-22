@@ -17,18 +17,23 @@ const Table = require("cli-table3")
 
 // MARK: Functions
 
+// Get a new access token using the refresh token if the old one expires
 function getNewAccessToken(instanceName) {
   return new Promise((resolve, reject) => {
+    // Make an API call to the OAuth2 endpoint
     const tokenURL = "https://oauth2.googleapis.com/token"
+    // POST request
     axios.post(tokenURL, null, {
       params: {
+        // Pass the client ID, client secret and refresh token to ask for an access token
         client_id: store.get(`instances.${instanceName}.client_id`),
         client_secret: store.get(`instances.${instanceName}.client_secret`),
         refresh_token: store.get(`instances.${instanceName}.refresh_token`),
-        grant_type: "refresh_token"
+        grant_type: "refresh_token" // This tell Google to find the refresh token in the URL params, it does NOT mean return a refresh token
       }
     })
     .then(res => {
+      // Store the access token and return
       const {access_token, refresh_token, expires_in} = res.data
       store.set(`instances.${instanceName}.access_token`, access_token)
       store.set(`instances.${instanceName}.last_refresh_time`, Math.floor(Date.now() / 1000))

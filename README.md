@@ -30,6 +30,14 @@ $ npm start
 ```
 - And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-server/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
 
+## Updating the CLI
+
+To update the CLI, simply run the following commands from the terminal/command prompt:
+
+```sh
+$ git pull origin main
+```
+
 ## Providers supported
 - **Hard drive**
 - **Google drive**

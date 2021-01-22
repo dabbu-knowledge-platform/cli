@@ -4,8 +4,8 @@ const chalk = require("chalk")
 const figlet = require("figlet")
 const store = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
 const axios = require("axios")
-const { Input, AutoComplete, Select } = require("enquirer")
-const { waterfall, ask, get, set, error, exit, replaceAll } = require("./utils.js")
+const { Input, Select } = require("enquirer")
+const { waterfall, ask, error, exit, replaceAll } = require("./utils.js")
 
 // MARK - Functions
 
