@@ -12,13 +12,13 @@ Tired of having your files and folders randomly scattered about online with mult
 
 What you just saw there was Dabbu CLI in action - a simple program in javascript that leverages the Dabbu API to bring your files and folders to your fingertips from all over the web.
 
-**This repo contains the CLI application's source code. To view and install the server that handles API calls from clients like this one, go [here](https://github.com/gamemaker1/dabbu-server)**
+**This repo contains the CLI application's source code. To view and install the server that handles API calls from clients like this one, go [here](https://github.com/gamemaker1/dabbu-server).**
 
 ## Getting started
 
 The installation can be done manually on Linux, MacOS, Android (Requires Termux) and Windows.
 
-A detailed installation guide can be found [here](./docs/Installation.md)
+A detailed installation guide can be found [here](./docs/Installation.md).
 
 Here is a brief install guide:
 - Install [git](https://github.com/git-guides/install-git) and [nodejs](https://nodejs.org/en/download/package-manager/).
@@ -50,7 +50,7 @@ $ git pull origin main
 
 ## Docs
 
-The code structure is documented in the file [docs/Code.md](./docs/Code.md)
+The code structure is documented in the file [docs/Code.md](./docs/Code.md).
 
 ## Issues and pull requests
 
@@ -206,9 +206,10 @@ In order to land, a pull request needs to be reviewed and approved by at least o
 
 ## Legal stuff
 
-**License - GNU GPL v3**
+### License - GNU GPL v3
 
 Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+
 Copyright (C) 2021  gamemaker1
 
 This program is free software: you can redistribute it and/or modify
