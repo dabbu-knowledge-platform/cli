@@ -56,7 +56,7 @@ async function help() {
     chalk.blue("  To move into a directory, use cd <relative_directory_path>"),
     chalk.blue("  To check your current directory, use pwd"),
     chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
-    chalk.blue("  To view/download a file, use cat <relative_file_path>"),
+    chalk.blue("  To download and view a file, use cat <relative_file_path>"),
     chalk.blue("  To delete a file, use rm <relative_file_path>")
   ].join("\n")
 }
@@ -103,7 +103,7 @@ function setupUX() {
             "validate": async (input) => {
               // Check if its a valid URL
               const expression = /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/i
-              const regex = new RegExp(expression);
+              const regex = new RegExp(expression)
 
               if (input.match(regex)) {
                 return true
@@ -147,13 +147,13 @@ function setupUX() {
           .catch(err => {
             if (err.response) {
               // Request made and server responded
-              error(`An error occurred: ${err.response.data.error.message}`);
+              error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
             } else if (err.request) {
               // The request was made but no response was received
-              error(`An error occurred: No response was received from the server: ${err.message}`);
+              error(`An error occurred: No response was received from the server: ${err.message}`)
             } else {
               // Something happened in setting up the request that triggered an Error
-              error(`An error occurred while sending a request to the server: ${err.message}`);
+              error(`An error occurred while sending a request to the server: ${err.message}`)
             }
             exit(1)
           })
@@ -219,10 +219,10 @@ async function repl() {
       autosave: true // Let enquirer do the saving
     },
     up() {
-      return this.altUp(); // Scroll through previous commands on pressing the up arrow
+      return this.altUp() // Scroll through previous commands on pressing the up arrow
     },
     down() {
-      return this.altDown(); // Scroll through previous commands on pressing the down arrow
+      return this.altDown() // Scroll through previous commands on pressing the down arrow
     }
   }))
   .then(async userInput => {

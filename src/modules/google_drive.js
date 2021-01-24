@@ -7,10 +7,11 @@ const axios = require("axios")
 const fs = require("fs-extra")
 const store = require("data-store")({ path: `${__dirname}/../config/dabbu_cli_config.json` })
 const http = require("http")
-const url = require("url");
+const url = require("url")
+const open = require("open")
 const { nanoid } = require("nanoid")
-const { Input } = require("enquirer")
-const { waterfall, ask, replaceAll, parsePath, error, exit } = require("../utils.js")
+const { Input, Confirm } = require("enquirer")
+const { waterfall, ask, replaceAll, parsePath, error, exit, getExtFromMime } = require("../utils.js")
 const Client = require("./client.js").default
 
 const Table = require("cli-table3")
@@ -135,7 +136,7 @@ class GoogleDriveClient extends Client {
           const query = url.parse(req.url, true).query
           res.statusCode = 200
           res.setHeader("Content-Type", "text/html")          
-          res.end(`<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Dabbu CLI Login Process</title><style media='screen'>body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }#message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px 16px; border-radius: 3px; }#message h3 { color: #888; font-weight: normal; font-size: 16px; margin: 16px 0 12px; }#message h2 { color: #C4A000; font-weight: bold; font-size: 16px; margin: 0 0 8px; }#message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}#message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }#message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }#message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }button { background-color: #C4A000; color: #cbcbcb; border-radius: 4px; border: 1px solid #e7e7e7; font-family: Roboto, Helvetica; font-size:14px; color: white; padding: 3px; }@media (max-width: 600px) {body, #message { margin-top: 0; background: white; box-shadow: none; }body { border-top: 16px solid #079632; }}</style><script>function copy() {var copyText = document.querySelector("#code");copyText.select();document.execCommand("copy");}document.querySelector("#copy-button").addEventListener("click", copy);</script></head><body><div id='message'><h2>Dabbu CLI Login Process</h2><h1>Copy authorization code</h1><p>Please copy the following code into the CLI to complete the sign in process<br><br><small><div id="code">${query.code}</div></small><button id="copy-button">Copy code</button></p></div></body></html>`)
+          res.end(`<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Dabbu CLI Login Process</title><style media='screen'>body { background: #ECEFF1; color: rgba(0,0,0,0.87) font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }#message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px 16px; border-radius: 3px; }#message h3 { color: #888; font-weight: normal; font-size: 16px; margin: 16px 0 12px; }#message h2 { color: #C4A000; font-weight: bold; font-size: 16px; margin: 0 0 8px; }#message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6) margin: 0 0 16px;}#message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }#message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }#message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24) }button { background-color: #C4A000; color: #cbcbcb; border-radius: 4px; border: 1px solid #e7e7e7; font-family: Roboto, Helvetica; font-size:14px; color: white; padding: 3px; }@media (max-width: 600px) {body, #message { margin-top: 0; background: white; box-shadow: none; }body { border-top: 16px solid #079632; }}</style><script>function copy() {let copyText = document.querySelector("#code")copyText.select()document.execCommand("copy")}document.querySelector("#copy-button").addEventListener("click", copy)</script></head><body><div id='message'><h2>Dabbu CLI Login Process</h2><h1>Copy authorization code</h1><p>Please copy the following code into the CLI to complete the sign in process<br><br><small><div id="code">${query.code}</div></small><button id="copy-button">Copy code</button></p></div></body></html>`)
           /*ask([
             {
               "name": "authCode",
@@ -248,13 +249,13 @@ class GoogleDriveClient extends Client {
           const files = res.data.content
           // Append the files to this table and then display them
           const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
-          for (var i = 0, length = files.length; i < length; i++) {
+          for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
             const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
             table.push([
               file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
               `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}...`, contentURI) // Download link
+              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}`, contentURI) // Download link
             ])
           }
           // We got the result, stop loading
@@ -273,14 +274,14 @@ class GoogleDriveClient extends Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
           console.error(err)
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }
@@ -315,31 +316,98 @@ class GoogleDriveClient extends Client {
     const spinner = ora(`Fetching ${chalk.blue(fileName)}`).start()
 
     // Create an axios instance so the headers carry on to the requests
+    // No base URL here because we are making a request to another file as well
     const instance = axios.create({
-      baseURL: store.get("server_address"),
-      headers: {"Authorization": `Bearer ${accessToken}`} // Put it in the authorization header
+      headers: {"Authorization": `Bearer ${accessToken}`, "Access-Control-Allow-Origin": "*" } // Put it in the authorization header
     })
 
     // The URL to send the GET request to
-    const url = `/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
+    let url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
     // GET request
-    return instance.get(url)
+    return instance.get(url, {
+      params: {
+        // This is required so the server's Google Drive provider will return a link that we can access through curl/axios
+        exportType: "media"
+      }
+    })
       .then(res => {
         if (res.data.content) {
-          // If we have a file, print out its info
+          // If we have a file, download it using the content URI
           const file = res.data.content
-          // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
-          const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
-          table.push([
-            file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
-            `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-            link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}...`, contentURI) // Download link
-          ])
-          // We got the result, stop loading
-          spinner.stop()
-          // Print out the table
-          console.log(table.toString())
+          // The URL to download it from
+          url = file.contentURI
+          if (file.contentURI) {
+            // If there is a contentURI
+            // GET request
+            return instance.get(url, { responseType: "stream" })
+              .then(async res => {
+                if (res.data) {
+                  // Download it to the downloads folder
+                  const ext = getExtFromMime(file.mimeType)
+                  const downloadFilePath = parsePath(__dirname,`../../downloads/${fileName}${ext && fileName.indexOf(ext) === -1 ? `.${ext}` : ""}`)
+                  // Create the file
+                  await fs.createFile(downloadFilePath)
+                  // Open a write stream so we can write the data we got to it
+                  const writer = fs.createWriteStream(downloadFilePath)
+                  // Pipe the bytes to the file
+                  res.data.pipe(writer)
+                  return new Promise((resolve, reject) => {
+                    writer.on('finish', () => {
+                      // Stop loading, we got the file
+                      spinner.stop()
+                      // Tell them we downloaded it
+                      console.log(
+                        chalk.yellow(
+                          `File download to ${downloadFilePath}`
+                        )
+                      )
+                      // Ask the user if they want to open the download the file
+                      ask(new Confirm({
+                        "name": "confirm",
+                        "message": "Do you want to open it?"
+                      }))
+                      .then(confirm => {
+                        if (confirm) {
+                          // Open the file
+                          open(downloadFilePath, { wait: false })
+                        }
+                        // Return from the promise
+                        resolve()
+                      })
+                    })
+                    writer.on('error', err => {
+                      // Stop loading, we have an error
+                      spinner.stop()
+                      // Error out
+                      error(err)
+                      // Don't reject else it will throw an unhandled promise rejection error
+                    })
+                  })
+                } else {
+                  // We have no response, stop loading
+                  spinner.stop()
+                  // Tell the user the server responded with an empty body
+                  error("An error occurred: server responded with an empty response body")
+                }
+              })
+              .catch(err => {
+                // We have an error, stop loading
+                spinner.stop()
+                if (err.response) {
+                  // Request made and server responded
+                  error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
+                } else if (err.request) {
+                  // The request was made but no response was received
+                  error(`An error occurred: No response was received: ${err.message}`)
+                } else {
+                  // Something happened in setting up the request that triggered an Error
+                  error(`An error occurred while sending the request: ${err.message}`)
+                }
+              })
+          } else {
+            spinner.stop()
+            error("File/folder couldn't be downloaded, no download link available. Folders do not have a download link in Google Drive.")
+          }
         } else {
           // We have no response, stop loading
           spinner.stop()
@@ -352,13 +420,13 @@ class GoogleDriveClient extends Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }
@@ -413,13 +481,13 @@ class GoogleDriveClient extends Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }

@@ -65,13 +65,13 @@ class Client {
           const files = res.data.content
           // Append the files to this table and then display them
           const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
-          for (var i = 0, length = files.length; i < length; i++) {
+          for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
             const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
             table.push([
               file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
               `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}...`, contentURI) // Download link
+              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}`, contentURI) // Download link
             ])
           }
           // We got the result, stop loading
@@ -90,13 +90,13 @@ class Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }
@@ -120,23 +120,85 @@ class Client {
     // The URL to send a request to
     const url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
     // GET request
-    return axios.get(url)
+    return instance.get(url)
       .then(res => {
         if (res.data.content) {
-          // If we have a file, print out its info
+          // If we have a file, download it using the content URI
           const file = res.data.content
-          // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
-          const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
-          table.push([
-            file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
-            `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-            link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}...`, contentURI) // Download link
-          ])
-          // We got the result, stop loading
-          spinner.stop()
-          // Print out the table
-          console.log(table.toString())
+          // The URL to download it from
+          url = file.contentURI
+          if (file.contentURI) {
+            // If there is a contentURI
+            // GET request
+            return instance.get(url, { responseType: "stream" })
+              .then(async res => {
+                if (res.data) {
+                  // Download it to the downloads folder
+                  const ext = getExtFromMime(file.mimeType)
+                  const downloadFilePath = parsePath(__dirname,`../../downloads/${fileName}${ext && fileName.indexOf(ext) === -1 ? `.${ext}` : ""}`)
+                  // Create the file
+                  await fs.createFile(downloadFilePath)
+                  // Open a write stream so we can write the data we got to it
+                  const writer = fs.createWriteStream(downloadFilePath)
+                  // Pipe the bytes to the file
+                  res.data.pipe(writer)
+                  return new Promise((resolve, reject) => {
+                    writer.on('finish', () => {
+                      // Stop loading, we got the file
+                      spinner.stop()
+                      // Tell them we downloaded it
+                      console.log(
+                        chalk.yellow(
+                          `File download to ${downloadFilePath}`
+                        )
+                      )
+                      // Ask the user if they want to open the download the file
+                      ask(new Confirm({
+                        "name": "confirm",
+                        "message": "Do you want to open it?"
+                      }))
+                      .then(confirm => {
+                        if (confirm) {
+                          // Open the file
+                          open(downloadFilePath, { wait: false })
+                        }
+                        // Return from the promise
+                        resolve()
+                      })
+                    })
+                    writer.on('error', err => {
+                      // Stop loading, we have an error
+                      spinner.stop()
+                      // Error out
+                      error(err)
+                      // Don't reject else it will throw an unhandled promise rejection error
+                    })
+                  })
+                } else {
+                  // We have no response, stop loading
+                  spinner.stop()
+                  // Tell the user the server responded with an empty body
+                  error("An error occurred: server responded with an empty response body")
+                }
+              })
+              .catch(err => {
+                // We have an error, stop loading
+                spinner.stop()
+                if (err.response) {
+                  // Request made and server responded
+                  error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
+                } else if (err.request) {
+                  // The request was made but no response was received
+                  error(`An error occurred: No response was received: ${err.message}`)
+                } else {
+                  // Something happened in setting up the request that triggered an Error
+                  error(`An error occurred while sending the request: ${err.message}`)
+                }
+              })
+          } else {
+            spinner.stop()
+            error("File/folder couldn't be downloaded, no download link available.")
+          }
         } else {
           // We have no response, stop loading
           spinner.stop()
@@ -149,13 +211,13 @@ class Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }
@@ -191,13 +253,13 @@ class Client {
         spinner.stop()
         if (err.response) {
           // Request made and server responded
-          error(`An error occurred: ${err.response.data.error.message}`);
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
         } else if (err.request) {
           // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`);
+          error(`An error occurred: No response was received: ${err.message}`)
         } else {
           // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`);
+          error(`An error occurred while sending the request: ${err.message}`)
         }
       })
   }
