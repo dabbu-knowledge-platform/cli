@@ -1,10 +1,11 @@
 // MARK - Imports
 
+const fs = require("fs-extra")
 const chalk = require("chalk")
 const figlet = require("figlet")
 const store = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
 const axios = require("axios")
-const { Input, Select } = require("enquirer")
+const { Input, Confirm, Select } = require("enquirer")
 const { waterfall, ask, error, exit, replaceAll } = require("./utils.js")
 
 // MARK - Functions
@@ -46,6 +47,54 @@ async function switchInstance(input) {
   }
   return
 }
+async function reset(input) {
+  // Parse the instance ID from the command
+  const onlyHist = replaceAll(input, {"reset": "", " ": ""}).toLowerCase().indexOf("h") !== -1
+  if (onlyHist) {
+    return ask(new Confirm({
+      name: "confirm",
+      message: "Are you sure you want to delete your command history?"
+    }))
+    .then(async confirm => {
+      if (confirm) {
+        await fs.unlink(`${__dirname}/config/dabbu_cli_history.json`)
+        console.log(
+          chalk.yellow("Deleted src/config/dabbu_cli_history.json")
+        )
+      }
+    })
+  } else {
+    console.log(
+      chalk.redBright([
+        "Are you sure you want to delete the current configuration",
+        "file? This will remove all your drives and related configuration",
+        "details! It will also forget your command history. If you",
+        "want to delete only command history, run reset -h instead."
+      ].join("\n"))
+    )
+    return ask(new Confirm({
+      name: "confirm",
+      message: "Are you sure you want to delete the current configuration file?"
+    }))
+    .then(async confirm => {
+      if (confirm) {
+        await fs.unlink(`${__dirname}/config/dabbu_cli_config.json`)
+        console.log(
+          chalk.yellow("Deleted src/config/dabbu_cli_config.json")
+        )
+
+        await fs.unlink(`${__dirname}/config/dabbu_cli_history.json`)
+        console.log(
+          chalk.yellow("Deleted src/config/dabbu_cli_history.json")
+        )
+
+        return
+      } else {
+        return
+      }
+    })
+  }
+}
 
 // Return a help message
 async function help() {
@@ -57,7 +106,9 @@ async function help() {
     chalk.blue("  To check your current directory, use pwd"),
     chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
     chalk.blue("  To download and view a file, use cat <relative_file_path>"),
-    chalk.blue("  To delete a file, use rm <relative_file_path>")
+    chalk.blue("  To delete a file, use rm <relative_file_path>"),
+    chalk.blue("  To delete your command history, run reset -h"),
+    chalk.blue("  To delete your configuration and command history, run reset")
   ].join("\n")
 }
 // Call the current client's pwd method
@@ -241,6 +292,8 @@ async function repl() {
       await createInstance(userInput)
     } else if (userInput.endsWith(":")) {
       await switchInstance(userInput)
+    } else if (userInput.startsWith("reset")) {
+      await reset(userInput)
     } else if (userInput === "help") {
       console.log(await help())
     } else if (userInput === "q" || userInput === "Q" || userInput === "quit" || userInput === "Quit" || userInput === "exit" || userInput === "Exit") {
