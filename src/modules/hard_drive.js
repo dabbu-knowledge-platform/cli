@@ -1,16 +1,20 @@
 // MARK: Imports
 
+const fs = require("fs-extra")
 const chalk = require("chalk")
 const ora = require("ora")
 const link = require("terminal-link")
 const axios = require("axios")
+const getURI = require("get-uri")
 const store = require("data-store")({ path: `${__dirname}/../config/dabbu_cli_config.json` })
 const open = require("open")
+const FormData = require("form-data")
 const { Input, Confirm } = require("enquirer")
 const { waterfall, ask, replaceAll, parsePath, error } = require("../utils.js")
 const Client = require("./client.js").default
 
 const Table = require("cli-table3")
+const { typeOf } = require("data-store/utils")
 
 // MARK: HardDriveClient
 
@@ -208,6 +212,116 @@ class HardDriveClient extends Client {
               open(file.contentURI, { wait: false })
             }
             return
+          })
+        } else {
+          // We have no response, stop loading
+          spinner.stop()
+          // Tell the user the server responded with an empty body
+          error("An error occurred: server responded with an empty response body")
+        }
+      })
+      .catch(err => {
+        // We have an error, stop loading
+        spinner.stop()
+        if (err.response) {
+          // Request made and server responded
+          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
+        } else if (err.request) {
+          // The request was made but no response was received
+          error(`An error occurred: No response was received: ${err.message}`)
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          error(`An error occurred while sending the request: ${err.message}`)
+        }
+      })
+  }
+
+  // Copy a file from one location to another
+  async cp(input) {
+    // Get the current instance ID so we can get variables from the config file
+    const currentInstance = store.get("current_instance_id")
+
+    // Parse the command for two relative paths - one to the original file and second to where it should be copied
+    const inputPath = replaceAll(input, {"cp ": "", "cp": "", "//": "/"})
+
+    // Check if the required arguments exist
+    if (inputPath.split(" ").length < 2) {
+      // Else error out
+      error("Must have a path to the file to copy and the folder path to copy it to")
+      return
+    }
+
+    // The path to the file to copy
+    const fromFolderPath = inputPath.split(" ")[0]
+    // The location to copy it to
+    const toFolderPath = inputPath.split(" ")[1]
+    // Get the file name
+    const fileName = fromFolderPath.split("/").pop()
+    // Now parse the folder paths to get absolute ones
+    const fromPath = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", fromFolderPath.split("/").slice(0, -1).join("/"))
+    const toPath = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", toFolderPath)
+    // Show a loading indicator
+    const spinner = ora(`Copying ${chalk.blue(fileName)} to ${toPath}`).start()
+
+    // The URL to send the request to
+    let url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(fromPath === "" ? "/" : fromPath)}/${encodeURIComponent(fileName)}`
+    // GET request
+    return axios.get(url, { 
+        data: {
+          // Send the base path along, since the hard drive provider requires it
+          base_path: store.get(`instances.${currentInstance}.base_path`) 
+        }
+      })
+      .then(async res => {
+        if (res.data.content) {
+          // If we have a file, download it then upload it again
+          const file = res.data.content
+          // Get the data as a readable stream
+          const response = await getURI(file.contentURI)
+          // To upload the data as a file, we need to store it in a file first
+          // Path to the file
+          const downloadFilePath = parsePath(__dirname,`../../downloads/${fileName}`)
+          // Create the file
+          await fs.createFile(downloadFilePath)
+          // Open a write stream so we can write the data we got to it
+          const writer = fs.createWriteStream(downloadFilePath)
+          // Pipe the bytes to the file
+          response.pipe(writer)
+          // Now upload it as form data
+          const formData = new FormData()
+          // Send the base path too
+          formData.append("base_path", store.get(`instances.${currentInstance}.base_path`))
+          // Add it to the content field
+          formData.append("content", await fs.readFile(downloadFilePath), { filename: fileName })
+
+          // Use the headers that the form-data modules sets
+          const headers = formData.getHeaders()
+
+          // POST request
+          url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(toPath === "" ? "/" : toPath)}/${encodeURIComponent(fileName)}`
+          return axios.post(url, formData, { headers })
+          .then(res => {
+            // We have the result, stop loading
+            spinner.stop()
+            console.log(
+              chalk.yellow(
+                `Copied ${chalk.blue(fileName)} to ${toPath}`
+              )
+            )
+          })
+          .catch(err => {
+            // We have an error, stop loading
+            spinner.stop()
+            if (err.response) {
+              // Request made and server responded
+              error(`An error occurred while moving the file: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
+            } else if (err.request) {
+              // The request was made but no response was received
+              error(`An error occurred: No response was received: ${err.message}`)
+            } else {
+              // Something happened in setting up the request that triggered an Error
+              error(`An error occurred while sending the request: ${err.message}`)
+            }
           })
         } else {
           // We have no response, stop loading

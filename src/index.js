@@ -131,6 +131,11 @@ async function cat(input) {
   const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
   return await new Client().cat(input)
 }
+// Call the current client's cp method
+async function cp(input) {
+  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
+  return await new Client().cp(input)
+}
 // Call the current client's rm method
 async function rm(input) {
   const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
@@ -286,6 +291,8 @@ async function repl() {
       await ls(userInput)
     } else if (userInput.startsWith("cat")) {
       await cat(userInput)
+    } else if (userInput.startsWith("cp")) {
+      await cp(userInput)
     } else if (userInput.startsWith("rm")) {
       await rm(userInput)
     } else if (userInput.startsWith("::")) {
