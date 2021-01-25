@@ -106,6 +106,7 @@ async function help() {
     chalk.blue("  To check your current directory, use pwd"),
     chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
     chalk.blue("  To download and view a file, use cat <relative_file_path>"),
+    chalk.blue("  To copy a file within a drive, use cp <relative_file_path> <path_to_folder_to_copy_to>"),
     chalk.blue("  To delete a file, use rm <relative_file_path>"),
     chalk.blue("  To delete your command history, run reset -h"),
     chalk.blue("  To delete your configuration and command history, run reset")
@@ -130,6 +131,11 @@ async function ls(input) {
 async function cat(input) {
   const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
   return await new Client().cat(input)
+}
+// Call the current client's cp method
+async function cp(input) {
+  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
+  return await new Client().cp(input)
 }
 // Call the current client's rm method
 async function rm(input) {
@@ -286,6 +292,8 @@ async function repl() {
       await ls(userInput)
     } else if (userInput.startsWith("cat")) {
       await cat(userInput)
+    } else if (userInput.startsWith("cp")) {
+      await cp(userInput)
     } else if (userInput.startsWith("rm")) {
       await rm(userInput)
     } else if (userInput.startsWith("::")) {
