@@ -106,6 +106,7 @@ async function help() {
     chalk.blue("  To check your current directory, use pwd"),
     chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
     chalk.blue("  To download and view a file, use cat <relative_file_path>"),
+    chalk.blue("  To copy a file within a drive, use cp <relative_file_path> <path_to_folder_to_copy_to>"),
     chalk.blue("  To delete a file, use rm <relative_file_path>"),
     chalk.blue("  To delete your command history, run reset -h"),
     chalk.blue("  To delete your configuration and command history, run reset")
