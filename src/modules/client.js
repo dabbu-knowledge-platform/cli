@@ -11,7 +11,7 @@ const axios = require("axios")
 // Get and set values to and from JSON config
 const store = require("data-store")({ path: `${__dirname}/../config/dabbu_cli_config.json` })
 // Utility methods
-const { replaceAll, parsePath, error } = require("../utils.js")
+const { replaceAll, parsePath, error, handleError } = require("../utils.js")
 
 const Table = require("cli-table3")
 
@@ -21,7 +21,7 @@ class Client {
   constructor() {}
 
   // Creates a new instance
-  async newInstance() {
+  newInstance() {
     // Error out, each client needs a separate instantiator
     error("Extend the default Client class at the very least, implement the newInstance method.")
     exit(1)
@@ -64,14 +64,14 @@ class Client {
           // If there are some files, loop through them
           const files = res.data.content
           // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
+          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [null, null, null]})
           for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
             const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
             table.push([
               file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
               `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}`, contentURI) // Download link
+              link(!contentURI ? "No download link" : "Click to download", contentURI) // Download link
             ])
           }
           // We got the result, stop loading
@@ -88,16 +88,8 @@ class Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -209,16 +201,8 @@ class Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -312,16 +296,8 @@ class Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -354,16 +330,8 @@ class Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 }

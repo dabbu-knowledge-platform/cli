@@ -12,7 +12,7 @@ const open = require("open")
 const FormData = require("form-data")
 const { nanoid } = require("nanoid")
 const { Input, Confirm } = require("enquirer")
-const { waterfall, ask, replaceAll, parsePath, error, exit, getExtFromMime } = require("../utils.js")
+const { waterfall, ask, replaceAll, parsePath, error, exit, getExtFromMime, handleError } = require("../utils.js")
 const Client = require("./client.js").default
 
 const Table = require("cli-table3")
@@ -60,21 +60,13 @@ class GoogleDriveClient extends Client {
   async newInstance() {
     const askForInstanceName = function() {
       return new Promise((resolve, reject) => {
-        /*ask([
-          {
-            "name": "instanceName",
-            "type": "input",
-            "message": "What should this instance be named (usually a single letter, like a drive name):",
-            "default": "g"
-          }
-        ])*/
         ask(new Input({
           name: "instanceName",
           message: "What should this instance be named (usually a single letter, like a drive name):",
-          initial: "g"
+          initial: "g:"
         }))
         .then(instanceName => {
-          store.set("current_instance_id", instanceName.toLowerCase())
+          store.set("current_instance_id", replaceAll(instanceName.toLowerCase(), {":": ""}))
           store.set(`instances.${instanceName}.provider_id`, "google_drive")
           resolve(instanceName)
         })
@@ -98,13 +90,6 @@ class GoogleDriveClient extends Client {
             `  - Type in the path to the file you downloaded into the CLI`
           ].join("\n"))
         )
-        /*ask([
-          {
-            "name": "pathToCredentialFile",
-            "type": "input",
-            "message": `Enter the path to the configuration file you downloaded:`
-          }
-        ])*/
         ask(new Input({
           name: "pathToCredentialFile",
           message: "Enter the path to the configuration file you downloaded:",
@@ -137,14 +122,7 @@ class GoogleDriveClient extends Client {
           const query = url.parse(req.url, true).query
           res.statusCode = 200
           res.setHeader("Content-Type", "text/html")          
-          res.end(`<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Dabbu CLI Login Process</title><style media='screen'>body { background: #ECEFF1; color: rgba(0,0,0,0.87) font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }#message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px 16px; border-radius: 3px; }#message h3 { color: #888; font-weight: normal; font-size: 16px; margin: 16px 0 12px; }#message h2 { color: #C4A000; font-weight: bold; font-size: 16px; margin: 0 0 8px; }#message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6) margin: 0 0 16px;}#message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }#message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }#message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24) }button { background-color: #C4A000; color: #cbcbcb; border-radius: 4px; border: 1px solid #e7e7e7; font-family: Roboto, Helvetica; font-size:14px; color: white; padding: 3px; }@media (max-width: 600px) {body, #message { margin-top: 0; background: white; box-shadow: none; }body { border-top: 16px solid #079632; }}</style><script>function copy() {let copyText = document.querySelector("#code")copyText.select()document.execCommand("copy")}document.querySelector("#copy-button").addEventListener("click", copy)</script></head><body><div id='message'><h2>Dabbu CLI Login Process</h2><h1>Copy authorization code</h1><p>Please copy the following code into the CLI to complete the sign in process<br><br><small><div id="code">${query.code}</div></small><button id="copy-button">Copy code</button></p></div></body></html>`)
-          /*ask([
-            {
-              "name": "authCode",
-              "type": "input",
-              "message": `Enter the code that you just got in the browser:`
-            }
-          ])*/
+          res.end(`<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Dabbu CLI Login Process</title><style media='screen'>body { background: #ECEFF1; color: rgba(0,0,0,0.87) font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }#message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px 16px; border-radius: 3px; }#message h3 { color: #888; font-weight: normal; font-size: 16px; margin: 16px 0 12px; }#message h2 { color: #C4A000; font-weight: bold; font-size: 16px; margin: 0 0 8px; }#message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6) margin: 0 0 16px;}#message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }#message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }#message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24) }button { background-color: #C4A000; color: #cbcbcb; border-radius: 4px; border: 1px solid #e7e7e7; font-family: Roboto, Helvetica; font-size:14px; color: white; padding: 3px; }@media (max-width: 600px) {body, #message { margin-top: 0; background: white; box-shadow: none; }body { border-top: 16px solid #079632; }}</style><script>function copy() {let copyText = document.querySelector("#code")copyText.select()document.execCommand("copy")}document.querySelector("#copy-button").addEventListener("click", copy)</script></head><body><div id='message'><h2>Dabbu CLI Login Process</h2><h1>Copy authorization code</h1><p>Please copy the following code into the CLI to complete the sign in process<br><br><small><div id="code">${query.code}</div></small></p></div></body></html>`)
           ask(new Input({
             name: "authCode",
             message: "Enter the code that you just got in the browser:",
@@ -249,14 +227,14 @@ class GoogleDriveClient extends Client {
           // If there are some files, loop through them
           const files = res.data.content
           // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
+          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [null, null, null]})
           for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
             const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
             table.push([
               file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
               `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}`, contentURI) // Download link
+              link(!contentURI ? "No download link" : "Click to download", contentURI) // Download link
             ])
           }
           // We got the result, stop loading
@@ -273,17 +251,8 @@ class GoogleDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error(err)
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -326,11 +295,11 @@ class GoogleDriveClient extends Client {
     let url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
     // GET request
     return instance.get(url, {
-      params: {
-        // This is required so the server's Google Drive provider will return a link that we can access through curl/axios
-        exportType: "media"
-      }
-    })
+        params: {
+          // This is required so the server's Google Drive provider will return a link that we can access through curl/axios
+          exportType: "media"
+        }
+      })
       .then(res => {
         if (res.data.content) {
           // If we have a file, download it using the content URI
@@ -394,16 +363,8 @@ class GoogleDriveClient extends Client {
               .catch(err => {
                 // We have an error, stop loading
                 spinner.stop()
-                if (err.response) {
-                  // Request made and server responded
-                  error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-                } else if (err.request) {
-                  // The request was made but no response was received
-                  error(`An error occurred: No response was received: ${err.message}`)
-                } else {
-                  // Something happened in setting up the request that triggered an Error
-                  error(`An error occurred while sending the request: ${err.message}`)
-                }
+                // Handle it 
+                handleError(err)
               })
           } else {
             spinner.stop()
@@ -419,16 +380,8 @@ class GoogleDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -531,16 +484,8 @@ class GoogleDriveClient extends Client {
           .catch(err => {
             // We have an error, stop loading
             spinner.stop()
-            if (err.response) {
-              // Request made and server responded
-              error(`An error occurred while moving the file: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-            } else if (err.request) {
-              // The request was made but no response was received
-              error(`An error occurred: No response was received: ${err.message}`)
-            } else {
-              // Something happened in setting up the request that triggered an Error
-              error(`An error occurred while sending the request: ${err.message}`)
-            }
+            // Handle it 
+            handleError(err)
           })
         } else {
           // We have no response, stop loading
@@ -552,16 +497,8 @@ class GoogleDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 
@@ -613,16 +550,8 @@ class GoogleDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it 
+        handleError(err)
       })
   }
 }

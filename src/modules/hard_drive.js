@@ -10,7 +10,7 @@ const store = require("data-store")({ path: `${__dirname}/../config/dabbu_cli_co
 const open = require("open")
 const FormData = require("form-data")
 const { Input, Confirm } = require("enquirer")
-const { waterfall, ask, replaceAll, parsePath, error } = require("../utils.js")
+const { waterfall, ask, replaceAll, parsePath, error, handleError } = require("../utils.js")
 const Client = require("./client.js").default
 
 const Table = require("cli-table3")
@@ -27,21 +27,13 @@ class HardDriveClient extends Client {
   async newInstance() {
     const askForInstanceName = function() {
       return new Promise((resolve, reject) => {
-        /*ask([
-          {
-            "name": "instanceName",
-            "type": "input",
-            "message": "What should this instance be named (usually a single letter, like a drive name):",
-            "default": "c"
-          }
-        ])*/
         ask(new Input({
           name: "instanceName",
           message: "What should this instance be named (usually a single letter, like a drive name):",
-          initial: "c"
+          initial: "c:"
         }))
         .then(instanceName => {
-          store.set("current_instance_id", instanceName.toLowerCase())
+          store.set("current_instance_id", replaceAll(instanceName.toLowerCase(), {":": ""}))
           store.set(`instances.${instanceName}.provider_id`, "hard_drive")
           resolve(instanceName)
         })
@@ -133,14 +125,14 @@ class HardDriveClient extends Client {
           // If there are some files, loop through them
           const files = res.data.content
           // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [30, 10, 40]})
+          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [null, null, null]})
           for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
             const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
             table.push([
               file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
               `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : `${contentURI.substring(0, 34)}`, contentURI) // Download link
+              link(!contentURI ? "No download link" : "Click to download", contentURI) // Download link
             ])
           }
           // We got the result, stop loading
@@ -157,16 +149,8 @@ class HardDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it
+        handleError(err)
       })
   }
 
@@ -223,16 +207,8 @@ class HardDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it
+        handleError(err)
       })
   }
 
@@ -312,16 +288,8 @@ class HardDriveClient extends Client {
           .catch(err => {
             // We have an error, stop loading
             spinner.stop()
-            if (err.response) {
-              // Request made and server responded
-              error(`An error occurred while moving the file: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-            } else if (err.request) {
-              // The request was made but no response was received
-              error(`An error occurred: No response was received: ${err.message}`)
-            } else {
-              // Something happened in setting up the request that triggered an Error
-              error(`An error occurred while sending the request: ${err.message}`)
-            }
+            // Handle it
+            handleError(err)
           })
         } else {
           // We have no response, stop loading
@@ -333,16 +301,8 @@ class HardDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it
+        handleError(err)
       })
   }
 
@@ -380,16 +340,8 @@ class HardDriveClient extends Client {
       .catch(err => {
         // We have an error, stop loading
         spinner.stop()
-        if (err.response) {
-          // Request made and server responded
-          error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-        } else if (err.request) {
-          // The request was made but no response was received
-          error(`An error occurred: No response was received: ${err.message}`)
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          error(`An error occurred while sending the request: ${err.message}`)
-        }
+        // Handle it
+        handleError(err)
       })
   }
 }

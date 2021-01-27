@@ -5,7 +5,7 @@ function waterfall(functions) {
   let promise = Promise.resolve()
 
   functions.forEach(func => {
-    promise = promise.then(result => func(result))
+    promise = promise.then(result => func(result)).catch(err => { error(err.message); exit(1) })
   })
 
   return promise
@@ -241,9 +241,23 @@ function exit(code) {
   process.exit(code)
 }
 
+// Handle an axios request error
+function handleError(err) {
+  if (err.response) {
+    // Request made and server responded
+    error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
+  } else if (err.request) {
+    // The request was made but no response was received
+    error(`An error occurred: No response was received from the server: ${err.message}`)
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    error(`An error occurred while sending a request to the server: ${err.message}`)
+  }
+}
+
 // MARK: Exports
 
 // Export all the functions declared in this file
 module.exports = {
-  waterfall, ask, replaceAll, parsePath, getExtFromMime, error, exit
+  waterfall, ask, replaceAll, parsePath, getExtFromMime, error, exit, handleError
 }
