@@ -2,6 +2,7 @@ const ora = require("ora")
 const link = require("terminal-link")
 const open = require("open")
 const chalk = require("chalk")
+const path = require("path")
 const { get, set, parsePath, printInfo, printBright } = require("./utils")
 
 const Table = require("cli-table3")
@@ -36,6 +37,19 @@ exports.parseCommand = (args) => {
         case "rm": // Delete a file
           opFunc = rm
           break
+        case "clear": // Clear the console
+          opFunc = () => {
+            // Promisify the clear process
+            return new Promise((resolve, reject) => {
+              process.stdout.write('\x1b[2J')
+              process.stdout.write('\x1b[0f')
+              resolve()
+            })
+          }
+          break
+        case "q", "quit", "Q", "Quit", "exit", "Exit":
+          process.exit(0)
+          break
         default:
           if (args[0] === "::") 
             opFunc = cnd // Create a new drive
@@ -44,7 +58,7 @@ exports.parseCommand = (args) => {
           break
       }
       if (opFunc) {
-        // Run the function. Pass any errors back up
+        // Run the function (if needed only). Pass any errors back up
         opFunc(args).then(resolve).catch(reject)
       } else {
         reject("No such command") // Invalid input
@@ -189,8 +203,6 @@ const cat = (args) => {
           // Open the downloaded file
           open(filePath, { wait: false })
         } else {
-          // We have no file, stop loading
-          spinner.stop()
           // Tell the user there was no file downloaded
           printBright("No file was downloaded")
         }
@@ -205,42 +217,127 @@ const cat = (args) => {
 }
 
 const cp = (args) => {
+  // Parse the from file path
+  let fromInput = args[1]
+  if (!fromInput) fromInput = "."
+
+  let fromSplit = fromInput.split(":")
+  let fromDrive = fromSplit[0]
+  if (!fromDrive || fromSplit.length === 1) fromDrive = get("current_drive")
+
+  // Get the current drive name, so we can get the variables from the config file
+  const fromDriveVars = get(`drives.${fromDrive}`)
+
+  // The current path in that drive
+  const fromCurrentPath = fromDriveVars.path || ""
+  // The user given relative path
+  const fromInputPath = fromSplit.length === 2 ? fromSplit[1] : fromSplit[0]
+  // Get the folder names and file names separately
+  let fromFolders = fromInputPath.split("/")
+  // Get the file name
+  const fromFileName = fromFolders.pop()
+  // If only the file name was specified, set the fromFolders array to have a path 
+  // to the present directory
+  if (fromFolders.length === 0) {
+    fromFolders = ["."]
+  }
+  // Parse the relative path and get an absolute one
+  let fromFolderPath = parsePath(fromFolders.join("/"), fromCurrentPath)
+  fromFolderPath = fromFolderPath === "" ? "/" : fromFolderPath
+
+  // Parse the to file path
+  let toInput = args[2]
+  if (!toInput) toInput = "."
+
+  let toSplit = toInput.split(":")
+  let toDrive = toSplit[0]
+  if (!toDrive || toSplit.length === 1) toDrive = get("current_drive")
+
+  // Get the current drive name, so we can get the variables to the config file
+  const toDriveVars = get(`drives.${toDrive}`)
+
+  // The current path in that drive
+  const toCurrentPath = toDriveVars.path || ""
+  // The user given relative path
+  const toInputPath = toSplit.length === 2 ? toSplit[1] : toSplit[0]
+  // Get the folder names and file names separately
+  let toFolders = toInputPath.split("/")
+  // Get the file name
+  const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("..") || toInputPath.endsWith(".") ? fromFileName : toFolders.pop()
+  // If only the file name was specified, set the toFolders array to have a path 
+  // to the present directory
+  if (toFolders.length === 0) {
+    toFolders = ["."]
+  }
+  // Parse the relative path and get an absolute one
+  let toFolderPath = parsePath(toFolders.join("/"), toCurrentPath)
+  toFolderPath = toFolderPath === "" ? "/" : toFolderPath
+
+  // First, download the file
+  const downloadFile = () => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Show a loading indicator
+      const spinner = ora(`Fetching ${chalk.blue(fromFileName)}`).start()
+
+      // Initialise the provider module
+      const FromDataModule = require(`./modules/${fromDriveVars.provider}`).default
+      new FromDataModule().cat(get("server"), fromFolderPath, fromFileName, fromDriveVars)
+        .then(filePath => {
+          // We got the result, stop loading
+          spinner.stop()
+          if (filePath) {
+            // Return the file path successfully
+            resolve(filePath) 
+          } else {
+            // Error out
+            reject("No file was downloaded")
+          }
+        })
+        .catch((err) => {
+          spinner.stop()
+          reject(err)
+        })
+    })
+  }
+
+  // Then, upload it
+  const uploadFile = (downloadedFilePath) => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Show a loading indicator
+      const spinner = ora(`Uploading ${chalk.blue(toFileName)}`).start()
+
+      // Initialise the provider module
+      const ToDataModule = require(`./modules/${toDriveVars.provider}`).default
+      new ToDataModule().upl(get("server"), toFolderPath, toFileName, {...toDriveVars, downloadedFilePath: downloadedFilePath})
+        .then(uploaded => {
+          // We got the result, stop loading
+          spinner.stop()
+          if (uploaded) {
+            // Tell the user we're done
+            printInfo(`Successfully copied ${path.join(fromFolderPath, fromFileName)} to ${path.join(toFolderPath, toFileName)}`)
+            // Return successfully
+            resolve()
+          } else {
+            // Error out
+            reject("File could not be uploaded")
+          }
+        })
+        .catch((err) => {
+          spinner.stop()
+          reject(err)
+        })
+    })
+  }
+
+  // Execute the functions one after the other
   // Wrap everything in a promise
   return new Promise((resolve, reject) => {
-    // Get the current drive name, so we can get the variables from the config file
-    const driveVars = get(`drives.${get("current_drive")}`)
-
-    // The current path in that drive
-    const currentPath = driveVars.path || ""
-    // The user given relative path
-    const inputPath = args[1] || "./"
-    // Get the folder names and file names separately
-    let folders = inputPath.split("/")
-    // Get the file name
-    const fileName = folders.pop()
-    // If only the file name was specified, set the folders array to have a path 
-    // to the present directory
-    if (folders.length === 0) {
-      folders = ["."]
-    }
-    // Parse the relative path and get an absolute one
-    let folderPath = parsePath(folders.join("/"), currentPath)
-    folderPath = folderPath === "" ? "/" : folderPath
-
-    // Show a loading indicator
-    const spinner = ora(`Loading your ${chalk.blue("files and folders")}`).start()
-
-    // Initialise the provider module
-    const DataModule = require(`./modules/${driveVars.provider}`).default
-    new DataModule().upl(get("server"), folderPath, fileName, driveVars)
-      .then(() => {
-        // Return successfully
-        resolve()
-      })
-      .catch((err) => {
-        spinner.stop()
-        reject(err)
-      })
+    downloadFile()
+      .then(uploadFile)
+      .then(resolve)
+      .catch(reject)
   })
 }
 
@@ -268,24 +365,22 @@ const rm = (args) => {
     folderPath = folderPath === "" ? "/" : folderPath
 
     // Show a loading indicator
-    const spinner = ora(`Loading your ${chalk.blue("files and folders")}`).start()
+    const spinner = ora(`Deleting ${chalk.blue(fileName || folderPath)}`).start()
 
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
     new DataModule().rm(get("server"), folderPath, fileName, driveVars)
       .then(deleted => {
+        // We got the result, stop loading
+        spinner.stop()
         if (deleted) {
-          // We got the result, stop loading
-          spinner.stop()
           // Tell the user the file/folder was deleted
           if (fileName) {
-            printInfo(`File ${folderPath}/${fileName} was successfully deleted`)
+            printInfo(`File ${path.join(folderPath, fileName)} was successfully deleted`)
           } else {
             printInfo(`Folder ${folderPath} was successfully deleted`)
           }
         } else {
-          // We have no files, stop loading
-          spinner.stop()
           // Tell the user the file/folder was not deleted
           reject("File/folder not deleted due to unkown reason")
         }

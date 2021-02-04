@@ -2,6 +2,7 @@ const fs = require("fs-extra")
 const axios = require("axios")
 const getUri = require("get-uri")
 
+const FormData = require("form-data")
 const Client = require("./client").default
 
 exports.default = class HardDriveClient extends Client {
@@ -53,7 +54,8 @@ exports.default = class HardDriveClient extends Client {
             const file = res.data.content
             resolve(file)
           } else {
-            resolve(null)
+            // Else return false if there is an error
+            reject(res.response.data.error)
           }
         })
         .catch(reject)
@@ -108,6 +110,40 @@ exports.default = class HardDriveClient extends Client {
       })
 
       resolve(promise)
+    })
+  }
+
+  upl(server, folderPath, fileName, vars) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // First read the file
+      fs.readFile(vars.downloadedFilePath)
+      .then(fileData => {
+        // Make a form data object to upload the file's contents
+        const formData = new FormData()
+        // Send the base path too
+        formData.append("base_path", vars.base_path)
+        // Add it to the content field
+        formData.append("content", fileData, { filename: fileName })
+
+        // Use the headers that the form-data modules sets
+        const headers = formData.getHeaders()
+
+        // The URL to send the request to
+        const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
+        // Send a POST request
+        axios.post(url, formData, { headers })
+        .then(res => {
+          if (res.status === 200) {
+            // If there is no error, return true
+            resolve(true)
+          } else {
+            // Else return false if there is an error
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
     })
   }
 
