@@ -1,3 +1,21 @@
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 const fs = require("fs-extra")
 const chalk = require("chalk")
 const axios = require("axios")
@@ -6,7 +24,7 @@ const getUri = require("get-uri")
 
 const FormData = require("form-data")
 const Client = require("./client").default
-const { set, printInfo } = require("../utils")
+const { set, printInfo } = require("../utils.js")
 
 exports.default = class HardDriveClient extends Client {
   constructor() {
@@ -42,7 +60,7 @@ exports.default = class HardDriveClient extends Client {
     })
   }
 
-  ls(server, folderPath, vars) {
+  ls(server, name, folderPath, vars) {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to
@@ -67,7 +85,7 @@ exports.default = class HardDriveClient extends Client {
     })
   }
 
-  cat(server, folderPath, fileName, vars) {
+  cat(server, name, folderPath, fileName, vars) {
     const getFileData = () => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
@@ -142,7 +160,7 @@ exports.default = class HardDriveClient extends Client {
     })
   }
 
-  upl(server, folderPath, fileName, vars) {
+  upl(server, name, folderPath, fileName, vars) {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // First read the file
@@ -153,13 +171,13 @@ exports.default = class HardDriveClient extends Client {
         // Send the base path too
         formData.append("base_path", vars.base_path)
         // Add it to the content field
-        formData.append("content", fileData, { filename: fileName })
+        formData.append("content", fileData, { filename: vars.downloadedFilePath.split("/").pop() })
 
         // Use the headers that the form-data modules sets
         const headers = formData.getHeaders()
 
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
+        const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(vars.downloadedFilePath.split("/").pop())}`
         // Send a POST request
         axios.post(url, formData, { headers })
         .then(res => {
@@ -176,7 +194,7 @@ exports.default = class HardDriveClient extends Client {
     })
   }
 
-  rm(server, folderPath, fileName, vars) {
+  rm(server, name, folderPath, fileName, vars) {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to

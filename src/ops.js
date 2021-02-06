@@ -1,3 +1,21 @@
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 const ora = require("ora")
 const link = require("terminal-link")
 const open = require("open")
@@ -5,7 +23,7 @@ const chalk = require("chalk")
 const axios = require("axios")
 const prompt = require("readcommand")
 const path = require("path")
-const { get, set, parsePath, printInfo, printBright, exitDabbu } = require("./utils")
+const { get, set, parsePath, printInfo, printBright, exitDabbu, printError } = require("./utils.js")
 
 const Table = require("cli-table3")
 
@@ -43,8 +61,31 @@ exports.parseCommand = (args) => {
         case "rm": // Delete a file
           opFunc = rm
           break
+        case "help":
+          const help = () => {
+            // Promisify the help command
+            return new Promise((resolve, reject) => {
+              printInfo([
+                "Welcome to Dabbu CLI! Here is an overview of the commands you can use:",
+                "Anything in <> must be mentioned, while if it is in [], it is optional.",
+                "  pwd - Know your current drive and directory",
+                "  cd <relative path to directory> - Move into a directory",
+                "  ls [relative path to directory] - List files in a directory",
+                "  cat <relative path to file> - Download and open a file",
+                "  cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)> - Copy a file from one place to another",
+                "  rm <relative path to file> - Delete a file",
+                "  <drive name>: - Switch drives",
+                "  :: - Create a new drive",
+                "  clear - Clear the screen",
+                "  q or quit or exit or CTRL+C - Exit"
+              ].join("\n"))
+              resolve()
+            })
+          }
+          opFunc = help
+          break
         case "clear": // Clear the console
-          clear = () => {
+          const clear = () => {
             // Promisify the clear process
             return new Promise((resolve, reject) => {
               process.stdout.write('\x1b[2J')
@@ -84,7 +125,7 @@ const pwd = (args) => {
   // Current drive
   const drive = get("current_drive")
   // Print the drive name and path as a promise
-  printInfo(`${drive}:/${get(`drives.${drive}.path`)}`)
+  printInfo(`(${get(`drives.${drive}.provider`)}) ${drive}:/${get(`drives.${drive}.path`)}`)
 
   // Return a resolved promise
   return Promise.resolve()
@@ -124,7 +165,7 @@ const ls = (args) => {
 
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
-    new DataModule().ls(get("server"), finalPath, driveVars)
+    new DataModule().ls(get("server"), get("current_drive"), finalPath, driveVars)
       .then((files) => {
         if (files) {
           // Append the files to a table and then display them
@@ -141,8 +182,11 @@ const ls = (args) => {
             // Convert to hyper link and then display it
             let downloadLink
             if (file.kind === "folder") {
-              // Never show a download link for a folder
-              downloadLink = link("View folder", contentURI)
+              if (!contentURI) {
+                downloadLink = "Link unavailable"
+              } else {
+                downloadLink = link("View folder", contentURI)
+              }
             } else {
               if (!contentURI) {
                 downloadLink = "Link unavailable"
@@ -205,7 +249,7 @@ const cat = (args) => {
 
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
-    new DataModule().cat(get("server"), folderPath, fileName, driveVars)
+    new DataModule().cat(get("server"), get("current_drive"), folderPath, fileName, driveVars)
       .then(filePath => {
         // We got the result, stop loading
         spinner.stop()
@@ -248,7 +292,10 @@ const cp = (args) => {
   // Get the folder names and file names separately
   let fromFolders = fromInputPath.split("/")
   // Get the file name
-  const fromFileName = fromFolders.pop()
+  const fromFileName = fromInputPath.endsWith("..") || fromInputPath.endsWith(".") ? null : fromFolders.pop()
+  if (fromFileName === null) {
+    return Promise.reject("Invalid file name")
+  }
   // If only the file name was specified, set the fromFolders array to have a path 
   // to the present directory
   if (fromFolders.length === 0) {
@@ -295,7 +342,7 @@ const cp = (args) => {
 
       // Initialise the provider module
       const FromDataModule = require(`./modules/${fromDriveVars.provider}`).default
-      new FromDataModule().cat(get("server"), fromFolderPath, fromFileName, fromDriveVars)
+      new FromDataModule().cat(get("server"), fromDrive, fromFolderPath, fromFileName, fromDriveVars)
         .then(filePath => {
           // We got the result, stop loading
           spinner.stop()
@@ -323,7 +370,7 @@ const cp = (args) => {
 
       // Initialise the provider module
       const ToDataModule = require(`./modules/${toDriveVars.provider}`).default
-      new ToDataModule().upl(get("server"), toFolderPath, toFileName, {...toDriveVars, downloadedFilePath: downloadedFilePath})
+      new ToDataModule().upl(get("server"), toDrive, toFolderPath, toFileName, {...toDriveVars, downloadedFilePath: downloadedFilePath})
         .then(uploaded => {
           // We got the result, stop loading
           spinner.stop()
@@ -382,7 +429,7 @@ const rm = (args) => {
 
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
-    new DataModule().rm(get("server"), folderPath, fileName, driveVars)
+    new DataModule().rm(get("server"), get("current_drive"), folderPath, fileName, driveVars)
       .then(deleted => {
         // We got the result, stop loading
         spinner.stop()
@@ -501,7 +548,7 @@ const cnd = (args) => {
     return new Promise((resolve, reject) => {
       const provider = get(`drives.${name}.provider`)
       const DataModule = require(`./modules/${provider}`).default
-      new DataModule().init(get("server"), name)
+      new DataModule().init(get("server"), get("current_drive"), name)
         .then(() => resolve(name))
         .catch(reject)
     })

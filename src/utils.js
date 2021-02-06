@@ -1,5 +1,24 @@
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 const fs = require("fs-extra")
 const chalk = require("chalk")
+const mime = require("mime-types")
 const figlet = require("figlet")
 
 const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
@@ -20,6 +39,33 @@ exports.getDrawableText = (text) => {
       }
     })
   })
+}
+
+exports.getExtFromMime = (mimeType) => {
+  if (mimeType === "application/vnd.google-apps.document") {
+    // Google Docs ---> Microsoft Word (docx)
+    return "docx"
+  } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
+    // Google Sheets ---> Microsoft Excel (xlsx)
+    return "xlsx"
+  } else if (mimeType === "application/vnd.google-apps.presentation") {
+    // Google Slides ---> Microsoft Power Point (pptx)
+    return "pptx"
+  } else if (mimeType === "application/vnd.google-apps.drawing") {
+    // Google Drawing ---> PNG Image (png)
+    return "png"
+  } else if (mimeType === "application/vnd.google-apps.script+json") {
+    // Google App Script ---> JSON (json)
+    return "json"
+  } else {
+    // Get the ext from the mime DB
+    let ext = mime.extension(mimeType)
+    if (ext) 
+      return ext
+    else
+      // No extension - should idealy not happen
+      return ""
+  }
 }
 
 // Handle an input error while reading user input
@@ -107,5 +153,6 @@ exports.printError = (err) => {
 // Exit Dabbu and delete the .cache directory
 exports.exitDabbu = () => {
   return fs.remove(`${__dirname}/../.cache/`)
+    .then(() => this.printInfo("Removed cache. Exiting.."))
     .finally(() => process.exit(0))
 }
