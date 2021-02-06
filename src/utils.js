@@ -1,263 +1,158 @@
-// MARK - Utility functions, imports and exports
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
-// This runs async/promise returning functions one after the other insted of simultaneously, like Promise.all() would do
-function waterfall(functions) {
-  let promise = Promise.resolve()
-
-  functions.forEach(func => {
-    promise = promise.then(result => func(result)).catch(err => { error(err.message); exit(1) })
-  })
-
-  return promise
-}
-
-// Asks a question using Enquirer
-function ask(prompt) {
-  return prompt.run()
-}
-
-// Replaces all occurrences of the given substrings with another set of substrings
-function replaceAll(string, replaceObj) {
-  let replacedString = string
-  Object.keys(replaceObj).forEach((key) => {
-    const replaceWhat = key
-    const replaceWith = replaceObj[key]
-
-    if (replacedString.includes(replaceWhat)) {
-      replacedString = replacedString.split(replaceWhat).join(replaceWith)
-    }
-  })
-  return replacedString
-}
-
-// Return a path from the current path and relative input path
-function parsePath(currentPath, inputPath) {
-  if (inputPath === "/") return ""
-
-  const splitInputPath = inputPath.split("/")
-  
-  let finalPath = currentPath.split("/")
-  for (let i = 0, length = splitInputPath.length; i < length; i++) {
-    const folder = splitInputPath[i]
-    if (folder) {
-      if (folder === ".") {
-        continue
-      } else if (folder === "..") {
-        finalPath.pop()
-      } else {
-        finalPath.push(`/${folder}`)
-      }
-    } else {
-      continue
-    }
-  }
-  
-  return replaceAll(finalPath.join("/"), {"////": "/", "///": "/", "//": "/"})
-}
-
-// Get the extension of a file based on its mime type
-function getExtFromMime(mimeType) {
-  let exts = { 
-		"video/3gpp": "3gp",
-		"application/octet-stream": "a",
-		"application/postscript": "ai",
-		"audio/x-aiff": "aif",
-		"audio/x-aiff": "aiff",
-		"application/pgp-signature": "asc",
-		"video/x-ms-asf": "asf",
-		"text/x-asm": "asm",
-		"video/x-ms-asf": "asx",
-		"application/atom+xml": "atom",
-		"audio/basic": "au",
-		"video/x-msvideo": "avi",
-		"application/x-msdownload": "bat",
-		"application/octet-stream": "bin",
-		"image/bmp": "bmp",
-		"application/x-bzip2": "bz2",
-		"text/x-c": "c",
-		"application/vnd.ms-cab-compressed": "cab",
-		"text/x-c": "cc",
-		"application/vnd.ms-htmlhelp": "chm",
-		"application/octet-stream": "class",
-		"application/x-msdownload": "com",
-		"text/plain": "conf",
-		"text/x-c": "cpp",
-		"application/x-x509-ca-cert": "crt",
-		"text/css": "css",
-		"text/csv": "csv",
-		"text/x-c": "cxx",
-		"application/x-debian-package": "deb",
-		"application/x-x509-ca-cert": "der",
-		"text/x-diff": "diff",
-		"image/vnd.djvu": "djv",
-		"image/vnd.djvu": "djvu",
-		"application/x-msdownload": "dll",
-		"application/octet-stream": "dmg",
-		"application/msword": "doc",
-		"application/msword": "dot",
-		"application/xml-dtd": "dtd",
-		"application/x-dvi": "dvi",
-		"application/java-archive": "ear",
-		"message/rfc822": "eml",
-		"application/postscript": "eps",
-		"application/x-msdownload": "exe",
-		"text/x-fortran": "f",
-		"text/x-fortran": "f77",
-		"text/x-fortran": "f90",
-		"video/x-flv": "flv",
-		"text/x-fortran": "for",
-		"application/octet-stream": "gem",
-		"text/x-script.ruby": "gemspec",
-		"image/gif": "gif",
-		"application/x-gzip": "gz",
-		"text/x-c": "h",
-		"text/x-c": "hh",
-		"text/html": "htm",
-		"text/html": "html",
-		"image/vnd.microsoft.icon": "ico",
-		"text/calendar": "ics",
-		"text/calendar": "ifb",
-		"application/octet-stream": "iso",
-		"application/java-archive": "jar",
-		"text/x-java-source": "java",
-		"application/x-java-jnlp-file": "jnlp",
-		"image/jpeg": "jpeg",
-		"image/jpeg": "jpg",
-		"application/javascript": "js",
-		"application/json": "json",
-		"text/plain": "log",
-		"audio/x-mpegurl": "m3u",
-		"text/troff": "man",
-		"application/mathml+xml": "mathml",
-		"application/mbox": "mbox",
-		"text/troff": "mdoc",
-		"text/troff": "me",
-		"audio/midi": "mid",
-		"audio/midi": "midi",
-		"message/rfc822": "mime",
-		"application/mathml+xml": "mml",
-		"video/x-mng": "mng",
-		"video/quicktime": "mov",
-		"audio/mpeg": "mp3",
-		"video/mp4": "mp4",
-		"video/mpeg": "mpeg",
-		"text/troff": "ms",
-		"application/x-msdownload": "msi",
-		"application/vnd.oasis.opendocument.presentation": "odp",
-		"application/vnd.oasis.opendocument.spreadsheet": "ods",
-		"application/vnd.oasis.opendocument.text": "odt",
-		"application/ogg": "ogg",
-		"text/x-pascal": "p",
-		"text/x-pascal": "pas",
-		"image/x-portable-bitmap": "pbm",
-		"application/pdf": "pdf",
-		"application/x-x509-ca-cert": "pem",
-		"image/x-portable-graymap": "pgm",
-		"application/pgp-encrypted": "pgp",
-		"application/octet-stream": "pkg",
-		"text/x-script.perl": "pl",
-		"text/x-script.perl-module": "pm",
-		"image/png": "png",
-		"image/x-portable-anymap": "pnm",
-		"image/x-portable-pixmap": "ppm",
-		"application/vnd.ms-powerpoint": "pps",
-		"application/vnd.ms-powerpoint": "ppt",
-		"application/postscript": "ps",
-		"image/vnd.adobe.photoshop": "psd",
-		"text/x-script.python": "py",
-		"video/quicktime": "qt",
-		"audio/x-pn-realaudio": "ra",
-		"text/x-script.ruby": "rake",
-		"audio/x-pn-realaudio": "ram",
-		"application/x-rar-compressed": "rar",
-		"text/x-script.ruby": "rb",
-		"application/rdf+xml": "rdf",
-		"text/troff": "roff",
-		"application/x-redhat-package-manager": "rpm",
-		"application/rss+xml": "rss",
-		"application/rtf": "rtf",
-		"text/x-script.ruby": "ru",
-		"text/x-asm": "s",
-		"text/sgml": "sgm",
-		"text/sgml": "sgml",
-		"application/x-sh": "sh",
-		"application/pgp-signature": "sig",
-		"audio/basic": "snd",
-		"application/octet-stream": "so",
-		"image/svg+xml": "svg",
-		"image/svg+xml": "svgz",
-		"application/x-shockwave-flash": "swf",
-		"text/troff": "t",
-		"application/x-tar": "tar",
-		"application/x-bzip-compressed-tar": "tbz",
-		"application/x-tcl": "tcl",
-		"application/x-tex": "tex",
-		"application/x-texinfo": "texi",
-		"application/x-texinfo": "texinfo",
-		"text/plain": "text",
-		"image/tiff": "tif",
-		"image/tiff": "tiff",
-		"application/x-bittorrent": "torrent",
-		"text/troff": "tr" ,
-		"text/plain": "txt",
-		"text/x-vcard": "vcf",
-		"text/x-vcalendar": "vcs",
-		"model/vrml": "vrml",
-		"application/java-archive": "war",
-		"audio/x-wav": "wav",
-		"audio/x-ms-wma": "wma",
-		"video/x-ms-wmv": "wmv",
-		"video/x-ms-wmx": "wmx",
-		"model/vrml": "wrl",
-		"application/wsdl+xml": "wsdl",
-		"image/x-xbitmap": "xbm",
-		"application/xhtml+xml": "xhtml",
-		"application/vnd.ms-excel": "xlsx",
-		"application/xml": "xml",
-		"image/x-xpixmap": "xpm",
-		"application/xml": "xsl",
-		"application/xslt+xml": "xslt",
-		"text/yaml": "yaml",
-		"text/yaml": "yml",
-    "application/zip": "zip",
-    "application/vnd.android.package-archive": "apk",
-    "application/vnd.google-apps.document": "docx",
-    "application/vnd.google-apps.spreadsheet": "xlsx",
-    "application/vnd.google-apps.presentation": "pptx",
-    "application/vnd.google-apps.drawing": "png",
-    "application/vnd.google-apps.script+json": "json"
-  }
-  return exts[mimeType]
-}
-
-// Print out a message in red
+const fs = require("fs-extra")
 const chalk = require("chalk")
-function error(message) {
-  console.log(chalk.redBright(`${message}`))
+const mime = require("mime-types")
+const figlet = require("figlet")
+
+const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
+
+// Return the fancy text that we can print out
+exports.getDrawableText = (text) => {
+  // Return it wrapped up as a promise
+  return new Promise((resolve, reject) => {
+    // Get the text
+    figlet.text(text, (err, res) => {
+      // In the callback, check for errors
+      if (err) {
+        // Error occurred, reject
+        reject(err)
+      } else {
+        // Return the printable result
+        resolve(res)
+      }
+    })
+  })
 }
 
-// Kill this process with an exit code
-function exit(code) {
-  process.exit(code)
-}
-
-// Handle an axios request error
-function handleError(err) {
-  if (err.response) {
-    // Request made and server responded
-    error(`An error occurred: ${err.response.data ? err.response.data.error.message : "Unkown Error"}`)
-  } else if (err.request) {
-    // The request was made but no response was received
-    error(`An error occurred: No response was received from the server: ${err.message}`)
+exports.getExtFromMime = (mimeType) => {
+  if (mimeType === "application/vnd.google-apps.document") {
+    // Google Docs ---> Microsoft Word (docx)
+    return "docx"
+  } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
+    // Google Sheets ---> Microsoft Excel (xlsx)
+    return "xlsx"
+  } else if (mimeType === "application/vnd.google-apps.presentation") {
+    // Google Slides ---> Microsoft Power Point (pptx)
+    return "pptx"
+  } else if (mimeType === "application/vnd.google-apps.drawing") {
+    // Google Drawing ---> PNG Image (png)
+    return "png"
+  } else if (mimeType === "application/vnd.google-apps.script+json") {
+    // Google App Script ---> JSON (json)
+    return "json"
   } else {
-    // Something happened in setting up the request that triggered an Error
-    error(`An error occurred while sending a request to the server: ${err.message}`)
+    // Get the ext from the mime DB
+    let ext = mime.extension(mimeType)
+    if (ext) 
+      return ext
+    else
+      // No extension - should idealy not happen
+      return ""
   }
 }
 
-// MARK: Exports
+// Handle an input error while reading user input
+exports.handleInputError = (err) => {
+  // Check if it is a Ctrl+C
+  if (err.code === "SIGINT") {
+    // If so, exit without error
+    this.exitDabbu()
+    return
+  }
 
-// Export all the functions declared in this file
-module.exports = {
-  waterfall, ask, replaceAll, parsePath, getExtFromMime, error, exit, handleError
+  // Else print out the error
+  this.printError(err)
+}
+
+// Get a variable's value from config
+exports.get = (name) => {
+  return config.get(name)
+}
+
+// Set the value of a variable in config
+exports.set = (path, value) => {
+  return config.set(path, value)
+}
+
+exports.parsePath = (inputPath, currentPath) => {
+  if (!inputPath || inputPath === "/") {
+    return ""
+  }
+  
+  const folders = inputPath.split("/")
+  let finalPath = currentPath.split("/")
+
+  for (let i = 0, length = folders.length; i < length; i++) {
+    const folder = folders[i]
+    if (folder === ".") {
+      continue
+    } else if (folder === "..") {
+      finalPath.pop()
+    } else {
+      finalPath.push(folder)
+    }
+  }
+
+  return finalPath.join("/")
+    .replace(/\/\/\/\//g, "")
+    .replace(/\/\/\//g, "")
+    .replace(/\/\//g, "")
+}
+
+// Wrap the console.log in a print function
+exports.print = console.log
+
+// Print out information in yellow
+exports.printInfo = (anything) => {
+  this.print(
+    chalk.yellow(anything)
+  )
+}
+
+// Print out something important in orange
+exports.printBright = (anything) => {
+  this.print(
+    chalk.keyword("orange").bold(anything)
+  )
+}
+
+// Print out an error in red
+exports.printError = (err) => {
+  if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
+    this.print(
+      chalk.red.bold(err.response.data.error.message)
+    )
+  } else if (err.message) {
+    this.print(
+      chalk.red.bold(err.message)
+    )
+  } else {
+    this.print(
+      chalk.red.bold(err)
+    )
+  }
+}
+
+// Exit Dabbu and delete the .cache directory
+exports.exitDabbu = () => {
+  return fs.remove(`${__dirname}/../.cache/`)
+    .then(() => this.printInfo("Removed cache. Exiting.."))
+    .finally(() => process.exit(0))
 }

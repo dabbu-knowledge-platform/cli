@@ -1,12 +1,21 @@
 {
-  "server_address": "http://localhost:8080",
-  "current_provider_id": "hard_drive",
-  "current_instance_id": "hd",
-  "instances": {
-    "hd": {
-      "provider_id": "hard_drive",
-      "base_path": "/home/user",
-      "current_path": "/Test"
+  "server": "http://localhost:8080",
+  "current_drive": "c",
+  "drives": {
+    "c": {
+      "provider": "hard_drive",
+      "path": "/dabbu-cli",
+      "base_path": "/home/user/code"
+    },
+    "d": {
+      "provider": "hard_drive",
+      "path": "",
+      "base_path": "/home/user/Documents"
     }
-  }
+  },
+  "setup_done": true,
+  "history": [
+    "ls",
+    "cd .."
+  ]
 }

@@ -22,13 +22,14 @@ A detailed installation guide can be found [here](./docs/Installation.md).
 
 Here is a brief install guide:
 - Install [git](https://github.com/git-guides/install-git) and [nodejs](https://nodejs.org/en/download/package-manager/).
+- Install **Dabbu Server** from [here](https://github.com/gamemaker1/dabbu-server#getting-started)
 - Then run the following commands in terminal/command prompt:
 ```sh
-$ git clone https://github.com/gamemaker1/dabbu-server . [Notice the full stop at the end]
+$ git clone https://github.com/gamemaker1/dabbu-cli
 $ npm install
 $ npm start
 ```
-- And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-server/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
+- And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-cli/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
 
 ## Updating the CLI
 

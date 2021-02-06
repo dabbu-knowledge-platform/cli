@@ -8,11 +8,11 @@ These are the style guidelines for coding in Dabbu.
 - End files with a newline.
 - Use two spaces instead of tabs for indentation.
 - Place requires in the following order:
-  - Dependencies (such as `express`)
+  - Dependencies (such as `fs-extra`)
   - Built in Node Modules (such as `path`)
   - Local Modules (using relative paths) (include `.js` at the end of the module name)
 - Avoid platform-dependent code:
-  - Use the diskPath function in `utils.js` to parse a path (though the CLI only accepts forward slashes as a delimeter)
+  - Use the parsePath function in `utils.js` to parse a path (though the CLI only accepts forward slashes as a delimeter)
 - Using a plain `return` when returning explicitly at the end of a function.
   - Not `return null`, `return undefined`, `null` or `undefined`
 

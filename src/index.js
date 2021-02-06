@@ -1,263 +1,225 @@
-// MARK - Imports
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
-const fs = require("fs-extra")
 const chalk = require("chalk")
-const figlet = require("figlet")
-const store = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
 const axios = require("axios")
-const { Input, Confirm, Select } = require("enquirer")
-const { waterfall, ask, replaceAll, error, exit, handleError } = require("./utils.js")
-
-// MARK - Functions
-
-// Create an instance by calling the client's newInstance method
-function configureClientForProvider(providerId) {
-  // Set the current provider ID to the new one
-  store.set("current_provider_id", providerId)
-  // Import the client and call the newInstance method
-  const Client = require(`./modules/${providerId}.js`).default
-  return new Client().newInstance()
-}
-// Create an instance based on the user's command
-function createInstance(input) {
-  // Parse the command for the provider ID
-  const providerId = replaceAll(input.toLowerCase(), {"::": ""})
-  if (providerId) {
-    // Create an instance for that provider
-    return configureClientForProvider(providerId)
-  } else {
-    // Else error out
-    error(`Invalid provider ID ${providerId}. Try checking for a typo.`)
-  }
-}
-// Switch to an existing instance
-async function switchInstance(input) {
-  // Parse the instance ID from the command
-  const instanceId = replaceAll(input, {":": ""}).toLowerCase()
-  // Get the provider ID of that instance
-  const providerId = store.get(`instances.${instanceId}.provider_id`)
-  if (providerId) {
-    // Set them and return to the prompt
-    store.set("current_instance_id", instanceId)
-    store.set("current_provider_id", providerId)
-  } else {
-    // Else error out
-    error("Invalid drive/instance name. Try checking for a typo.")
-  }
-  return
-}
-async function reset(input) {
-  // Parse the instance ID from the command
-  const onlyHist = replaceAll(input, {"reset": "", " ": ""}).toLowerCase().indexOf("h") !== -1
-  if (onlyHist) {
-    // If only history is to be deleted, ask the user and then do so
-    return ask(new Confirm({
-        name: "confirm",
-        message: "Are you sure you want to delete your command history?"
-      }))
-      .then(confirm => confirm ? fs.unlink(`${__dirname}/config/dabbu_cli_history.json`) : false)
-      .then(deleted => deleted ? console.log(chalk.yellow("Deleted history (src/config/dabbu_cli_history.json)")) : undefined)
-  } else {
-    console.log(
-      chalk.redBright([
-        "Are you sure you want to delete the current configuration",
-        "file? This will remove all your drives and related configuration",
-        "details! It will also forget your command history. If you",
-        "want to delete only command history, run reset -h instead."
-      ].join("\n"))
-    )
-    return ask(new Confirm({
-        name: "confirm",
-        message: "Are you sure want to do this?"
-      }))
-      .then(confirm => confirm ? fs.unlink(`${__dirname}/config/dabbu_cli_config.json`) : false)
-      .then(confirm => confirm ? fs.unlink(`${__dirname}/config/dabbu_cli_history.json`) : false)
-      .then(deleted => deleted ? console.log(chalk.yellow("Deleted config (src/config/dabbu_cli_config.json) and history (src/config/dabbu_cli_history.json)")) : undefined)
-  }
-}
-
-// Return a help message
-function help() {
-  return [
-    chalk.green("Welcome to Dabbu CLI v1.0.0! Here are a few tips to make your experience better:"),
-    chalk.blue("  To move into a drive, just type in the drive name followed by a :, e.g. c:"),
-    chalk.blue("  To create a new drive, just type in ::<hard_drive OR google_drive>"),
-    chalk.blue("  To move into a directory, use cd <relative_directory_path>"),
-    chalk.blue("  To check your current directory, use pwd"),
-    chalk.blue("  To list files in a folder, use ls [relative_directory_path]"),
-    chalk.blue("  To download and view a file, use cat <relative_file_path>"),
-    chalk.blue("  To copy a file within a drive, use cp <relative_file_path> <path_to_folder_to_copy_to>"),
-    chalk.blue("  To delete a file, use rm <relative_file_path>"),
-    chalk.blue("  To delete your command history, run reset -h"),
-    chalk.blue("  To delete your configuration and command history, run reset")
-  ].join("\n")
-}
-// Call the current client's pwd method
-function pwd() {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().pwd()
-}
-// Call the current client's cd method
-function cd(input) {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().cd(input)
-}
-// Call the current client's ls method
-function ls(input) {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().ls(input)
-}
-// Call the current client's cat method
-function cat(input) {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().cat(input)
-}
-// Call the current client's cp method
-function cp(input) {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().cp(input)
-}
-// Call the current client's rm method
-function rm(input) {
-  const Client = require(`./modules/${store.get("current_provider_id")}.js`).default
-  return new Client().rm(input)
-}
-
-// MARK - Main
-
-// Go through the setup process if not done already
-function setupUX() {
-  // Check if the server address has been saved or not
-  if (!store.get("server_address")) {
-    // Ask for the server address
-    const askForServerAddress = function() {
-      return ask(new Input({
-          message: "Enter the address of your server",
-          initial: "http://localhost:8080"
-        }))
-        .then(serverAddress => {
-          // Store the server address and move on to the next step
-          store.set("server_address", serverAddress)
-          return serverAddress
-        })
-    }
-  
-    // Get the enabled providers on that server
-    const getEnabledProviders = function(serverAddress) {
-        // Make an API call to the Dabbu server to get a list of enabled providers
-      return axios.get(`${serverAddress}/dabbu/v1/api/providers`)
-        .then(res => {
-          if (res.data && res.data.content && res.data.content.providers) {
-            // Return them
-            resolve(res.data.content.providers)
-          } else {
-            // Else error out
-            error("Couldn't detect any enabled providers on the server!")
-            exit(1)
-          }
-        })
-        .catch(err => {
-          // Handle the error
-          handleError(err)
-          exit(1)
-        })
-    }
-  
-    // Ask the user to choose a provider to setup first
-    const askToChooseProvider = function(providers) {
-      return ask(new Select({
-          name: "provider",
-          message: "Pick a data provider to setup first (you can set up the others anytime):",
-          choices: providers
-        }))
-        .then(currentProvider => {
-          // Return the chosen provider and then call the configureClientForProvider method
-          return currentProvider
-        })
-    }
-  
-    // Call these functions one after the other
-    return waterfall([
-      askForServerAddress,
-      getEnabledProviders,
-      askToChooseProvider,
-      configureClientForProvider
-    ])
-  } else {
-    return Promise.resolve()
-  }
-}
-
-// Setup the UI
-function setupUI() {
-  // Draw the logo
-  console.log(chalk.yellowBright(figlet.textSync("Dabbu")))
-}
-
-// Go into a REPL loop - read the command line input, parse it, call the appropriate function or client module, and then repeat.
-async function repl() {
-  // To store the history, create a new data-store object
-  const Store = require("data-store")
-  const history = new Store({ path: `${__dirname}/config/dabbu_cli_history.json` })
-  ask(new Input({
-    name: "userInput", // The name of the variable the value gets saved in
-    message: pwd(), // The prompt
-    history: {
-      store: history, // Save history in src/config/dabbu_cli_history.json
-      autosave: true // Let enquirer do the saving
-    },
-    up() {
-      return this.altUp() // Scroll through previous commands on pressing the up arrow
-    },
-    down() {
-      return this.altUp() // Scroll through previous commands on pressing the down arrow
-    }
-  }))
-  .then(async userInput => {
-    // Check the user's input and call the appropriate function    
-    if (userInput.startsWith("pwd")) {
-      console.log(await pwd())
-    } else if (userInput.startsWith("cd")) {
-      await cd(userInput)
-    } else if (userInput.startsWith("ls")) {
-      await ls(userInput)
-    } else if (userInput.startsWith("cat")) {
-      await cat(userInput)
-    } else if (userInput.startsWith("cp")) {
-      await cp(userInput)
-    } else if (userInput.startsWith("rm")) {
-      await rm(userInput)
-    } else if (userInput.startsWith("::")) {
-      await createInstance(userInput)
-    } else if (userInput.endsWith(":")) {
-      await switchInstance(userInput)
-    } else if (userInput.startsWith("reset")) {
-      await reset(userInput)
-    } else if (userInput === "help") {
-      console.log(await help())
-    } else if (userInput === "q" || userInput === "Q" || userInput === "quit" || userInput === "Quit" || userInput === "exit" || userInput === "Exit") {
-      exit(0)
-    } else {
-      error("Invalid command. Type in help to know more.")
-    }
-    // Loop!
-    return repl()
-  })
-  .catch(err => {
-    // Error out, but continue to loop
-    error(err.message)
-    return repl()
-  })
-}
+const prompt = require("readcommand")
+const { parseCommand } = require("./ops.js")
+const { getDrawableText, handleInputError, get, printInfo, printBright, printError, set } = require("./utils.js")
 
 // Main function
 function main() {
-  waterfall([
-    setupUI,
-    setupUX,
-    repl
-  ])
+  // Draw fancy text
+  getDrawableText("Dabbu") // Get the text
+    .then(printBright) // Print it out
+    .then(checkSetupAndRun) // Check if the user is new and act accordingly
+    .catch(printError) // Any error should be printed out
 }
 
-// Call it
+// Check if the user is new and act accordingly
+function checkSetupAndRun() {
+  // If the user hasn't been setup, welcome them
+  if (!get("setup_done")) {
+    // Ask the user for the address of the server
+    const reqServerAddress = () => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter your server's address ${chalk.gray("default: http://localhost:8080")} > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the address
+            const server = args[0] || "http://localhost:8080"
+            // Store it in config
+            set("server", server)
+            // Return successfully
+            resolve(server)
+          }
+        })
+      })
+    }
+
+    // Get all enabled providers from the server
+    const getProviders = (server) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // The URL to send the request to
+        const url = `${server}/dabbu/v1/api/providers`
+        // Send a GET request
+        axios.get(url)
+        .then(res => {
+          if (res.data.content.providers.length > 0) {
+            // If there are some providers, return them
+            resolve(res.data.content.providers)
+          } else {
+            // Else error out
+            reject("An unexpected error occurred: The server returned no valid/enabled providers")
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
+    }
+
+    // Ask the user to choose a provider
+    const reqProvider = (providers) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Join the providers into a presentable list
+        let providerString = providers.join(", ")
+
+        // Tell the user about the base path they need to enter
+        printInfo(`Choose a provider to setup first - ${providerString}`)
+
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter the provider name as is > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the provider
+            let provider = args.join("_")
+            // If they haven't entered anything, flag it and ask again
+            if (!provider || providers.indexOf(provider.replace(/\ /g, "_").toLowerCase()) === -1) {
+              printError(`Choose a provider to setup first - ${providerString}`)
+              reqProvider(providers)
+            } else {
+              provider = provider.replace(/\ /g, "_").toLowerCase()
+              // Return successfully
+              resolve(provider)
+            }
+          }
+        })
+      })
+    }
+    
+    // Ask the user for a name for the drive
+    const reqDriveName = (provider) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter a name for your drive > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the name
+            let name = args.join("_")
+            // If they haven't entered anything, flag it and ask again
+            if (!name) {
+              printError("Please enter a name for the drive. (e.g.: c, d, e)")
+              reqDriveName(provider)
+            } else {
+              // Else create a drive in config by setting the provider and path
+              name = name.replace(/\ /g, "_").replace(/:/g, "")
+              set(`drives.${name}.provider`, provider)
+              set(`drives.${name}.path`, "")
+              // Return successfully
+              resolve(name)
+            }
+          }
+        })
+      })
+    }
+
+    // Let the provider do the rest
+    const providerInit = (name) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        const provider = get(`drives.${name}.provider`)
+        const DataModule = require(`./modules/${provider}`).default
+        new DataModule().init(get("server"), name)
+          .then(() => resolve(name))
+          .catch(reject)
+      })
+    }
+
+    reqServerAddress() // Get the server address from the user
+      .then(getProviders) // Then get enabled providers from the server
+      .then(reqProvider) // Then ask the user to choose a provider to setup
+      .then(reqDriveName) // Get the name of the drive to create from the user
+      .then(providerInit) // Let the provider run the rest
+      .then(name => set("current_drive", name)) // Set the current drive
+      .then(() => set("setup_done", true)) // Mark the setup as done
+      .then(() => showPrompt()) // Show the user the command line
+      .catch(printError) // Print the error, if any
+  } else {
+    // Else show them the command line
+    showPrompt()
+  }
+}
+
+// Show the user a prompt to enter input
+function showPrompt(err = null) {
+  // If there is an error, show it and then continue with the prompt
+  if (err) printError(err)
+
+  prompt
+    .read({
+      ps1: getPromptPs(), // The PS is the prefix to the user's input
+      history: getPromptHistory() // Past commands can be accessed with the up key
+    }, (err, args) => {
+      // Add the command to history
+      if (args.join(" ") !== "") {
+        // Get current history
+        let history = get("history") || []
+        // Trim the length to the last 20 commands
+        if (history.length > 19) {
+          history = [...history.slice(history.length - 18, history.length - 1), args.join(" ")]
+        } else {
+          history = [...history, args.join(" ")]
+        }
+        // Set it in config
+        set("history", history)
+      }
+      
+      // If there is an error, handle it
+      if (err) {
+        handleInputError(err) // Handle the error
+        showPrompt() // Show prompt again
+      } else {
+        // If there is no error, parse the input
+        parseCommand(args)
+          .then(showPrompt) // Then show prompt again
+          .catch(showPrompt) // Show prompt again, but pass the error to it
+      }
+    })
+}
+
+function getPromptPs() {
+  // Current drive
+  const drive = get("current_drive")
+  const driveVars = get(`drives.${drive}`)
+  // Return the drive and the current path as the PS
+  //return `(${driveVars.provider}) ${chalk.cyan(`${drive}:${driveVars.path}$`)} `
+  return chalk.cyan(`${drive}:${driveVars.path}$ `)
+}
+
+function getPromptHistory() {
+  return get("history") || []
+}
+
+// Start the app
 main()

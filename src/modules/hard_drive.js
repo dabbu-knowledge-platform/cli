@@ -1,352 +1,221 @@
-// MARK: Imports
+/* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+ * 
+ * Copyright (C) 2021  gamemaker1
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 const fs = require("fs-extra")
 const chalk = require("chalk")
-const ora = require("ora")
-const link = require("terminal-link")
 const axios = require("axios")
-const getURI = require("get-uri")
-const store = require("data-store")({ path: `${__dirname}/../config/dabbu_cli_config.json` })
-const open = require("open")
+const prompt = require("readcommand")
+const getUri = require("get-uri")
+
 const FormData = require("form-data")
-const { Input, Confirm } = require("enquirer")
-const { waterfall, ask, replaceAll, parsePath, error, handleError } = require("../utils.js")
-const Client = require("./client.js").default
+const Client = require("./client").default
+const { set, printInfo } = require("../utils.js")
 
-const Table = require("cli-table3")
-const { typeOf } = require("data-store/utils")
-
-// MARK: HardDriveClient
-
-class HardDriveClient extends Client {
+exports.default = class HardDriveClient extends Client {
   constructor() {
     super()
   }
 
-  // Creates a new instance
-  async newInstance() {
-    const askForInstanceName = function() {
-      return new Promise((resolve, reject) => {
-        ask(new Input({
-          name: "instanceName",
-          message: "What should this instance be named (usually a single letter, like a drive name):",
-          initial: "c:"
-        }))
-        .then(instanceName => {
-          store.set("current_instance_id", replaceAll(instanceName.toLowerCase(), {":": ""}))
-          store.set(`instances.${instanceName}.provider_id`, "hard_drive")
-          resolve(instanceName)
-        })
-        .catch(err => {
-          error(err.message)
-          exit(1)
-        })
-      })
-    }
+  init(server, name) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Tell the user about the base path they need to enter
+      printInfo([
+        "In Dabbu, the root of your drive need not be the root path of your computer.",
+        "Each drive can point to any folder on your hard drive. The path to the folder",
+        "on your computer is called the base path by Dabbu."
+      ].join("\n"))
 
-    const askForBasePath = function(instanceName) {
-      return new Promise((resolve, reject) => {
-        /*ask([
-          {
-            "name": "basePath",
-            "type": "input",
-            "message": "Enter the path to the folder you want to refer to as root in Dabbu:",
-            "default": store.get(`instances.${instanceName}.base_path`) || "/"
-          }
-        ])*/
-        console.log(
-          chalk.yellow([
-            "In Dabbu, the root of your drive need not be the root path of your computer.",
-            "Each drive can point to any folder on your hard drive. The path to the folder",
-            "on your computer is called the base path by Dabbu."
-          ].join("\n"))
-        )
-        ask(new Input({
-          name: "basePath",
-          message: "Enter your base path for Dabbu:"
-        }))
-        .then(basePath => {
-          store.set(`instances.${instanceName}.base_path`, basePath)
-          console.log(chalk.blue(`Created ${instanceName}: successfully!`))
+      // Ask them to enter it
+      prompt.read({
+        ps1: `Enter your base path for ${name}: ${chalk.gray("default: /")} > `
+      }, (err, args) => {        
+        // If there is an error, handle it
+        if (err) {
+          reject(err)
+        } else {
+          // If there is no error, get the base path
+          const basePath = args[0] || "/"
+          // Store it in config
+          set(`drives.${name}.base_path`, basePath)
+          // Return successfully
           resolve()
-        })
-        .catch(err => {
-          error(err.message)
-          exit(1)
-        })
+        }
       })
-    }
-
-    return waterfall([
-      askForInstanceName,
-      askForBasePath
-    ])
+    })
   }
 
-  // Returns the present working directory
-  async pwd() {
-    // Return string of format :instanceId/:currentPath, e.g. c:/Documents/Work
-    return `${store.get("current_instance_id")}:${store.get(`instances.${store.get("current_instance_id")}.current_path`) || ""}`
-  }
-
-  // Move into a directory by saving it in the config
-  async cd(input) {
-    // Parse the command to get the relative path
-    const inputPath = replaceAll(input, {"cd ": "", "cd": "", "//": "/"})
-    // Parse the relative path to get an absolute one
-    const path = parsePath(store.get(`instances.${store.get("current_instance_id")}.current_path`) || "", inputPath)
-    // Save the new path
-    return store.set(`instances.${store.get("current_instance_id")}.current_path`, path)
-  }
-
-  // List out files and folders by sending an API call to the server
-  async ls(input) {
-    // Get the ID of the current instance, so we can get the variables from the config file
-    const currentInstance = store.get("current_instance_id")
-
-    // Parse the command to get the relative path
-    const inputPath = replaceAll(input, {"ls ": "", "ls": "", "//": "/"})
-    // Parse the relative path to get an absolute one
-    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", inputPath ? inputPath: "")
-    // Show a loading indicator
-    const spinner = ora(`Loading your ${chalk.blue("files and folders")}`).start()
-
-    // The URL to send the request to
-    const url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}`
-    // GET request
-    return axios.get(url, { 
+  ls(server, name, folderPath, vars) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // The URL to send the request to
+      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}?exportType=view`
+      // Send a GET request
+      axios.get(url, { 
         data: {
           // Send the base path along, since the hard drive provider requires it
-          base_path: store.get(`instances.${currentInstance}.base_path`) 
+          base_path: vars.base_path || "/"
         }
       })
       .then(res => {
         if (res.data.content.length > 0) {
-          // If there are some files, loop through them
-          const files = res.data.content
-          // Append the files to this table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [null, null, null]})
-          for (let i = 0, length = files.length; i < length; i++) {
-            const file = files[i]
-            const contentURI = replaceAll(file.contentURI || "", {" ": "%20"})
-            table.push([
-              file.kind === "folder" ? chalk.blueBright(file.name) : chalk.magenta(file.name), // File name - blue if folder, magenta if file
-              `${!file.size ? "-" : Math.floor(file.size / (1024 * 1024))} MB`, // File size in MB
-              link(!contentURI ? "No download link" : "Click to download", contentURI) // Download link
-            ])
+          // If there are some files, return them
+          resolve(res.data.content)
+        } else {
+          // Else return null if it is an empty folder
+          resolve(null)
+        }
+      })
+      .catch(reject) // Pass error back if any
+    })
+  }
+
+  cat(server, name, folderPath, fileName, vars) {
+    const getFileData = () => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // The URL to send the request to
+        const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
+        // Send a GET request
+        return axios.get(url, { 
+          data: {
+            // Send the base path along, since the hard drive provider requires it
+            base_path: vars.base_path || "/"
           }
-          // We got the result, stop loading
-          spinner.stop()
-          // Print out the table
-          console.log(table.toString())
-        } else {
-          // We have no files, stop loading
-          spinner.stop()
-          // Tell the user the folder is empty
-          error("Folder is empty")
-        }
+        })
+        .then(res => {
+          if (res.data.content) {
+            // If there is a file, download it
+            const file = res.data.content
+            resolve(file)
+          } else {
+            // Else return false if there is an error
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject)
       })
-      .catch(err => {
-        // We have an error, stop loading
-        spinner.stop()
-        // Handle it
-        handleError(err)
-      })
-  }
-
-  // Return a single file's information by sending an API call to the server
-  async cat(input) {
-    // Get the current instance ID so we can get variables from the config file
-    const currentInstance = store.get("current_instance_id")
-
-    // Parse the command for the relative path
-    const inputPath = replaceAll(input, {"cat ": "", "cat": "", "//": "/"})
-    // Get an array of folder names from the path
-    const folderPath = inputPath.split("/")
-    // Get the file name
-    const fileName = folderPath.pop()
-    // Now parse the folder path to get an absolute one
-    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath.join("/"))
-    // Show a loading indicator
-    const spinner = ora(`Fetching ${chalk.blue(fileName)}`).start()
-
-    // The URL to send the request to
-    const url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
-    // GET request
-    return axios.get(url, { 
-        data: {
-          // Send the base path along, since the hard drive provider requires it
-          base_path: store.get(`instances.${currentInstance}.base_path`) 
-        }
-      })
-      .then(res => {
-        if (res.data.content) {
-          // We got the result, stop loading
-          spinner.stop()
-          // If we have a file, ask if they want to view it
-          const file = res.data.content
-          // Ask the user if they want to open the file
-          return ask(new Confirm({
-            "name": "confirm",
-            "message": "Do you want to open it?"
-          }))
-          .then(confirm => {
-            if (confirm) {
-              // Open the file
-              open(file.contentURI, { wait: false })
-            }
-            return
-          })
-        } else {
-          // We have no response, stop loading
-          spinner.stop()
-          // Tell the user the server responded with an empty body
-          error("An error occurred: server responded with an empty response body")
-        }
-      })
-      .catch(err => {
-        // We have an error, stop loading
-        spinner.stop()
-        // Handle it
-        handleError(err)
-      })
-  }
-
-  // Copy a file from one location to another
-  async cp(input) {
-    // Get the current instance ID so we can get variables from the config file
-    const currentInstance = store.get("current_instance_id")
-
-    // Parse the command for two relative paths - one to the original file and second to where it should be copied
-    const inputPath = replaceAll(input, {"cp ": "", "cp": "", "//": "/"})
-
-    // Check if the required arguments exist
-    if (inputPath.split(" ").length < 2) {
-      // Else error out
-      error("Must have a path to the file to copy and the folder path to copy it to")
-      return
     }
 
-    // The path to the file to copy
-    const fromFolderPath = inputPath.split(" ")[0]
-    // The location to copy it to
-    const toFolderPath = inputPath.split(" ")[1]
-    // Get the file name
-    const fileName = fromFolderPath.split("/").pop()
-    // Now parse the folder paths to get absolute ones
-    const fromPath = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", fromFolderPath.split("/").slice(0, -1).join("/"))
-    const toPath = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", toFolderPath)
-    // Show a loading indicator
-    const spinner = ora(`Copying ${chalk.blue(fileName)} to ${toPath}`).start()
-
-    // The URL to send the request to
-    let url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(fromPath === "" ? "/" : fromPath)}/${encodeURIComponent(fileName)}`
-    // GET request
-    return axios.get(url, { 
-        data: {
-          // Send the base path along, since the hard drive provider requires it
-          base_path: store.get(`instances.${currentInstance}.base_path`) 
-        }
-      })
-      .then(async res => {
-        if (res.data.content) {
-          // If we have a file, download it then upload it again
-          const file = res.data.content
-          // Get the data as a readable stream
-          const response = await getURI(file.contentURI)
-          // To upload the data as a file, we need to store it in a file first
-          // Path to the file
-          const downloadFilePath = parsePath(__dirname,`../../downloads/${fileName}`)
-          // Create the file
-          await fs.createFile(downloadFilePath)
-          // Open a write stream so we can write the data we got to it
-          const writer = fs.createWriteStream(downloadFilePath)
-          // Pipe the bytes to the file
-          response.pipe(writer)
-          // Now upload it as form data
-          const formData = new FormData()
-          // Send the base path too
-          formData.append("base_path", store.get(`instances.${currentInstance}.base_path`))
-          // Add it to the content field
-          formData.append("content", await fs.readFile(downloadFilePath), { filename: fileName })
-
-          // Use the headers that the form-data modules sets
-          const headers = formData.getHeaders()
-
-          // POST request
-          url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(toPath === "" ? "/" : toPath)}/${encodeURIComponent(fileName)}`
-          return axios.post(url, formData, { headers })
-          .then(res => {
-            // We have the result, stop loading
-            spinner.stop()
-            console.log(
-              chalk.yellow(
-                `Copied ${chalk.blue(fileName)} to ${toPath}`
-              )
-            )
-          })
-          .catch(err => {
-            // We have an error, stop loading
-            spinner.stop()
-            // Handle it
-            handleError(err)
-          })
+    const downloadFile = (file) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        if (file && file.contentURI) {
+          // If a content URI is provided, download the file
+          resolve(getUri(file.contentURI))
         } else {
-          // We have no response, stop loading
-          spinner.stop()
-          // Tell the user the server responded with an empty body
-          error("An error occurred: server responded with an empty response body")
+          // Else return null
+          resolve("No such file/folder was found.")
         }
       })
-      .catch(err => {
-        // We have an error, stop loading
-        spinner.stop()
-        // Handle it
-        handleError(err)
+    }
+
+    const storeFile = (fileData) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        if (fileData) {
+          // Download the file
+          // Path to the file
+          const downloadFilePath = `${__dirname}/../../.cache/${fileName}`
+          // Create the file
+          fs.createFile(downloadFilePath)
+          .then(() => {
+            // Open a write stream so we can write the data we got to it
+            const writer = fs.createWriteStream(downloadFilePath)
+            // Pipe the bytes to the file
+            fileData.pipe(writer)
+            // Return the file path
+            resolve(downloadFilePath)
+          })
+          .catch(reject)
+        } else {
+          // Else return null
+          resolve("No such file/folder was found.")
+        }
       })
+    }
+
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      getFileData() // Get the file's metadata and content URI from the server
+      .then(downloadFile) // Download the file from its content URI
+      .then(storeFile) // Store the file's contents in a .cache directory
+      .then(resolve) // Return the file path
+      .catch(reject) // Pass back the error, if any
+    })
   }
 
-  // Delete a file by sending an API call to the server
-  async rm(input) {
-    // Get the current instance ID so we can get variables from the config file
-    const currentInstance = store.get("current_instance_id")
+  upl(server, name, folderPath, fileName, vars) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // First read the file
+      fs.readFile(vars.downloadedFilePath)
+      .then(fileData => {
+        // Make a form data object to upload the file's contents
+        const formData = new FormData()
+        // Send the base path too
+        formData.append("base_path", vars.base_path)
+        // Add it to the content field
+        formData.append("content", fileData, { filename: vars.downloadedFilePath.split("/").pop() })
 
-    // Parse the command for the relative path
-    const inputPath = replaceAll(input, {"rm ": "", "rm": "", "//": "/"})
-    // Get an array of folder names from the path
-    const folderPath = inputPath.split("/")
-    // Get the file name
-    const fileName = folderPath.pop()
-    // Now parse the folder path to get an absolute one
-    const path = parsePath(store.get(`instances.${currentInstance}.current_path`) || "", folderPath.join("/"))
-    // Show a loading indicator
-    const spinner = ora(`Deleting ${chalk.blue(fileName)}`).start()
+        // Use the headers that the form-data modules sets
+        const headers = formData.getHeaders()
 
-    // The URL to send a DELETE request to
-    const url = `${store.get("server_address")}/dabbu/v1/api/data/${encodeURIComponent(store.get("current_provider_id"))}/${encodeURIComponent(path === "" ? "/" : path)}/${encodeURIComponent(fileName)}`
-    // DELETE request
-    return axios.delete(url, { 
+        // The URL to send the request to
+        const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(vars.downloadedFilePath.split("/").pop())}`
+        // Send a POST request
+        axios.post(url, formData, { headers })
+        .then(res => {
+          if (res.status === 200) {
+            // If there is no error, return true
+            resolve(true)
+          } else {
+            // Else return false if there is an error
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
+    })
+  }
+
+  rm(server, name, folderPath, fileName, vars) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // The URL to send the request to
+      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}/${fileName ? encodeURIComponent(fileName) : ""}`
+      // Send a DELETE request
+      axios.delete(url, { 
         data: {
           // Send the base path along, since the hard drive provider requires it
-          base_path: store.get(`instances.${currentInstance}.base_path`) 
+          base_path: vars.base_path || "/"
         }
       })
       .then(res => {
-        // Done, stop loading
-        spinner.stop()
-        // Tell the user
-        console.log(`File ${fileName} was deleted successfully`)
+        if (res.status === 200) {
+          // If there is no error, return true
+          resolve(true)
+        } else {
+          // Else return false if there is an error
+          resolve(false)
+        }
       })
-      .catch(err => {
-        // We have an error, stop loading
-        spinner.stop()
-        // Handle it
-        handleError(err)
-      })
+      .catch(reject) // Pass error back if any
+    })
   }
 }
-
-// MARK: Export
-
-// Export the client as the default export
-exports.default = HardDriveClient
