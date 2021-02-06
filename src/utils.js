@@ -1,3 +1,4 @@
+const fs = require("fs-extra")
 const chalk = require("chalk")
 const figlet = require("figlet")
 
@@ -26,7 +27,8 @@ exports.handleInputError = (err) => {
   // Check if it is a Ctrl+C
   if (err.code === "SIGINT") {
     // If so, exit without error
-    process.exit(0)
+    this.exitDabbu()
+    return
   }
 
   // Else print out the error
@@ -66,7 +68,6 @@ exports.parsePath = (inputPath, currentPath) => {
     .replace(/\/\/\/\//g, "")
     .replace(/\/\/\//g, "")
     .replace(/\/\//g, "")
-    .replace(/\//g, "")
 }
 
 // Wrap the console.log in a print function
@@ -101,4 +102,10 @@ exports.printError = (err) => {
       chalk.red.bold(err)
     )
   }
+}
+
+// Exit Dabbu and delete the .cache directory
+exports.exitDabbu = () => {
+  return fs.remove(`${__dirname}/../.cache/`)
+    .finally(() => process.exit(0))
 }

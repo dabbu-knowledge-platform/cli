@@ -2,8 +2,10 @@ const ora = require("ora")
 const link = require("terminal-link")
 const open = require("open")
 const chalk = require("chalk")
+const axios = require("axios")
+const prompt = require("readcommand")
 const path = require("path")
-const { get, set, parsePath, printInfo, printBright } = require("./utils")
+const { get, set, parsePath, printInfo, printBright, exitDabbu } = require("./utils")
 
 const Table = require("cli-table3")
 
@@ -25,7 +27,11 @@ exports.parseCommand = (args) => {
         case "cd": // Move into a directory
           opFunc = cd
           break
-        case "ls": // List out files and folders in a directory
+        case "l": // List out files and folders in a directory
+        case "ls":
+        case "ll":
+        case "la":
+        case "lf":
           opFunc = ls
           break
         case "cat": // Download and open a file
@@ -38,7 +44,7 @@ exports.parseCommand = (args) => {
           opFunc = rm
           break
         case "clear": // Clear the console
-          opFunc = () => {
+          clear = () => {
             // Promisify the clear process
             return new Promise((resolve, reject) => {
               process.stdout.write('\x1b[2J')
@@ -46,10 +52,16 @@ exports.parseCommand = (args) => {
               resolve()
             })
           }
+          opFunc = clear
           break
-        case "q", "quit", "Q", "Quit", "exit", "Exit":
-          process.exit(0)
-          break
+        case "q":
+        case "quit":
+        case "Q":
+        case "Quit":
+        case "exit":
+        case "Exit":
+          exitDabbu()
+          return
         default:
           if (args[0] === "::") 
             opFunc = cnd // Create a new drive
@@ -113,10 +125,10 @@ const ls = (args) => {
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
     new DataModule().ls(get("server"), finalPath, driveVars)
-      .then(files => {
+      .then((files) => {
         if (files) {
           // Append the files to a table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Download Link")], colWidths: [null, null, null]})
+          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Action(s)")], colWidths: [null, null, null]})
           for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
 
@@ -128,15 +140,15 @@ const ls = (args) => {
             const contentURI = file.contentURI
             // Convert to hyper link and then display it
             let downloadLink
-            if (!contentURI) {
-              if (file.kind !== "folder") {
+            if (file.kind === "folder") {
+              // Never show a download link for a folder
+              downloadLink = link("View folder", contentURI)
+            } else {
+              if (!contentURI) {
                 downloadLink = "Link unavailable"
               } else {
-                // Never show a download link for a folder
-                downloadLink = "-"
+                downloadLink = link("View file", contentURI)
               }
-            } else {
-              downloadLink = link("Click to download", contentURI.replace(/\ /g, ""))
             }
 
             table.push([
@@ -199,7 +211,8 @@ const cat = (args) => {
         spinner.stop()
         if (filePath) {
           // Tell the user where the file is downloaded
-          printInfo(`File downloaded to ${filePath}`)
+          printInfo(`File downloaded temporarily to ${path.normalize(filePath)}`)
+          printInfo(`It will be deleted once this session ends.`)
           // Open the downloaded file
           open(filePath, { wait: false })
         } else {
@@ -391,5 +404,136 @@ const rm = (args) => {
         spinner.stop()
         reject(err)
       })
+  })
+}
+
+const cnd = (args) => {
+  const server = get("server")
+  // Get all enabled providers from the server
+  const getProviders = (server) => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // The URL to send the request to
+      const url = `${server}/dabbu/v1/api/providers`
+      // Send a GET request
+      axios.get(url)
+      .then(res => {
+        if (res.data.content.providers.length > 0) {
+          // If there are some providers, return them
+          resolve(res.data.content.providers)
+        } else {
+          // Else error out
+          reject("An unexpected error occurred: The server returned no valid/enabled providers")
+        }
+      })
+      .catch(reject) // Pass error back if any
+    })
+  }
+
+  // Ask the user to choose a provider
+  const reqProvider = (providers) => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Join the providers into a presentable list
+      let providerString = providers.join(", ")
+
+      // Tell the user about the base path they need to enter
+      printInfo(`Choose a provider to setup first - ${providerString}`)
+
+      // Ask them to enter it
+      prompt.read({
+        ps1: `Enter the provider name as is > `
+      }, (err, args) => {        
+        // If there is an error, handle it
+        if (err) {
+          reject(err)
+        } else {
+          // If there is no error, get the provider
+          let provider = args.join("_")
+          // If they haven't entered anything, flag it and ask again
+          if (!provider || providers.indexOf(provider.replace(/\ /g, "_").toLowerCase()) === -1) {
+            printError(`Choose a provider to setup first - ${providerString}`)
+            reqProvider(providers)
+          } else {
+            provider = provider.replace(/\ /g, "_").toLowerCase()
+            // Return successfully
+            resolve(provider)
+          }
+        }
+      })
+    })
+  }
+  
+  // Ask the user for a name for the drive
+  const reqDriveName = (provider) => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Ask them to enter it
+      prompt.read({
+        ps1: `Enter a name for your drive > `
+      }, (err, args) => {        
+        // If there is an error, handle it
+        if (err) {
+          reject(err)
+        } else {
+          // If there is no error, get the name
+          let name = args.join("_")
+          // If they haven't entered anything, flag it and ask again
+          if (!name) {
+            printError("Please enter a name for the drive. (e.g.: c, d, e)")
+            reqDriveName(provider)
+          } else {
+            // Else create a drive in config by setting the provider and path
+            name = name.replace(/\ /g, "_").replace(/:/g, "")
+            set(`drives.${name}.provider`, provider)
+            set(`drives.${name}.path`, "")
+            // Return successfully
+            resolve(name)
+          }
+        }
+      })
+    })
+  }
+
+  // Let the provider do the rest
+  const providerInit = (name) => {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      const provider = get(`drives.${name}.provider`)
+      const DataModule = require(`./modules/${provider}`).default
+      new DataModule().init(get("server"), name)
+        .then(() => resolve(name))
+        .catch(reject)
+    })
+  }
+
+  // Wrap everything in a promise
+  return new Promise((resolve, reject) => {
+    getProviders(server) // Get enabled providers from the server
+    .then(reqProvider) // Then ask the user to choose a provider to setup
+    .then(reqDriveName) // Get the name of the drive to create from the user
+    .then(providerInit) // Let the provider run the rest
+    .then(name => set("current_drive", name)) // Set the current drive
+    .then(() => resolve())
+    .catch(reject) // Pass back the error, if any
+  })
+}
+
+const sd = (args) => {
+  // Wrap everything in a promise
+  return new Promise((resolve, reject) => {
+    // Get the drive the user wants to switch to
+    const drive = args[0].replace(/:/g, "")
+    // Get the drives the user has setup
+    const drives = get("drives")
+
+    // If there is a drive with that name, switch to it
+    if (drives[drive]) {
+      set("current_drive", drive)
+      resolve()
+    } else {
+      // Else error out
+      reject(`Invalid drive name - choose one of these - ${Object.keys(drives).join(", ")}`)
+    }
   })
 }

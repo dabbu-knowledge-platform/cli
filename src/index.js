@@ -1,15 +1,156 @@
 const chalk = require("chalk")
+const axios = require("axios")
 const prompt = require("readcommand")
 const { parseCommand } = require("./ops")
-const { getDrawableText, handleInputError, get, printBright, printError, set } = require("./utils")
+const { getDrawableText, handleInputError, get, printInfo, printBright, printError, set } = require("./utils")
 
 // Main function
 function main() {
   // Draw fancy text
   getDrawableText("Dabbu") // Get the text
     .then(printBright) // Print it out
-    .then(showPrompt) // Show the user the prompt
+    .then(checkSetupAndRun) // Check if the user is new and act accordingly
     .catch(printError) // Any error should be printed out
+}
+
+// Check if the user is new and act accordingly
+function checkSetupAndRun() {
+  // If the user hasn't been setup, welcome them
+  if (!get("setup_done")) {
+    // Ask the user for the address of the server
+    const reqServerAddress = () => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter your server's address ${chalk.gray("default: http://localhost:8080")} > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the address
+            const server = args[0] || "http://localhost:8080"
+            // Store it in config
+            set("server", server)
+            // Return successfully
+            resolve(server)
+          }
+        })
+      })
+    }
+
+    // Get all enabled providers from the server
+    const getProviders = (server) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // The URL to send the request to
+        const url = `${server}/dabbu/v1/api/providers`
+        // Send a GET request
+        axios.get(url)
+        .then(res => {
+          if (res.data.content.providers.length > 0) {
+            // If there are some providers, return them
+            resolve(res.data.content.providers)
+          } else {
+            // Else error out
+            reject("An unexpected error occurred: The server returned no valid/enabled providers")
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
+    }
+
+    // Ask the user to choose a provider
+    const reqProvider = (providers) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Join the providers into a presentable list
+        let providerString = providers.join(", ")
+
+        // Tell the user about the base path they need to enter
+        printInfo(`Choose a provider to setup first - ${providerString}`)
+
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter the provider name as is > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the provider
+            let provider = args.join("_")
+            // If they haven't entered anything, flag it and ask again
+            if (!provider || providers.indexOf(provider.replace(/\ /g, "_").toLowerCase()) === -1) {
+              printError(`Choose a provider to setup first - ${providerString}`)
+              reqProvider(providers)
+            } else {
+              provider = provider.replace(/\ /g, "_").toLowerCase()
+              // Return successfully
+              resolve(provider)
+            }
+          }
+        })
+      })
+    }
+    
+    // Ask the user for a name for the drive
+    const reqDriveName = (provider) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Ask them to enter it
+        prompt.read({
+          ps1: `Enter a name for your drive > `
+        }, (err, args) => {        
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the name
+            let name = args.join("_")
+            // If they haven't entered anything, flag it and ask again
+            if (!name) {
+              printError("Please enter a name for the drive. (e.g.: c, d, e)")
+              reqDriveName(provider)
+            } else {
+              // Else create a drive in config by setting the provider and path
+              name = name.replace(/\ /g, "_").replace(/:/g, "")
+              set(`drives.${name}.provider`, provider)
+              set(`drives.${name}.path`, "")
+              // Return successfully
+              resolve(name)
+            }
+          }
+        })
+      })
+    }
+
+    // Let the provider do the rest
+    const providerInit = (name) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        const provider = get(`drives.${name}.provider`)
+        const DataModule = require(`./modules/${provider}`).default
+        new DataModule().init(get("server"), name)
+          .then(() => resolve(name))
+          .catch(reject)
+      })
+    }
+
+    reqServerAddress() // Get the server address from the user
+      .then(getProviders) // Then get enabled providers from the server
+      .then(reqProvider) // Then ask the user to choose a provider to setup
+      .then(reqDriveName) // Get the name of the drive to create from the user
+      .then(providerInit) // Let the provider run the rest
+      .then(name => set("current_drive", name)) // Set the current drive
+      .then(() => set("setup_done", true)) // Mark the setup as done
+      .then(() => showPrompt()) // Show the user the command line
+      .catch(printError) // Print the error, if any
+  } else {
+    // Else show them the command line
+    showPrompt()
+  }
 }
 
 // Show the user a prompt to enter input
@@ -23,16 +164,18 @@ function showPrompt(err = null) {
       history: getPromptHistory() // Past commands can be accessed with the up key
     }, (err, args) => {
       // Add the command to history
-      // Get current history
-      let history = get("history") || []
-      // Trim the length to the last 20 commands
-      if (history.length > 19) {
-        history = [...history.slice(history.length - 18, history.length - 1), args.join(" ")]
-      } else {
-        history = [...history, args.join(" ")]
+      if (args.join(" ") !== "") {
+        // Get current history
+        let history = get("history") || []
+        // Trim the length to the last 20 commands
+        if (history.length > 19) {
+          history = [...history.slice(history.length - 18, history.length - 1), args.join(" ")]
+        } else {
+          history = [...history, args.join(" ")]
+        }
+        // Set it in config
+        set("history", history)
       }
-      // Set it in config
-      set("history", history)
       
       // If there is an error, handle it
       if (err) {
@@ -50,8 +193,10 @@ function showPrompt(err = null) {
 function getPromptPs() {
   // Current drive
   const drive = get("current_drive")
+  const driveVars = get(`drives.${drive}`)
   // Return the drive and the current path as the PS
-  return chalk.cyan(`${drive}:${get(`drives.${drive}.path`)}$ `)
+  //return `(${driveVars.provider}) ${chalk.cyan(`${drive}:${driveVars.path}$`)} `
+  return chalk.cyan(`${drive}:${driveVars.path}$ `)
 }
 
 function getPromptHistory() {

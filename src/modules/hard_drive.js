@@ -1,20 +1,52 @@
 const fs = require("fs-extra")
+const chalk = require("chalk")
 const axios = require("axios")
+const prompt = require("readcommand")
 const getUri = require("get-uri")
 
 const FormData = require("form-data")
 const Client = require("./client").default
+const { set, printInfo } = require("../utils")
 
 exports.default = class HardDriveClient extends Client {
   constructor() {
     super()
   }
 
+  init(server, name) {
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Tell the user about the base path they need to enter
+      printInfo([
+        "In Dabbu, the root of your drive need not be the root path of your computer.",
+        "Each drive can point to any folder on your hard drive. The path to the folder",
+        "on your computer is called the base path by Dabbu."
+      ].join("\n"))
+
+      // Ask them to enter it
+      prompt.read({
+        ps1: `Enter your base path for ${name}: ${chalk.gray("default: /")} > `
+      }, (err, args) => {        
+        // If there is an error, handle it
+        if (err) {
+          reject(err)
+        } else {
+          // If there is no error, get the base path
+          const basePath = args[0] || "/"
+          // Store it in config
+          set(`drives.${name}.base_path`, basePath)
+          // Return successfully
+          resolve()
+        }
+      })
+    })
+  }
+
   ls(server, folderPath, vars) {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to
-      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}`
+      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath)}?exportType=view`
       // Send a GET request
       axios.get(url, { 
         data: {
@@ -70,7 +102,7 @@ exports.default = class HardDriveClient extends Client {
           resolve(getUri(file.contentURI))
         } else {
           // Else return null
-          resolve(null)
+          resolve("No such file/folder was found.")
         }
       })
     }
@@ -81,7 +113,7 @@ exports.default = class HardDriveClient extends Client {
         if (fileData) {
           // Download the file
           // Path to the file
-          const downloadFilePath = `${__dirname}/../../downloads/${fileName}`
+          const downloadFilePath = `${__dirname}/../../.cache/${fileName}`
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
@@ -94,22 +126,19 @@ exports.default = class HardDriveClient extends Client {
           })
           .catch(reject)
         } else {
-          resolve(null)
+          // Else return null
+          resolve("No such file/folder was found.")
         }
       })
     }
 
-    // Execute the functions one after the other
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-      let promise = Promise.resolve()
-      let functions = [getFileData, downloadFile, storeFile]
-
-      functions.forEach(func => {
-        promise = promise.then(func).catch(reject)
-      })
-
-      resolve(promise)
+      getFileData() // Get the file's metadata and content URI from the server
+      .then(downloadFile) // Download the file from its content URI
+      .then(storeFile) // Store the file's contents in a .cache directory
+      .then(resolve) // Return the file path
+      .catch(reject) // Pass back the error, if any
     })
   }
 

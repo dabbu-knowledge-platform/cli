@@ -1,6 +1,8 @@
 exports.default = class Client {
   constructor() {}
 
+  init(server, name) {}
+
   ls(server, folderPath, vars) {}
 
   cat(server, folderPath, fileName, vars) {}
