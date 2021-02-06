@@ -1,0 +1,21 @@
+{
+  "server": "http://localhost:8080",
+  "current_drive": "c",
+  "drives": {
+    "c": {
+      "provider": "hard_drive",
+      "path": "/dabbu-cli",
+      "base_path": "/home/user/code"
+    },
+    "d": {
+      "provider": "hard_drive",
+      "path": "",
+      "base_path": "/home/user/Documents"
+    }
+  },
+  "setup_done": true,
+  "history": [
+    "ls",
+    "cd .."
+  ]
+}
