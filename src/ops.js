@@ -180,7 +180,10 @@ const ls = (args) => {
             // Mime type of file
             const fileType = file.mimeType
             // Last modified time
-            const dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
+            let dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
+            if (dateModified === "Invalid Date") {
+              dateModified = "-"
+            }
             // Download link
             const contentURI = file.contentURI
             // Convert to hyper link and then display it

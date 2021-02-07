@@ -359,8 +359,8 @@ exports.default = class HardDriveClient extends Client {
         if (fileData) {
           // Download the file
           // Path to the file
-          const fileName = path.normalize(`${__dirname}/../../.cache/${fileName}`)
-          const downloadFilePath = appendExtToFileName(fileName, file.mimeType)
+          const fileNameWithExt = path.normalize(`${__dirname}/../../.cache/${fileName}`)
+          const downloadFilePath = appendExtToFileName(fileNameWithExt, file.mimeType)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
