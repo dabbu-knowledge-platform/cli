@@ -25,7 +25,35 @@ const { nanoid } = require("nanoid")
 
 const FormData = require("form-data")
 const Client = require("./client").default
-const { getExtFromMime, get, set, printInfo, printBright } = require("../utils.js")
+const { get, set, printInfo, printBright } = require("../utils.js")
+
+const path = require("path")
+
+// Helper function to add the appropriate extension to the file if 
+// it is a Google Workspace file (Google Doc/Sheet/Slide/App Script, etc)
+const appendExtToFileName = (fileName, mimeType) => {
+  let ext
+  if (mimeType === "application/vnd.google-apps.document") {
+    // Google Docs ---> Microsoft Word (docx)
+    ext = ".docx"
+  } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
+    // Google Sheets ---> Microsoft Excel (xlsx)
+    ext = ".xlsx"
+  } else if (mimeType === "application/vnd.google-apps.presentation") {
+    // Google Slides ---> Microsoft Power Point (pptx)
+    ext = ".pptx"
+  } else if (mimeType === "application/vnd.google-apps.drawing") {
+    // Google Drawing ---> PNG Image (png)
+    ext = ".png"
+  } else if (mimeType === "application/vnd.google-apps.script+json") {
+    // Google App Script ---> JSON (json)
+    ext = ".json"
+  } else {
+    ext = ""
+  }
+
+  return `${fileName}${ext}`
+}
 
 // Helper function to refresh the access token every time it expires
 const refreshAccessToken = (name, vars) => {
@@ -330,10 +358,9 @@ exports.default = class HardDriveClient extends Client {
       return new Promise((resolve, reject) => {
         if (fileData) {
           // Download the file
-          // The file extension
-          let ext = getExtFromMime(file.mimeType)
           // Path to the file
-          const downloadFilePath = `${__dirname}/../../.cache/${fileName}${ext && fileName.indexOf(ext) === -1 ? `.${ext}` : ""}`
+          const fileName = path.normalize(`${__dirname}/../../.cache/${fileName}`)
+          const downloadFilePath = appendExtToFileName(fileName, file.mimeType)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {

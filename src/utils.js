@@ -18,7 +18,6 @@
 
 const fs = require("fs-extra")
 const chalk = require("chalk")
-const mime = require("mime-types")
 const figlet = require("figlet")
 
 const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
@@ -39,33 +38,6 @@ exports.getDrawableText = (text) => {
       }
     })
   })
-}
-
-exports.getExtFromMime = (mimeType) => {
-  if (mimeType === "application/vnd.google-apps.document") {
-    // Google Docs ---> Microsoft Word (docx)
-    return "docx"
-  } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
-    // Google Sheets ---> Microsoft Excel (xlsx)
-    return "xlsx"
-  } else if (mimeType === "application/vnd.google-apps.presentation") {
-    // Google Slides ---> Microsoft Power Point (pptx)
-    return "pptx"
-  } else if (mimeType === "application/vnd.google-apps.drawing") {
-    // Google Drawing ---> PNG Image (png)
-    return "png"
-  } else if (mimeType === "application/vnd.google-apps.script+json") {
-    // Google App Script ---> JSON (json)
-    return "json"
-  } else {
-    // Get the ext from the mime DB
-    let ext = mime.extension(mimeType)
-    if (ext) 
-      return ext
-    else
-      // No extension - should idealy not happen
-      return ""
-  }
 }
 
 // Handle an input error while reading user input
