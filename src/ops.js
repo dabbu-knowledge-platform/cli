@@ -169,7 +169,7 @@ const ls = (args) => {
       .then((files) => {
         if (files) {
           // Append the files to a table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Action(s)")], colWidths: [null, null, null]})
+          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Type"), chalk.green("Date modified"), chalk.green("Action(s)")], colWidths: [null, null, null, null, null]})
           for (let i = 0, length = files.length; i < length; i++) {
             const file = files[i]
 
@@ -177,6 +177,10 @@ const ls = (args) => {
             const fileName = file.kind === "folder" ? `${chalk.blueBright(file.name)} (folder)` : chalk.magenta(file.name)
             // File size in MB
             const fileSize = !file.size ? "-" : `${Math.floor(file.size / (1024 * 1024))} MB`
+            // Mime type of file
+            const fileType = file.mimeType
+            // Last modified time
+            const dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
             // Download link
             const contentURI = file.contentURI
             // Convert to hyper link and then display it
@@ -198,6 +202,8 @@ const ls = (args) => {
             table.push([
               fileName, 
               fileSize,
+              fileType,
+              dateModified,
               downloadLink
             ])
           }
