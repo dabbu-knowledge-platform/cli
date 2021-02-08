@@ -17,10 +17,13 @@
 */
 
 const fs = require("fs-extra")
+const link = require("terminal-link")
 const chalk = require("chalk")
 const figlet = require("figlet")
 
 const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
+
+const Table = require("cli-table3")
 
 // Return the fancy text that we can print out
 exports.getDrawableText = (text) => {
@@ -63,29 +66,92 @@ exports.set = (path, value) => {
   return config.set(path, value)
 }
 
+// Return an absolute path based on the current path in
+// the drive and the user-entered path
 exports.parsePath = (inputPath, currentPath) => {
+  // If there is no path given, or the path is /, return 
+  // nothing (which means /)
   if (!inputPath || inputPath === "/") {
     return ""
   }
   
+  // Split the path by / and get an array of folders
   const folders = inputPath.split("/")
-  let finalPath = currentPath.split("/")
+  // The final path should begin with the current path 
+  // only if the user hasn't mentioned an absolute path
+  let finalPath = inputPath.startsWith("/") ? "/" : currentPath.split("/")
 
+  // Loop through the input path
   for (let i = 0, length = folders.length; i < length; i++) {
+    // Get the folder
     const folder = folders[i]
     if (folder === ".") {
+      // Do nothing if the folder is . (meaning current directory)
       continue
     } else if (folder === "..") {
+      // Go back one folder if the path is ..
       finalPath.pop()
     } else {
+      // Else add the folder to the path
       finalPath.push(folder)
     }
   }
 
+  // Return the path, joined by /s and replace any duplicate slash
   return finalPath.join("/")
     .replace(/\/\/\/\//g, "")
     .replace(/\/\/\//g, "")
     .replace(/\/\//g, "")
+}
+
+exports.printFiles = (files, printFullPath = false) => {
+  // Append the files to a table and then display them
+  const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Type"), chalk.green("Last modified"), chalk.green("Action(s)")], colWidths: [null, null, null, null, null]})
+  for (let i = 0, length = files.length; i < length; i++) {
+    const file = files[i]
+
+    // File name - blue if folder, magenta if file
+    const name = printFullPath ? file.path : file.name
+    const fileName = file.kind === "folder" ? `${chalk.blueBright(name)} (folder)` : chalk.magenta(name)
+    // File size in MB
+    const fileSize = !file.size ? "-" : `${Math.floor(file.size / (1024 * 1024))} MB`
+    // Mime type of file
+    const fileType = file.mimeType
+    // Last modified time
+    let dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
+    if (dateModified === "Invalid Date") {
+      dateModified = "-"
+    }
+    // Download link
+    const contentURI = file.contentURI
+    // Convert to hyper link and then display it
+    let downloadLink
+    if (file.kind === "folder") {
+      if (!contentURI) {
+        downloadLink = "Link unavailable"
+      } else {
+        downloadLink = link("View folder", contentURI)
+      }
+    } else {
+      if (!contentURI) {
+        downloadLink = "Link unavailable"
+      } else {
+        downloadLink = link("View file", contentURI)
+      }
+    }
+
+    table.push([
+      fileName, 
+      fileSize,
+      fileType,
+      dateModified,
+      downloadLink
+    ])
+  }
+  // Print out the table
+  if (table.length > 0) {
+    console.log(table.toString())
+  }
 }
 
 // Wrap the console.log in a print function
@@ -107,10 +173,25 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
-  if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
-    this.print(
-      chalk.red.bold(err.response.data.error.message)
-    )
+  if (err.isAxiosError) {
+    if (err.code === "ECONNRESET") {
+      this.print(
+        chalk.red.bold("The server abruptly closed the connection. Check your wifi connection. Also check if the server has shut down or try again in a few seconds.")
+      )
+    }
+    if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
+      this.print(
+        chalk.red.bold(err.response.data.error.message)
+      )
+    } else if (err.statusText) {
+      this.print(
+        chalk.red.bold(`${err.status}: ${err.statusText}`)
+      )
+    } else {
+      this.print(
+        chalk.red.bold(err)
+      )  
+    }
   } else if (err.message) {
     this.print(
       chalk.red.bold(err.message)

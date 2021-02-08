@@ -167,7 +167,7 @@ exports.default = class HardDriveClient extends Client {
         const app = express()
 
         // Start the server
-        app.listen(8081, null)
+        const server = app.listen(8081, null)
 
         // Once we get the code, return successfully
         // Listen for requests to localhost:8081/
@@ -175,6 +175,7 @@ exports.default = class HardDriveClient extends Client {
           // Return the code only if there is no error and the state variable matches
           if (req.query.error) {
             res.send(`The following error occurred: ${req.query.error}`)
+            server.close()
             reject(req.query.error)
           } else {
             if (req.query.state === randomNumber) {
@@ -277,7 +278,18 @@ exports.default = class HardDriveClient extends Client {
             resolve(null)
           }
         })
-        .catch(reject) // Pass error back if any
+        .catch(err => {
+          // If there is a network error, resolve with nothing
+          if (err.response && err.response.data 
+            && err.response.data.error
+            && err.response.data.error.message 
+            && err.response.data.error.message.includes("getaddrinfo ENOTFOUND www.googleapis.com")) {
+              reject("Network error. Cannot reach Google servers.")
+          } else {
+            // Else pass the error back on
+            reject(err)
+          }
+        })
       })
     }
 

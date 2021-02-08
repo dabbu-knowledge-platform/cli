@@ -17,15 +17,12 @@
 */
 
 const ora = require("ora")
-const link = require("terminal-link")
 const open = require("open")
 const chalk = require("chalk")
 const axios = require("axios")
 const prompt = require("readcommand")
 const path = require("path")
-const { get, set, parsePath, printInfo, printBright, exitDabbu, printError } = require("./utils.js")
-
-const Table = require("cli-table3")
+const { get, set, parsePath, printInfo, printBright, exitDabbu, printError, printFiles } = require("./utils.js")
 
 // Parse the command
 exports.parseCommand = (args) => {
@@ -61,6 +58,9 @@ exports.parseCommand = (args) => {
         case "rm": // Delete a file
           opFunc = rm
           break
+        case "search": // Search for a file
+          opFunc = search
+          break
         case "help":
           const help = () => {
             // Promisify the help command
@@ -74,6 +74,7 @@ exports.parseCommand = (args) => {
                 "  cat <relative path to file> - Download and open a file",
                 "  cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)> - Copy a file from one place to another",
                 "  rm <relative path to file> - Delete a file",
+                "  search <relative path to folder> | <space-separated keywords to search for> - Searches recursively for files and folders that contain any one of the mentioned keywords (greedy match)",
                 "  <drive name>: - Switch drives",
                 "  :: - Create a new drive",
                 "  clear - Clear the screen",
@@ -167,56 +168,11 @@ const ls = (args) => {
     const DataModule = require(`./modules/${driveVars.provider}`).default
     new DataModule().ls(get("server"), get("current_drive"), finalPath, driveVars)
       .then((files) => {
+        // Stop loading, we have the results
+        spinner.stop()
         if (files) {
-          // Append the files to a table and then display them
-          const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Type"), chalk.green("Date modified"), chalk.green("Action(s)")], colWidths: [null, null, null, null, null]})
-          for (let i = 0, length = files.length; i < length; i++) {
-            const file = files[i]
-
-            // File name - blue if folder, magenta if file
-            const fileName = file.kind === "folder" ? `${chalk.blueBright(file.name)} (folder)` : chalk.magenta(file.name)
-            // File size in MB
-            const fileSize = !file.size ? "-" : `${Math.floor(file.size / (1024 * 1024))} MB`
-            // Mime type of file
-            const fileType = file.mimeType
-            // Last modified time
-            let dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
-            if (dateModified === "Invalid Date") {
-              dateModified = "-"
-            }
-            // Download link
-            const contentURI = file.contentURI
-            // Convert to hyper link and then display it
-            let downloadLink
-            if (file.kind === "folder") {
-              if (!contentURI) {
-                downloadLink = "Link unavailable"
-              } else {
-                downloadLink = link("View folder", contentURI)
-              }
-            } else {
-              if (!contentURI) {
-                downloadLink = "Link unavailable"
-              } else {
-                downloadLink = link("View file", contentURI)
-              }
-            }
-
-            table.push([
-              fileName, 
-              fileSize,
-              fileType,
-              dateModified,
-              downloadLink
-            ])
-          }
-          // We got the result, stop loading
-          spinner.stop()
-          // Print out the table
-          console.log(table.toString())
+          printFiles(files)
         } else {
-          // We have no files, stop loading
-          spinner.stop()
           // Tell the user the folder is empty
           printBright("Folder is empty")
         }
@@ -460,6 +416,110 @@ const rm = (args) => {
         spinner.stop()
         reject(err)
       })
+  })
+}
+
+const search = (args) => {
+  // Wrap everything in a promise
+  return new Promise((resolve, reject) => {
+    // Get the current drive name, so we can get the variables from the config file
+    const driveVars = get(`drives.${get("current_drive")}`)
+
+    // The current path in that drive
+    const currentPath = driveVars.path || ""
+    // The user given relative path
+    const inputPath = args[1] || "."
+    // Parse the relative path and get an absolute one
+    let finalPath = parsePath(inputPath, currentPath)
+    finalPath = finalPath === "" ? "/" : finalPath
+
+    // The rest of the args are the search terms
+    let pipeDelim = args.indexOf("|")
+    let searchTerms = args.slice(pipeDelim + 1)
+    if (searchTerms.length === 0 || pipeDelim === -1) {
+      // If there are no search terms, error out
+      reject("Please specify space-separated keywords to search for. Use the command this way: \n  search <relative path to folder> | <space-separated keywords to search for>")
+    } else {
+      // List directories recursively
+      // Show a loading indicator
+      const spinner = ora(`Loading your ${chalk.blue("files and folders")}`).start()
+
+      // Initialise the provider module
+      const DataModule = require(`./modules/${driveVars.provider}`).default
+      const dataModule = new DataModule()
+
+      // Recursively list files
+      const listFilesRecursively = function(folder) {
+        // Tell the user which folder we are querying
+        spinner.start()
+        spinner.text = `Searching in ${chalk.blue(folder)}`
+        // An array to hold all the files whose names contain any 
+        // one of the search terms
+        let matchingFiles = []
+        // Wrap everything in a promise
+        return new Promise((resolve, reject) => {
+          // Call the module's list function
+          dataModule.ls(get("server"), get("current_drive"), folder, driveVars)
+            .then(list => {
+              if (list) {
+                let i = 0
+                // Create a function that will walk through the directories
+                const next = () => {
+                  // Current file
+                  var file = list[i++]
+                  // If there is no such file, return all the matching 
+                  // files found so far (we've reached the end)
+                  if (!file) {
+                    spinner.stop()
+                    if (matchingFiles.length > 0) {
+                      printInfo(folder)
+                      printFiles(matchingFiles, true)
+                    }
+                    return resolve()
+                  }
+                  if (file.kind === "folder") {
+                    // Check if ANY of the search terms are included 
+                    // in the name of the folder itself first
+                    for (j in searchTerms) {
+                      if (file.name.toLowerCase().includes(searchTerms[j].toLowerCase())) {
+                        matchingFiles.push(file)
+                        break
+                      }
+                    }
+                    // If it's a folder, then call the listFiles method again
+                    // with the folder path
+                    listFilesRecursively(file.path)
+                      .then(next)
+                  } else {
+                    // If it's a file, check if ANY of the search terms are 
+                    // included in the name of the file
+                    for (j in searchTerms) {
+                      if (file.name.toLowerCase().includes(searchTerms[j].toLowerCase())) {
+                        matchingFiles.push(file)
+                        break
+                      }
+                    }
+                    // Call this method again for the rest of the files
+                    next()
+                  }
+                }
+
+                // Start the chain
+                next()
+              } else {
+                resolve([])
+              }
+            })
+            .catch(reject) // Pass the error back on
+        })
+      }
+
+      // Get the files
+      listFilesRecursively(finalPath)
+      .then(() => spinner.stop()) // Stop loading
+      .then(() => resolve()) // Return successfully
+      .catch(reject) // Pass the error back on, if any
+    }
   })
 }
 
