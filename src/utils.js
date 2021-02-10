@@ -24,6 +24,7 @@ const figlet = require("figlet")
 const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
 
 const Table = require("cli-table3")
+const e = require("express")
 
 // Return the fancy text that we can print out
 exports.getDrawableText = (text) => {
@@ -79,7 +80,7 @@ exports.parsePath = (inputPath, currentPath) => {
   const folders = inputPath.split("/")
   // The final path should begin with the current path 
   // only if the user hasn't mentioned an absolute path
-  let finalPath = inputPath.startsWith("/") ? "/" : currentPath.split("/")
+  let finalPath = inputPath.startsWith("/") ? ["/"] : currentPath.split("/")
 
   // Loop through the input path
   for (let i = 0, length = folders.length; i < length; i++) {
@@ -99,9 +100,37 @@ exports.parsePath = (inputPath, currentPath) => {
 
   // Return the path, joined by /s and replace any duplicate slash
   return finalPath.join("/")
-    .replace(/\/\/\/\//g, "")
-    .replace(/\/\/\//g, "")
-    .replace(/\/\//g, "")
+    .replace(/\/\/\/\//g, "/")
+    .replace(/\/\/\//g, "/")
+    .replace(/\/\//g, "/")
+}
+
+exports.uniqueArray = (array) => {
+  return array.filter(function(item, pos) {
+    return array.lastIndexOf(item) == array.indexOf(item);
+  })
+}
+
+// Convert a file size in bytes to a human readable format (with units)
+// Copied from here - https://stackoverflow.com/a/20732091
+exports.getHumanReadableFileSize = (fileSize) => {
+  const thresh = 1024
+
+  if (Math.abs(fileSize) < thresh) {
+    return fileSize + " B"
+  }
+
+  const units = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+  let u = -1
+  const r = 100
+
+  do {
+    fileSize /= thresh
+    ++u
+  } while (Math.round(Math.abs(fileSize) * r) / r >= thresh && u < units.length - 1)
+
+
+  return fileSize.toFixed(2) + " " + units[u]
 }
 
 exports.printFiles = (files, printFullPath = false) => {
@@ -113,8 +142,8 @@ exports.printFiles = (files, printFullPath = false) => {
     // File name - blue if folder, magenta if file
     const name = printFullPath ? file.path : file.name
     const fileName = file.kind === "folder" ? `${chalk.blueBright(name)} (folder)` : chalk.magenta(name)
-    // File size in MB
-    const fileSize = !file.size ? "-" : `${Math.floor(file.size / (1024 * 1024))} MB`
+    // File size in a human readable unit
+    const fileSize = !file.size || file.kind === "folder" ? "-" : this.getHumanReadableFileSize(file.size)
     // Mime type of file
     const fileType = file.mimeType
     // Last modified time
@@ -206,6 +235,7 @@ exports.printError = (err) => {
 // Exit Dabbu and delete the .cache directory
 exports.exitDabbu = () => {
   return fs.remove(`${__dirname}/../.cache/`)
+    .then(() => this.set("clips", {}))
     .then(() => this.printInfo("Removed cache. Exiting.."))
     .finally(() => process.exit(0))
 }
