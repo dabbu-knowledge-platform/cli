@@ -31,6 +31,157 @@ $ npm start
 ```
 - And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-cli/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
 
+## Usage
+
+Once you have run `npm start` to start the CLI, it will take you through the setup process. Once that is done, here is a brief guide on how to see your files and folders, view them, download them, copy them and delete them. You can access this guide in the CLI by typing `help`.
+
+### Concept of drives in Dabbu
+
+Dabbu allows you to manage your files and folders from multiple sources like your hard drive, google drive, etc. Drives in Dabbu are just like a USB drive or external hard drive attached to your computer, except that you are getting files from Google Drive instead of the attached USB/hard drive. So when you start setup, you will be asked to setup a drive using one of the enabled providers on the server you connect to. Follow the onscreen instructions, and you will be able to access files and folders from that provider. 
+
+To create a new drive, type in the following:
+
+```
+::
+```
+
+It will then ask you to pick a provider to setup and then you can follow the onscreen instructions to finish setting up the drive.
+
+To switch a drive, type in the following:
+
+```
+<drive name>:
+```
+
+Notice the `:` at the end. This drive switch syntax has been borrowed from the old DOS style syntax. You are encouraged to name your drive with single letters for easier switching, like `c`, `d`, `e`, etc. So to switch to `d` drive, you would type in the following:
+
+```
+d:
+```
+
+### List files and folders
+
+To list files and folders in the current folder, type in the following:
+
+```
+ls
+```
+
+### To move into a folder
+
+To move into a folder, type in the following:
+
+```
+cd <path/to/folder>
+```
+
+To go back one folder, type in the following:
+
+```
+cd ..
+```
+
+To the program, `..` stands for previous folder.
+
+### To check what folder you are in
+
+To know what folder you are in, type in the folowing:
+
+```
+pwd
+```
+
+### To view a file
+
+To view a file/folder in the website/UI that the provider providers (like viewing a Google Doc from your Google Drive on the docs.google.com website), you can click on the link provided when you type in `ls`. To download the file and view it on your computer with an app installed on your computer, type in the following:
+
+```
+cat <path/to/file>
+```
+
+### To list out files in a folder recursively
+
+To view all the files in a folder and the folders within it, type in the following:
+
+```
+tree
+```
+
+### To search for a file
+
+To recursively search for a file with any of the mentioned keywords in its name, type in the following:
+
+```
+search <path/to/folder/to/search> <keyword 1> <keyword 2> ....
+```
+
+To search for files in the current folder, use `.` as the folder path. To search for files in the previous folder, use `..` as the folder path. You can use as many keywords as you like. If the file name contains even one of them, it will be displayed in the result.
+
+### To delete a file or folder
+
+To delete a file, type in the following:
+
+```
+rm <path/to/file>
+```
+
+To delete a folder and its contents, type in the following:
+
+```
+rm <path/to/folder>/ 
+```
+
+Notice the / at the end of the path. The / tells Dabbu that you want to delete a folder.
+
+### To copy a file from one place to another
+
+```
+cp <path/to/file> <path/to/folder/where/file/should/be/copied>/
+```
+
+Notice the / at the end of the path. The / tells Dabbu that you want to copy the file to inside the folder. If you do not put a / at the end, Dabbu will assume you want to copy the file there and rename it to the given name. In the cp command, you can specify paths in different drives by prefixing the paths with the drive name and a `:`, e.g.: 
+
+```
+cp c:/Test/SomeFile.pdf d:/Dabbu/
+```
+
+will copy the SomeFile.pdf file from the Test folder in `c:` to the Dabbu folder in `d:`.
+
+### To copy the result of a command to clipboard
+
+Suppose you wanted to copy the result of a search command and paste it into  another location. You can do that by adding ` | cp` to the end of the search/list/tree command. For example:
+
+Copy all the files in the current folder to clipboard. Folders will not be copied. To copy folders, use tree.
+```
+ls | cp
+```
+
+Copy all files in the current folder recursively to clipboard
+```
+tree | cp
+```
+
+Copy all the files returned by this search command to clipboard
+```
+search . dabbu cli server | cp
+```
+
+If you want, you can store that set of files under a specific name to be used later. For example, to store the result of a search command under the name `dabbufiles`, you can run the following:
+
+```
+search . dabbu cli server | cp dabbufiles
+```
+
+### To paste your clipboard
+
+To paste the files on your clipboard, type in the following:
+
+```
+pst [name of saved result]
+```
+
+If you didn't specify a name while copying the files to clipboard, you do not need to specift a name while using `pst`. (It stores it under the name `default` if you didn't mention any name)
+
 ## Updating the CLI
 
 To update the CLI, simply run the following commands from the terminal/command prompt:

@@ -137,7 +137,7 @@ const pwd = (args) => {
   // Current drive
   const drive = get("current_drive")
   // Print the drive name and path as a promise
-  printInfo(`(${get(`drives.${drive}.provider`)}) ${drive}:/${get(`drives.${drive}.path`)}`)
+  printInfo(`(${get(`drives.${drive}.provider`)}) ${drive}:${get(`drives.${drive}.path`)}`)
 
   // Return a resolved promise
   return Promise.resolve()
