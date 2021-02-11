@@ -129,7 +129,6 @@ exports.getHumanReadableFileSize = (fileSize) => {
     ++u
   } while (Math.round(Math.abs(fileSize) * r) / r >= thresh && u < units.length - 1)
 
-
   return fileSize.toFixed(2) + " " + units[u]
 }
 

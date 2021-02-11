@@ -297,6 +297,30 @@ const cat = (args) => {
 }
 
 const cp = (args) => {
+  // Check if we have the -l parameter. If there is a -l or --list,
+  // then list out the saved clips so far
+  if (args.indexOf("-l") !== -1 || args.indexOf("--list") !== -1) {
+    // Get the clips
+    const clips = get("clips")
+    // If there are no clips, tell the user that and return
+    if (JSON.stringify(clips) === "{}") {
+      printBright("Nothing copied to clipboard yet. To copy something to clipboard, add the following after a ls/tree/search command - \` | cp\`")
+      // Return successfully
+      return Promise.resolve()
+    }
+    // Loop through the clips
+    Object.keys(clips).forEach(clipName => {
+      // Get the clip
+      const clip = clips[clipName]
+      // Print out the clip name and which drive and folder it is from
+      printInfo(`Showing clip \`${clipName}\` - ${clip.drive}:${clip.path}`)
+      // Print the files with their full paths
+      printFiles(clip.files, true)
+    })
+    // Return successfully
+    return Promise.resolve()
+  }
+
   // Parse the from file path
   let fromInput = args[1]
   if (!fromInput) fromInput = "."
@@ -513,7 +537,7 @@ const tree = (args) => {
     const listFilesRecursively = function(folder, printResult) {
       // Tell the user which folder we are querying
       spinner.start()
-      spinner.text = `Searching in ${chalk.blue(folder)}`
+      spinner.text = `Listing files in ${chalk.blue(folder)}`
       // An array to hold all the files whose names contain any 
       // one of the search terms
       let matchingFiles = []
