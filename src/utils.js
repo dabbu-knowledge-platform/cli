@@ -158,13 +158,13 @@ exports.printFiles = (files, printFullPath = false) => {
       if (!contentURI) {
         downloadLink = "Link unavailable"
       } else {
-        downloadLink = link("View folder", contentURI)
+        downloadLink = link("View folder", contentURI, {fallback: (text, url) => url})
       }
     } else {
       if (!contentURI) {
         downloadLink = "Link unavailable"
       } else {
-        downloadLink = link("View file", contentURI)
+        downloadLink = link("View file", contentURI, {fallback: (text, url) => url})
       }
     }
 
