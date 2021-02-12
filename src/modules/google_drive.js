@@ -95,7 +95,7 @@ const refreshAccessToken = (name, vars) => {
   })
 }
 
-exports.default = class HardDriveClient extends Client {
+exports.default = class GoogleDriveClient extends Client {
   constructor() {
     super()
   }
@@ -247,7 +247,7 @@ exports.default = class HardDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}?exportType=view`
+        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}?orderBy=kind&direction=asc&exportType=view`
         // Send a GET request
         axios.get(url, { 
           headers: {
@@ -430,9 +430,9 @@ exports.default = class HardDriveClient extends Client {
           const formHeaders = formData.getHeaders()
 
           // The URL to send the request to
-          const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(vars.downloadedFilePath.split("/").pop())}`
+          const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
           // Send a POST request
-          axios.post(url, formData, { 
+          axios.post(url, formData, {
             headers: {
               ...formHeaders,
               "Authorization": `Bearer ${accessToken}`

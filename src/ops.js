@@ -1036,7 +1036,7 @@ const cnd = (args) => {
     return new Promise((resolve, reject) => {
       const provider = get(`drives.${name}.provider`)
       const DataModule = require(`./modules/${provider}`).default
-      new DataModule().init(get("server"), get("current_drive"), name)
+      new DataModule().init(get("server"), name)
         .then(() => resolve(name))
         .catch(reject)
     })
