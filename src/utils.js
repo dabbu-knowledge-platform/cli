@@ -239,6 +239,10 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) =
               this.listFilesRecursively(file.path, dataModule, drive, driveVars, spinner)
                 .then(files => matchingFiles = matchingFiles.concat(files))
                 .then(() => next())
+            } else {
+              // We have already printed and added these files to the array, 
+              // so continue
+              next()
             }
           }
 
