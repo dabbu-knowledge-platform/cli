@@ -66,6 +66,10 @@ exports.set = (path, value) => {
   return config.set(path, value)
 }
 
+exports.deleteConfig = () => {
+  return config.clear()
+}
+
 // Return an absolute path based on the current path in
 // the drive and the user-entered path
 exports.parsePath = (inputPath, currentPath) => {

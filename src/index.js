@@ -16,11 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+const fs = require("fs-extra")
 const chalk = require("chalk")
 const axios = require("axios")
 const prompt = require("readcommand")
 const { parseCommand } = require("./ops.js")
-const { getDrawableText, handleInputError, get, printInfo, printBright, printError, set } = require("./utils.js")
+const { getDrawableText, handleInputError, deleteConfig, exitDabbu, get, set, printInfo, printBright, printError } = require("./utils.js")
 
 // Main function
 function main() {
@@ -166,7 +167,39 @@ function checkSetupAndRun() {
       .then(() => showPrompt()) // Show the user the command line
       .catch(printError) // Print the error, if any
   } else {
-    // Else show them the command line
+    // First check if the current drive is valid, as someone may have
+    // deleted a provider and not changed the current drive
+    let currentDriveName = get("current_drive")
+    let currentDriveVars = get(`drives.${currentDriveName}`)
+    // Check if there is no current drive
+    if (!currentDriveName || JSON.stringify(currentDriveVars) === "{}") {
+      // If not, then get all the current drives possible
+      let allDrives = Object.keys(get("drives"))
+      if (allDrives.length === 0) {
+        // If there are no current drives, delete the config and exit, let them start again
+        // We delete the config because they have messed with the only drive they had, so
+        // there is no config other than server address that we will be deleting
+        printError(`No valid drive was found. Deleting config and exiting. Running again will start setup.`)
+        deleteConfig()
+        exitDabbu()
+      } else {
+        // Else, if there are a few drives left, change to the first one that's not empty
+        for (let i = 0, length = allDrives.length; i < length; i++) {
+          const driveName = allDrives[i]
+          const driveVars = get(`drives.${driveName}`)
+          // Make sure it is not the current drive and has at least the provider field
+          if (driveName != currentDriveName && driveVars.provider) {
+            set("current_drive", driveName)
+            break
+          } else {
+            // Empty that drive so it never gets picked, it is not properly configured
+            set(`drives.${drive}`, {})
+          }
+        }
+        printError(`Current drive was not set to a valid drive or current drive configuration was corrupt. Changing to ${drive}:`)
+      }
+    }
+    // Then show them the command line
     showPrompt()
   }
 }

@@ -661,7 +661,8 @@ const pst = async (args) => {
     })
   }
 
-  for(const file of filesToPaste) {
+  for(let i = 0, length = filesToPaste; i < length; i++) {
+    const file = filesToPaste[i]
     // Parse the paths, then download and re-upload the files
     // Don't do anything if the it is a folder
     if (file.kind === "folder") {
@@ -720,20 +721,38 @@ const pst = async (args) => {
     toFolderPath = toFolderPath === "" ? "/" : toFolderPath
 
     try {
+      // Using await as promises were not very reliable in the loop
+      // Also, if multiple files were being put into a new folder,
+      // There used to be multiple folders with the same name in
+      // providers like Google Drive, which allow same file/folder
+      // names in a single folder as Promise.all makes them run
+      // parallely
+      
+      // Download the file
       const downloadedFilePath = await downloadFile(fromDrive, fromDriveVars, fromFolderPath, fromFileName)
+      // Then upload it
       await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, downloadedFilePath)
     } catch (err) {
+      // If there is an error, don't return. Print it out and
+      // continue with other file uploads
+
+      // Pause the spinner
       spinner.stop()
+      // Print out the error
       printError(err)
+      // Resume the spinner
       spinner.start()
     }
   }
 
+  // Stop after all files are downloaded and re-uploaded
   spinner.stop()
 
+  // Return successfully or partially successfully (some files may have failed)
   return
 }
 
+// Create a new drive
 const cnd = (args) => {
   const server = get("server")
   // Get all enabled providers from the server
@@ -846,6 +865,7 @@ const cnd = (args) => {
   })
 }
 
+// Switch to another drive
 const sd = (args) => {
   // Wrap everything in a promise
   return new Promise((resolve, reject) => {
