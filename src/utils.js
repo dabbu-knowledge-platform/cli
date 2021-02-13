@@ -24,7 +24,6 @@ const figlet = require("figlet")
 const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
 
 const Table = require("cli-table3")
-const e = require("express")
 
 // Return the fancy text that we can print out
 exports.getDrawableText = (text) => {
@@ -105,9 +104,10 @@ exports.parsePath = (inputPath, currentPath) => {
     .replace(/\/\//g, "/")
 }
 
-exports.uniqueArray = (array) => {
-  return array.filter(function(item, pos) {
-    return array.lastIndexOf(item) == array.indexOf(item);
+// Remove any duplicates (and the original too) from an array
+exports.removeOriginalAndDuplicates = (array) => {
+  return array.filter((item, pos) => {
+    return array.lastIndexOf(item) == array.indexOf(item)
   })
 }
 
@@ -121,17 +121,18 @@ exports.getHumanReadableFileSize = (fileSize) => {
   }
 
   const units = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
-  let u = -1
-  const r = 100
+  let unitIndex = -1
+  const decimalsToKeep = 2
 
   do {
     fileSize /= thresh
-    ++u
-  } while (Math.round(Math.abs(fileSize) * r) / r >= thresh && u < units.length - 1)
+    ++unitIndex
+  } while (Math.round(Math.abs(fileSize) * (10 ** decimalsToKeep)) / (10 ** decimalsToKeep) >= thresh && unitIndex < units.length - 1)
 
-  return fileSize.toFixed(2) + " " + units[u]
+  return fileSize.toFixed(decimalsToKeep) + " " + units[unitIndex]
 }
 
+// Display a set of files in a tabular format
 exports.printFiles = (files, printFullPath = false) => {
   // Append the files to a table and then display them
   const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Type"), chalk.green("Last modified"), chalk.green("Action(s)")], colWidths: [null, null, null, null, null]})
@@ -158,13 +159,13 @@ exports.printFiles = (files, printFullPath = false) => {
       if (!contentURI) {
         downloadLink = "Link unavailable"
       } else {
-        downloadLink = link("View folder", contentURI, {fallback: (text, url) => url})
+        downloadLink = link("View folder", contentURI, {fallback: (text, url) => `${text} (${url})`})
       }
     } else {
       if (!contentURI) {
         downloadLink = "Link unavailable"
       } else {
-        downloadLink = link("View file", contentURI, {fallback: (text, url) => url})
+        downloadLink = link("View file", contentURI, {fallback: (text, url) => `${text} (${url})`})
       }
     }
 
@@ -179,6 +180,100 @@ exports.printFiles = (files, printFullPath = false) => {
   // Print out the table
   if (table.length > 0) {
     console.log(table.toString())
+  }
+}
+
+// Recursively search and print files
+exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) => {
+  // Tell the user which folder we are querying
+  spinner.start()
+  spinner.text = `Listing files in ${chalk.blue(folder)}`
+  // An array to hold all the files whose names contain any 
+  // one of the search terms
+  let matchingFiles = []
+  // Wrap everything in a promise
+  return new Promise((resolve, reject) => {
+    // Call the module's list function
+    dataModule.ls(this.get("server"), drive, folder, driveVars)
+      .then(list => {
+        if (list) {
+          // First get all of the files not folders (we do !=== folder)
+          // as we might have the "file" and "other" types
+          let filesOnlyList = list.filter((item, pos) => {
+            return item.kind !== "folder"
+          })
+
+          // Print them out
+          // Stop the spinner while we are printing
+          spinner.stop()
+          
+          // Print the folder name
+          this.printInfo(folder)
+          // Print the files (with the full path)
+          this.printFiles(filesOnlyList, true)
+
+          // Start the spinner
+          spinner.start()
+
+          // Add the files to matches as well
+          matchingFiles = matchingFiles.concat(filesOnlyList)
+
+          // Now recurse through the remaining folders
+          let i = 0
+          // Create a function that will walk through the directories
+          const next = () => {
+            // Current file
+            var file = list[i++]
+            // If there is no such file, return all the matching 
+            // files found so far (we've reached the end)
+            if (!file) {
+              return resolve(matchingFiles)
+            }
+            if (file.kind === "folder") {
+              // If it's a folder, then call the listFilesRecursively method again
+              // with the folder path
+              this.listFilesRecursively(file.path, dataModule, drive, driveVars, spinner)
+                .then(files => matchingFiles = matchingFiles.concat(files))
+                .then(() => next())
+            }
+          }
+
+          // Start the chain
+          next()
+        } else {
+          resolve([])
+        }
+      })
+      .catch(reject) // Pass the error back on
+  })
+}
+
+exports.handlePipe = (command, files, drive, driveVars) => {
+  const splitCommand = command.split("|")
+  if (splitCommand.length >= 2) {
+    // The part after the |
+    const pipedCommand = splitCommand[1]
+        .split(" ")
+        .filter(val => val !== "" && val !== null && val !== undefined)
+    
+    if (pipedCommand[0] === "cp") {
+      // This list of files should be referenced by this name
+      let clipName
+      // If not specified, take the name as default
+      if (pipedCommand.length === 1) 
+        clipName = "default"
+      else
+        clipName = pipedCommand[1]
+      
+      // Store the clip
+      set(`clips.${clipName}.files`, files)
+      // Store the current drive name along with the clip
+      set(`clips.${clipName}.drive`, drive)
+      // Also store the current path of the user in the drive
+      set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
+      // Tell the user
+      printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
+    }
   }
 }
 

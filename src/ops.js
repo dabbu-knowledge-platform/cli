@@ -22,7 +22,8 @@ const chalk = require("chalk")
 const axios = require("axios")
 const prompt = require("readcommand")
 const path = require("path")
-const { get, set, uniqueArray, parsePath, printInfo, printBright, exitDabbu, printError, printFiles } = require("./utils.js")
+
+const { get, set, parsePath, listFilesRecursively, handlePipe, printFiles, printInfo, printBright, printError, exitDabbu } = require("./utils.js")
 
 // Parse the command
 exports.parseCommand = (args) => {
@@ -192,44 +193,12 @@ const ls = (args) => {
         // Stop loading, we have the results
         spinner.stop()
         if (files) {
+          printFiles(files)
           // Check if the result is to be copied to clipboard
           const command = args.join(" ")
-          const splitCommand = command.split("|")
-          if (splitCommand.length >= 2) {
-            // The part after the |
-            const pipedCommand = splitCommand[1]
-                .split(" ")
-                .filter(val => val !== "" && val !== null && val !== undefined)
-            
-            if (pipedCommand[0] === "cp") {
-              // This list of files should be referenced by this name
-              let clipName
-              // If not specified, take the name as default
-              if (pipedCommand.length === 1) 
-                clipName = "default"
-              else
-                clipName = pipedCommand[1]
-              
-              // Store the clip
-              set(`clips.${clipName}.files`, files)
-              // Store the current drive name along with the clip
-              set(`clips.${clipName}.drive`, get("current_drive"))
-              // Also store the current path of the user in the drive
-              set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
-              // Tell the user
-              printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
-              // Return successfully
-              resolve()
-            } else {
-              // Else just print the files
-              printFiles(files)    
-            }
-          } else {
-            // Else just print the files
-            printFiles(files)
-            // Return successfully
-            resolve()
-          }
+          handlePipe(command, files, get("current_drive"), driveVars)
+          // Return successfully
+          resolve()
         } else {
           // Tell the user the folder is empty
           printBright("Folder is empty")
@@ -533,95 +502,15 @@ const tree = (args) => {
     const DataModule = require(`./modules/${driveVars.provider}`).default
     const dataModule = new DataModule()
 
-    // Recursively list files
-    const listFilesRecursively = function(folder, printResult) {
-      // Tell the user which folder we are querying
-      spinner.start()
-      spinner.text = `Listing files in ${chalk.blue(folder)}`
-      // An array to hold all the files whose names contain any 
-      // one of the search terms
-      let matchingFiles = []
-      // Files already printed in recursive folders
-      let seenFiles = []
-      // Wrap everything in a promise
-      return new Promise((resolve, reject) => {
-        // Call the module's list function
-        dataModule.ls(get("server"), get("current_drive"), folder, driveVars)
-          .then(list => {
-            if (list) {
-              let i = 0
-              // Create a function that will walk through the directories
-              const next = () => {
-                // Current file
-                var file = list[i++]
-                // If there is no such file, return all the matching 
-                // files found so far (we've reached the end)
-                if (!file) {
-                  spinner.stop()
-                  printInfo(folder)
-                  printFiles(uniqueArray(matchingFiles.concat(seenFiles)), true)
-                  return resolve(matchingFiles)
-                }
-                if (file.kind === "folder") {
-                  // If it's a folder, then call the listFiles method again
-                  // with the folder path
-                  listFilesRecursively(file.path)
-                    .then(files => {
-                      matchingFiles = matchingFiles.concat(files)
-                      seenFiles = seenFiles.concat(files)
-                    })
-                    .then(() => next())
-                } else {
-                  matchingFiles.push(file)
-                  // Call this method again for the rest of the files
-                  next()
-                }
-              }
-
-              // Start the chain
-              next()
-            } else {
-              resolve([])
-            }
-          })
-          .catch(reject) // Pass the error back on
-      })
-    }
-
     // Get the files
-    listFilesRecursively(finalPath, true)
+    listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, spinner)
     .then(files => {
       // Stop loading, we have the results
       spinner.stop()
       if (files) {
         // Check if the result is to be copied to clipboard
         const command = args.join(" ")
-        const splitCommand = command.split("|")
-        if (splitCommand.length >= 2) {
-          // The part after the |
-          const pipedCommand = splitCommand[1]
-              .split(" ")
-              .filter(val => val !== "" && val !== null && val !== undefined)
-          
-          if (pipedCommand[0] === "cp") {
-            // This list of files should be referenced by this name
-            let clipName
-            // If not specified, take the name as default
-            if (pipedCommand.length === 1) 
-              clipName = "default"
-            else
-              clipName = pipedCommand[1]
-            
-            // Store the clip
-            set(`clips.${clipName}.files`, files)
-            // Store the current drive name along with the clip
-            set(`clips.${clipName}.drive`, get("current_drive"))
-            // Also store the current path of the user in the drive
-            set(`clips.${clipName}.path`, finalPath === "" ? "/" : finalPath)
-            // Tell the user
-            printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
-          }
-        }
+        handlePipe(command, files, get("current_drive"), driveVars)
         // Return successfully
         resolve()
       } else {
@@ -663,112 +552,15 @@ const search = (args) => {
       const DataModule = require(`./modules/${driveVars.provider}`).default
       const dataModule = new DataModule()
 
-      // Recursively list files
-      const listFilesRecursively = function(folder, printResult) {
-        // Tell the user which folder we are querying
-        spinner.start()
-        spinner.text = `Searching in ${chalk.blue(folder)}`
-        // An array to hold all the files whose names contain any 
-        // one of the search terms
-        let matchingFiles = []
-        // Files already printed in recursive folders
-        let seenFiles = []
-        // Wrap everything in a promise
-        return new Promise((resolve, reject) => {
-          // Call the module's list function
-          dataModule.ls(get("server"), get("current_drive"), folder, driveVars)
-            .then(list => {
-              if (list) {
-                let i = 0
-                // Create a function that will walk through the directories
-                const next = () => {
-                  // Current file
-                  var file = list[i++]
-                  // If there is no such file, return all the matching 
-                  // files found so far (we've reached the end)
-                  if (!file) {
-                    spinner.stop()
-                    printInfo(folder)
-                    printFiles(uniqueArray(matchingFiles.concat(seenFiles)), true)
-                    return resolve(matchingFiles)
-                  }
-                  if (file.kind === "folder") {
-                    // Check if ANY of the search terms are included 
-                    // in the name of the folder itself first
-                    for (j in searchTerms) {
-                      if (file.name.toLowerCase().includes(searchTerms[j].toLowerCase())) {
-                        matchingFiles.push(file)
-                        break
-                      }
-                    }
-                    // If it's a folder, then call the listFiles method again
-                    // with the folder path
-                    listFilesRecursively(file.path)
-                      .then(files => {
-                        matchingFiles = matchingFiles.concat(files)
-                        seenFiles = seenFiles.concat(files)
-                        //printInfo(file.path)
-                        //printFiles(files, true)
-                      })
-                      .then(() => next())
-                  } else {
-                    // If it's a file, check if ANY of the search terms are 
-                    // included in the name of the file
-                    for (j in searchTerms) {
-                      if (file.name.toLowerCase().includes(searchTerms[j].toLowerCase())) {
-                        matchingFiles.push(file)
-                        break
-                      }
-                    }
-                    // Call this method again for the rest of the files
-                    next()
-                  }
-                }
-
-                // Start the chain
-                next()
-              } else {
-                resolve([])
-              }
-            })
-            .catch(reject) // Pass the error back on
-        })
-      }
-
       // Get the files
-      listFilesRecursively(finalPath, true)
+      listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, spinner)
       .then(files => {
         // Stop loading, we have the results
         spinner.stop()
         if (files) {
           // Check if the result is to be copied to clipboard
           const command = args.join(" ")
-          const splitCommand = command.split("|")
-          if (splitCommand.length >= 2) {
-            // The part after the |
-            const pipedCommand = splitCommand[1]
-                .split(" ")
-                .filter(val => val !== "" && val !== null && val !== undefined)
-            
-            if (pipedCommand[0] === "cp") {
-              // This list of files should be referenced by this name
-              let clipName
-              // If not specified, take the name as default
-              if (pipedCommand.length === 1) 
-                clipName = "default"
-              else
-                clipName = pipedCommand[1]
-              
-              // Store the clip
-              set(`clips.${clipName}.files`, files)
-              // Store the current drive name along with the clip
-              set(`clips.${clipName}.drive`, get("current_drive"))
-              // Also store the current path of the user in the drive
-              set(`clips.${clipName}.path`, finalPath === "" ? "/" : finalPath)
-              // Tell the user
-              printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
-            }
-          }
+          handlePipe(command, files, get("current_drive"), driveVars)
           // Return successfully
           resolve()
         } else {
