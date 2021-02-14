@@ -28,6 +28,8 @@
     "fs-extra": "^9.1.0",
     "get-uri": "^3.0.2",
     "nanoid": "^3.1.20",
+    "node-summarizer": "^1.0.7",
+    "node-tika": "0.0.1",
     "open": "^7.4.0",
     "ora": "^5.3.0",
     "readcommand": "^0.3.0",

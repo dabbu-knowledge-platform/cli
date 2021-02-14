@@ -64,7 +64,7 @@ exports.default = class HardDriveClient extends Client {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to
-      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath.replace(vars.base_path, ""))}?orderBy=kind&direction=ascexportType=view`
+      const url = `${server}/dabbu/v1/api/data/hard_drive/${encodeURIComponent(folderPath.replace(vars.base_path, ""))}?orderBy=kind&direction=asc&exportType=view`
       // Send a GET request
       axios.get(url, { 
         data: {

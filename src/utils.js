@@ -227,7 +227,7 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) =
           // Create a function that will walk through the directories
           const next = () => {
             // Current file
-            var file = list[i++]
+            let file = list[i++]
             // If there is no such file, return all the matching 
             // files found so far (we've reached the end)
             if (!file) {

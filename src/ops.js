@@ -23,6 +23,11 @@ const axios = require("axios")
 const prompt = require("readcommand")
 const path = require("path")
 
+const Tika = require("node-tika")
+const tika = new Tika()
+
+const SummarizerManager = require("node-summarizer").SummarizerManager
+
 const { get, set, parsePath, listFilesRecursively, handlePipe, printFiles, printInfo, printBright, printError, exitDabbu } = require("./utils.js")
 
 // Parse the command
@@ -67,6 +72,9 @@ exports.parseCommand = (args) => {
           break
         case "pst": // Paste copied files
           opFunc = pst
+          break
+        case "ka": // Give an analysis of the folder
+          opFunc = ka
           break
         case "help":
           const help = () => {
@@ -750,6 +758,144 @@ const pst = async (args) => {
 
   // Return successfully or partially successfully (some files may have failed)
   return
+}
+
+// Kowalski, analysis!
+const ka = (args) => {
+  // Wrap everything in a promise
+  return new Promise((resolve, reject) => {
+    // Get the current drive name, so we can get the variables from the config file
+    const driveVars = get(`drives.${get("current_drive")}`)
+
+    // The current path in that drive
+    const currentPath = driveVars.path || ""
+    // The user given relative path
+    let inputPath = args[1] || "."
+    // Parse the relative path and get an absolute one
+    let finalPath = parsePath(inputPath, currentPath)
+    finalPath = finalPath === "" ? "/" : finalPath
+
+    // Show a loading indicator
+    const spinner = ora(`Generating one-pager for all files in ${chalk.blue(finalPath)}`).start()
+
+    // Initialise the provider module
+    const DataModule = require(`./modules/${driveVars.provider}`).default
+    new DataModule().ls(get("server"), get("current_drive"), finalPath, driveVars)
+      .then(async (files) => {
+        if (files) {
+          // Get only files from the list
+          // This is a non-recursive function, could add recursion later?
+          let filesOnlyList = files.filter((item, pos) => {
+            return item.kind !== "folder"
+          })
+
+          // Generate a one pager for each file by downloading it, then
+          // running it through textract, and then presenting the data
+
+          // Do it for each file
+          for (let i = 0, length = filesOnlyList.length; i < length; i++) {
+            const file = filesOnlyList[i]
+            // First, download the file
+            const downloadFile = (fromDrive, fromDriveVars, fromFolderPath, fromFileName) => {
+              // Tell the user
+              spinner.text = `Downloading ${fromFolderPath}/${fromFileName}`
+              // Wrap everything in a promise
+              return new Promise((resolve, reject) => {
+                // Initialise the provider module
+                const FromDataModule = require(`./modules/${fromDriveVars.provider}`).default
+                new FromDataModule().cat(get("server"), fromDrive, fromFolderPath, fromFileName, fromDriveVars)
+                  .then(filePath => {
+                    if (filePath) {
+                      // Return the file path successfully
+                      resolve(filePath) 
+                    } else {
+                      // Error out
+                      reject("No file was downloaded")
+                    }
+                  })
+                  .catch((err) => {
+                    reject(err)
+                  })
+              })
+            }
+
+            // Then run node-tika on it
+            // https://github.com/ICIJ/node-tika
+            const extractTextFromFile = (downloadedFilePath, fromFolderPath, fromFileName) => {
+              // Tell the user
+              spinner.text = `Extracting text from ${fromFolderPath}/${fromFileName}`
+              // Wrap everything in a promise
+              return new Promise((resolve, reject) => {
+                // Extract text from the file using tika and give it a mime type hint
+                const parser = tika.parse(downloadedFilePath)
+                
+                parser.on("text", (data) => {
+                  // Else return the text
+                  resolve(data)
+                })
+
+                parser.on("error", (err) => {
+                  // Error out
+                  reject(err)
+                })
+              })
+            }
+
+            // Now summarize the text
+            // https://github.com/SwapnikKatkoori/node-summarizer
+            const summarize = (text, fromFolderPath, fromFileName) => {
+              // Tell the user
+              spinner.text = `Summarizing text from ${fromFolderPath}/${fromFileName}`
+              // Get 5 lines from the text
+              let Summarizer = new SummarizerManager(text, 5)
+              return new Promise((resolve, reject) => {
+                Summarizer.getSummaryByRank().then((summaryObj) => {
+                  resolve(summaryObj.summary)
+                })
+              })
+            }
+
+            // Run the functions
+            try {
+              const filePath = await downloadFile(get("current_drive"), driveVars, finalPath, file.name)
+              const text = await extractTextFromFile(filePath, finalPath, file.name)
+              const summary = await summarize(text, finalPath, file.name)
+
+              // Print out the result
+              // Stop loading
+              spinner.stop()
+              // Print the path and the summary
+              printBright(file.path)
+              printInfo(summary)
+              printInfo("") // A newline between summaries, it gets a bit crowded
+              // Start spinning again
+              spinner.start()
+            } catch (err) {
+              // Print out any error
+              // Stop loading
+              spinner.stop()
+              printError(err)
+              // Start spinning again
+              spinner.start()
+            }
+          }
+
+          // Stop loading, we have the results
+          spinner.stop()
+          // Return successfully
+          resolve()
+        } else {
+          // Tell the user the folder is empty
+          printBright("Folder is empty")
+          // Return successfully
+          resolve()
+        }
+      })
+      .catch((err) => {
+        spinner.stop()
+        reject(err)
+      })
+  })
 }
 
 // Create a new drive
