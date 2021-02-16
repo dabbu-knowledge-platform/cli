@@ -136,6 +136,15 @@ exports.getHumanReadableFileSize = (fileSize) => {
   return fileSize.toFixed(decimalsToKeep) + " " + units[unitIndex]
 }
 
+// Get a human readable mime name
+// Taken from the npm module name2mime, but made the index
+// the mime type instead of file extension
+exports.getNameForMime = (mime) => {
+  const types = require("./mimes.json")
+  const value = (types[mime] || {}).name
+  return value || mime || "Unknown"
+}
+
 // Display a set of files in a tabular format
 exports.printFiles = (files, printFullPath = false) => {
   // Append the files to a table and then display them
@@ -149,7 +158,7 @@ exports.printFiles = (files, printFullPath = false) => {
     // File size in a human readable unit
     const fileSize = !file.size || file.kind === "folder" ? "-" : this.getHumanReadableFileSize(file.size)
     // Mime type of file
-    const fileType = file.mimeType
+    const fileType = this.getNameForMime(file.mimeType)
     // Last modified time
     let dateModified = new Date(file.lastModifiedTime).toLocaleDateString("en-in", {hour: "numeric", minute: "numeric"})
     if (dateModified === "Invalid Date") {
