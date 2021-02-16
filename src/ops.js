@@ -351,6 +351,9 @@ const cp = (args) => {
   let toFolderPath = parsePath(toFolders.join("/"), toCurrentPath)
   toFolderPath = toFolderPath === "" ? "/" : toFolderPath
 
+  // Show a loading indicator
+  let spinner = ora(`Copying and pasting ${chalk.blue("files and folders")}`).start()
+
   // The functions needed to download and re-upload the files
   // First, download the file
   const downloadFile = (fromDrive, fromDriveVars, fromFolderPath, fromFileName) => {
@@ -364,7 +367,7 @@ const cp = (args) => {
         .then(filePaths => {
           if (filePaths) {
             // Return the file path successfully
-            resolve(filePaths) 
+            resolve(filePaths)
           } else {
             // Error out
             reject("No file was downloaded")
@@ -379,7 +382,7 @@ const cp = (args) => {
   // Then, upload it
   const uploadFile = (toDrive, toDriveVars, toFolderPath, toFileName, downloadedFilePath) => {
     // Tell the user
-    spinner.text = `Uploading ${toFolderPath}${toFileName}`
+    spinner.text = `Uploading ${toFolderPath}/${toFileName}`
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // Initialise the provider module
@@ -409,14 +412,21 @@ const cp = (args) => {
         // Using async-await as promises are unreliable in loops
         for (let i = 0, length = filePaths.length; i < length; i++) {
           const filePath = filePaths[i]
-          if (i != 0) {
+          if (i === 0) {
             await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
           } else {
             await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)
           }
-          // Tell the user we're done
+          // Tell the user we're done with this file
+          // Pause the spinner
+          spinner.stop()
+          // Print the text
           printInfo(`Successfully copied ${path.join(fromFolderPath, fromFileName)} to ${path.join(toFolderPath, toFileName)}`)
+          // Start spinning
+          spinner.start()
         }
+        // Stop spinning, we are completely done
+        spinner.stop()
       })
       .then(resolve)
       .catch(reject)
@@ -740,7 +750,7 @@ const pst = async (args) => {
       // Using async-await as promises are unreliable in loops
       for (let i = 0, length = filePaths.length; i < length; i++) {
         const filePath = filePaths[i]
-        if (i != 0) {
+        if (i === 0) {
           await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
         } else {
           await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)

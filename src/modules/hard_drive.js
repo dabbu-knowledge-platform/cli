@@ -140,7 +140,7 @@ exports.default = class HardDriveClient extends Client {
             // Pipe the bytes to the file
             fileData.pipe(writer)
             // Return the file path
-            resolve(downloadFilePath)
+            resolve([downloadFilePath])
           })
           .catch(reject)
         } else {

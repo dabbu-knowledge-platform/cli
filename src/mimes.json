@@ -89,7 +89,7 @@
   },
   "application/pdf": {
     "ext": ".pdf",
-    "name": "Adobe Portable Document Format"
+    "name": "Portable Document Format"
   },
   "application/vnd.cups-ppd": {
     "ext": ".ppd",

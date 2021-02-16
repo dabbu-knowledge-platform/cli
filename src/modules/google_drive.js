@@ -376,13 +376,14 @@ exports.default = class GoogleDriveClient extends Client {
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
+            console.log(downloadFilePath)
             // Open a write stream so we can write the data we got to it
             const writer = fs.createWriteStream(downloadFilePath)
             // Pipe the bytes to the file
             fileData.pipe(writer)
             writer.on('finish', () => {
               // Return the file path
-              resolve(downloadFilePath)
+              resolve([downloadFilePath])
             })
             writer.on('error', reject) // Pass the error back on, if any
           })
