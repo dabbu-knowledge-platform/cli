@@ -242,15 +242,17 @@ const cat = (args) => {
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
     new DataModule().cat(get("server"), get("current_drive"), folderPath, fileName, driveVars)
-      .then(filePath => {
+      .then(filePaths => {
         // We got the result, stop loading
         spinner.stop()
-        if (filePath) {
+        if (filePaths) {
           // Tell the user where the file is downloaded
-          printInfo(`File downloaded temporarily to ${path.normalize(filePath)}`)
+          printInfo(`File(s) downloaded temporarily to ${filePaths.map(filePath => path.normalize(filePath)).join(", ")}`)
           printInfo(`It will be deleted once this session ends.`)
           // Open the downloaded file
-          open(filePath, { wait: false })
+          filePaths.forEach(filePath => {
+            open(filePath, { wait: false })
+          })
         } else {
           // Tell the user there was no file downloaded
           printBright("No file was downloaded")
@@ -349,50 +351,42 @@ const cp = (args) => {
   let toFolderPath = parsePath(toFolders.join("/"), toCurrentPath)
   toFolderPath = toFolderPath === "" ? "/" : toFolderPath
 
+  // The functions needed to download and re-upload the files
   // First, download the file
-  const downloadFile = () => {
+  const downloadFile = (fromDrive, fromDriveVars, fromFolderPath, fromFileName) => {
+    // Tell the user
+    spinner.text = `Downloading ${fromFolderPath}/${fromFileName}`
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-      // Show a loading indicator
-      const spinner = ora(`Fetching ${chalk.blue(fromFileName)}`).start()
-
       // Initialise the provider module
       const FromDataModule = require(`./modules/${fromDriveVars.provider}`).default
       new FromDataModule().cat(get("server"), fromDrive, fromFolderPath, fromFileName, fromDriveVars)
-        .then(filePath => {
-          // We got the result, stop loading
-          spinner.stop()
-          if (filePath) {
+        .then(filePaths => {
+          if (filePaths) {
             // Return the file path successfully
-            resolve(filePath) 
+            resolve(filePaths) 
           } else {
             // Error out
             reject("No file was downloaded")
           }
         })
         .catch((err) => {
-          spinner.stop()
           reject(err)
         })
     })
   }
 
   // Then, upload it
-  const uploadFile = (downloadedFilePath) => {
+  const uploadFile = (toDrive, toDriveVars, toFolderPath, toFileName, downloadedFilePath) => {
+    // Tell the user
+    spinner.text = `Uploading ${toFolderPath}${toFileName}`
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-      // Show a loading indicator
-      const spinner = ora(`Uploading ${chalk.blue(toFileName)}`).start()
-
       // Initialise the provider module
       const ToDataModule = require(`./modules/${toDriveVars.provider}`).default
       new ToDataModule().upl(get("server"), toDrive, toFolderPath, toFileName, {...toDriveVars, downloadedFilePath: downloadedFilePath})
         .then(uploaded => {
-          // We got the result, stop loading
-          spinner.stop()
           if (uploaded) {
-            // Tell the user we're done
-            printInfo(`Successfully copied ${path.join(fromFolderPath, fromFileName)} to ${path.join(toFolderPath, toFileName)}`)
             // Return successfully
             resolve()
           } else {
@@ -401,7 +395,6 @@ const cp = (args) => {
           }
         })
         .catch((err) => {
-          spinner.stop()
           reject(err)
         })
     })
@@ -410,8 +403,21 @@ const cp = (args) => {
   // Execute the functions one after the other
   // Wrap everything in a promise
   return new Promise((resolve, reject) => {
-    downloadFile()
-      .then(uploadFile)
+    downloadFile(fromDrive, fromDriveVars, fromFolderPath, fromFileName)
+      .then(async filePaths => {
+        // Upload all downloaded files back
+        // Using async-await as promises are unreliable in loops
+        for (let i = 0, length = filePaths.length; i < length; i++) {
+          const filePath = filePaths[i]
+          if (i != 0) {
+            await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
+          } else {
+            await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)
+          }
+          // Tell the user we're done
+          printInfo(`Successfully copied ${path.join(fromFolderPath, fromFileName)} to ${path.join(toFolderPath, toFileName)}`)
+        }
+      })
       .then(resolve)
       .catch(reject)
   })
@@ -622,10 +628,10 @@ const pst = async (args) => {
       // Initialise the provider module
       const FromDataModule = require(`./modules/${fromDriveVars.provider}`).default
       new FromDataModule().cat(get("server"), fromDrive, fromFolderPath, fromFileName, fromDriveVars)
-        .then(filePath => {
-          if (filePath) {
+        .then(filePaths => {
+          if (filePaths) {
             // Return the file path successfully
-            resolve(filePath) 
+            resolve(filePaths) 
           } else {
             // Error out
             reject("No file was downloaded")
@@ -661,7 +667,7 @@ const pst = async (args) => {
     })
   }
 
-  for(let i = 0, length = filesToPaste; i < length; i++) {
+  for (let i = 0, length = filesToPaste; i < length; i++) {
     const file = filesToPaste[i]
     // Parse the paths, then download and re-upload the files
     // Don't do anything if the it is a folder
@@ -729,9 +735,17 @@ const pst = async (args) => {
       // parallely
       
       // Download the file
-      const downloadedFilePath = await downloadFile(fromDrive, fromDriveVars, fromFolderPath, fromFileName)
+      const downloadedFilePaths = await downloadFile(fromDrive, fromDriveVars, fromFolderPath, fromFileName)
       // Then upload it
-      await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, downloadedFilePath)
+      // Using async-await as promises are unreliable in loops
+      for (let i = 0, length = filePaths.length; i < length; i++) {
+        const filePath = filePaths[i]
+        if (i != 0) {
+          await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
+        } else {
+          await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)
+        }
+      }
     } catch (err) {
       // If there is an error, don't return. Print it out and
       // continue with other file uploads

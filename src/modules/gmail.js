@@ -95,7 +95,7 @@ const refreshAccessToken = (name, vars) => {
   })
 }
 
-exports.default = class GoogleDriveClient extends Client {
+exports.default = class GmailClient extends Client {
   constructor() {
     super()
   }
@@ -106,8 +106,8 @@ exports.default = class GoogleDriveClient extends Client {
       return new Promise((resolve, reject) => {
         // Tell the user what they need to do to setup a project
         printInfo([
-          `Open ${link("this", "https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the")} link in a web browser. Then follow these steps:\n` +
-          `  - Click on the blue "Enable Drive API" button`,
+          `Open ${link("this", "https://developers.google.com/gmail/api/quickstart/nodejs#step_1_turn_on_the")} link in a web browser. Then follow these steps:\n` +
+          `  - Click on the blue "Enable Gmail API" button`,
           `  - Fill in the following text boxes with these values`,
           `    - Name: Dabbu CLI`,
           `    - Type: Web Server`,
@@ -158,7 +158,10 @@ exports.default = class GoogleDriveClient extends Client {
         const clientId = get(`drives.${name}.client_id`)
         const redirectUri = get(`drives.${name}.redirect_uri`)
         // The URL
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https%3A//www.googleapis.com/auth/drive&state=${randomNumber}&include_granted_scopes=true&response_type=code&access_type=offline`
+        // WARNING: This authorization process requests readonly access to the user's mailbox
+        // If the API is updated, we will require users to give consent again to gain access to
+        // other scopes like sending messages
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https%3A//www.googleapis.com/auth/gmail.readonly&state=${randomNumber}&include_granted_scopes=true&response_type=code&access_type=offline`
         // Ask the user to go there
         printInfo(`Authorize the app by visting this URL in a browser - ${authUrl}`)
 
@@ -247,7 +250,7 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}?orderBy=kind&direction=asc&exportType=view`
+        const url = `${server}/dabbu/v1/api/data/gmail/${encodeURIComponent(folderPath)}?orderBy=kind&direction=asc&exportType=view`
         // Send a GET request
         axios.get(url, { 
           headers: {
@@ -257,22 +260,7 @@ exports.default = class GoogleDriveClient extends Client {
         .then(res => {
           if (res.data.content.length > 0) {
             // If there are some files, return them
-            let files = res.data.content
-            // If the folder is the root folder, add the shared 
-            // directory to the list of files and folders
-            if (folderPath === "/") {
-              files.push({
-                name: "Shared",
-                kind: "folder",
-                filePath: "/Shared",
-                mimeType: "application/vnd.google-apps.folder",
-                size: NaN,
-                createdAtTime: NaN,
-                lastModifiedTime: NaN,
-                contentURI: "https://drive.google.com/drive/shared-with-me"
-              })
-            }
-            resolve(files)
+            resolve(res.data.content)
           } else {
             // Else return null if it is an empty folder
             resolve(null)
@@ -316,7 +304,7 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}?exportType=media`
+        const url = `${server}/dabbu/v1/api/data/gmail/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}?exportType=media`
         // Send a GET request
         return axios.get(url, {
           headers: {
@@ -327,7 +315,7 @@ exports.default = class GoogleDriveClient extends Client {
           if (res.data.content) {
             // If there is a file, download it
             const file = res.data.content
-            resolve([accessToken, file])
+            resolve(file)
           } else {
             // Else return false if there is an error
             reject(res.response.data.error)
@@ -337,59 +325,89 @@ exports.default = class GoogleDriveClient extends Client {
       })
     }
 
-    const downloadFile = ([accessToken, file]) => {
+    const downloadFile = (file) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         const url = file.contentURI
         if (file && file.contentURI) {
-          // If a content URI is provided, download the file
-          axios.get(url, { 
-            headers: {
-              "Authorization": `Bearer ${accessToken}`
-            },
-            responseType: "stream" 
-          })
-          .then(res => {
-            // If there is data, return it
-            if (res.data) {
-              resolve([file, res.data])
-            } else {
-              reject(res)
-            }
-          })
-          .catch(reject) // Pass the error back up, if any
+          // The contentURI contains the message and any attachments
+          // First get the JSON data from the data URI
+          let data
+          try {
+            // Parse the URL and get the JSON from it
+            data = file.contentURI.split(",").slice(1).join(",")
+            // Parse it for JSON
+            data = JSON.parse(data)
+          } catch (err) {
+            reject("Invalid data returned")
+          }
+
+          // Get the message
+          let message = data.messages
+          // Get the individual attachments
+          let attachments = data.attachments
+
+          // Return them
+          resolve([message, attachments])
         } else {
           // Else return null
-          resolve("No such file/folder was found.")
+          reject("No such file/folder was found.")
         }
       })
     }
 
-    const storeFile = ([file, fileData]) => {
+    const storeMessage = (message) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
-        if (fileData) {
+        if (message) {
           // Download the file
           // Path to the file
-          const fileNameWithExt = path.normalize(`${__dirname}/../../.cache/${fileName}`)
-          const downloadFilePath = appendExtToFileName(fileNameWithExt, file.mimeType)
+          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${fileName}.txt`)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
-            // Open a write stream so we can write the data we got to it
-            const writer = fs.createWriteStream(downloadFilePath)
-            // Pipe the bytes to the file
-            fileData.pipe(writer)
-            writer.on('finish', () => {
+            // Decode the bytes into a buffer
+            const fileData = Buffer.from(message, "base64")
+            // Write the message to the file
+            fs.writeFile(downloadFilePath, fileData)
+            .then(() => {
               // Return the file path
               resolve(downloadFilePath)
             })
-            writer.on('error', reject) // Pass the error back on, if any
+            .catch(reject) // Pass the error back on, if any
           })
           .catch(reject)
         } else {
           // Else return null
-          resolve("No such file/folder was found.")
+          reject("No such file/folder was found.")
+        }
+      })
+    }
+
+    const storeAttachment = (attachment) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        if (attachment) {
+          // Download the file
+          // Path to the file
+          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${attachment.fileName}`)
+          // Create the file
+          fs.createFile(downloadFilePath)
+          .then(() => {
+            // Decode the bytes into a buffer
+            const fileData = Buffer.from(attachment.data, "base64")
+            // Write the message to the file
+            return fs.writeFile(downloadFilePath, fileData)
+            .then(() => {
+              // Return the file path
+              resolve(downloadFilePath)
+            })
+            .catch(reject) // Pass the error back on, if any
+          })
+          .catch(reject)
+        } else {
+          // Else return null
+          reject("No such file/folder was found.")
         }
       })
     }
@@ -398,67 +416,26 @@ exports.default = class GoogleDriveClient extends Client {
     return new Promise((resolve, reject) => {
       _getAccessToken()
       .then(getFileData) // Get the file's metadata and content URI from the server
-      .then(downloadFile) // Download the file from its content URI
-      .then(storeFile) // Store the file's contents in a .cache directory
+      .then(downloadFile) // Extract the message and attachments from the content URI
+      .then(async ([message, attachments]) => {
+        let paths = []
+        // Download the message as a file
+        paths.push(await storeMessage(message))
+        // Download each attachment as a file too
+        for (let i = 0, length = attachments.length; i < length; i++) {
+          const attachment = attachments[i]
+          const filePath = await storeAttachment(attachment)
+          paths.push(filePath)
+        }
+        return paths
+      })
       .then(resolve) // Return the file paths
       .catch(reject) // Pass back the error, if any
     })
   }
 
   upl(server, name, folderPath, fileName, vars) {
-    // First get the access token, then run the actual function
-    const _getAccessToken = () => {
-      // Wrap everything in a promise
-      return new Promise((resolve, reject) => {
-        refreshAccessToken(name, vars)
-        .then(() => resolve(get(`drives.${name}.access_token`))).catch(reject)
-      })
-    }
-
-    const _upl = (accessToken) => {
-      // Wrap everything in a promise
-      return new Promise((resolve, reject) => {
-        // First read the file
-        fs.readFile(vars.downloadedFilePath)
-        .then(fileData => {
-          // Make a form data object to upload the file's contents
-          const formData = new FormData()
-          // Add it to the content field
-          formData.append("content", fileData, { filename: vars.downloadedFilePath.split("/").pop() })
-
-          // Use the headers that the form-data modules sets
-          const formHeaders = formData.getHeaders()
-
-          // The URL to send the request to
-          const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
-          // Send a POST request
-          axios.post(url, formData, {
-            headers: {
-              ...formHeaders,
-              "Authorization": `Bearer ${accessToken}`
-            } 
-          })
-          .then(res => {
-            if (res.status === 200) {
-              // If there is no error, return true
-              resolve(true)
-            } else {
-              // Else return false if there is an error
-              reject(res.response.data.error)
-            }
-          })
-          .catch(reject) // Pass error back if any
-        })
-      })
-    }
-
-    // Wrap everything in a promise
-    return new Promise((resolve, reject) => {
-      _getAccessToken() // Get the latest access token
-      .then(_upl) // Upload the files
-      .then(resolve) // Return successfully
-      .catch(reject) // Pass back the error, if any
-    })
+    return Promise.reject("Not supported by Dabbu's Gmail provider")
   }
 
   rm(server, name, folderPath, fileName, vars) {
@@ -475,7 +452,7 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${fileName ? encodeURIComponent(fileName) : ""}`
+        const url = `${server}/dabbu/v1/api/data/gmail/${encodeURIComponent(folderPath)}/${fileName ? encodeURIComponent(fileName) : ""}`
         // Send a DELETE request
         axios.delete(url, { 
           headers: {

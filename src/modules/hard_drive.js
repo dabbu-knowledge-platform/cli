@@ -155,7 +155,7 @@ exports.default = class HardDriveClient extends Client {
       getFileData() // Get the file's metadata and content URI from the server
       .then(downloadFile) // Download the file from its content URI
       .then(storeFile) // Store the file's contents in a .cache directory
-      .then(resolve) // Return the file path
+      .then(resolve) // Return the file paths
       .catch(reject) // Pass back the error, if any
     })
   }
