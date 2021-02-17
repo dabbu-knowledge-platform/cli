@@ -21,39 +21,12 @@ const axios = require("axios")
 const prompt = require("readcommand")
 const express = require("express")
 const link = require("terminal-link")
-const { nanoid } = require("nanoid")
 
 const FormData = require("form-data")
 const Client = require("./client.js").default
 const { get, set, printInfo, printBright } = require("../utils.js")
 
 const path = require("path")
-
-// Helper function to add the appropriate extension to the file if 
-// it is a Google Workspace file (Google Doc/Sheet/Slide/App Script, etc)
-const appendExtToFileName = (fileName, mimeType) => {
-  let ext
-  if (mimeType === "application/vnd.google-apps.document") {
-    // Google Docs ---> Microsoft Word (docx)
-    ext = ".docx"
-  } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
-    // Google Sheets ---> Microsoft Excel (xlsx)
-    ext = ".xlsx"
-  } else if (mimeType === "application/vnd.google-apps.presentation") {
-    // Google Slides ---> Microsoft Power Point (pptx)
-    ext = ".pptx"
-  } else if (mimeType === "application/vnd.google-apps.drawing") {
-    // Google Drawing ---> PNG Image (png)
-    ext = ".png"
-  } else if (mimeType === "application/vnd.google-apps.script+json") {
-    // Google App Script ---> JSON (json)
-    ext = ".json"
-  } else {
-    ext = ""
-  }
-
-  return `${fileName}${ext}`
-}
 
 // Helper function to refresh the access token every time it expires
 const refreshAccessToken = (name, vars) => {
@@ -67,18 +40,11 @@ const refreshAccessToken = (name, vars) => {
     // Check if we are overdue
     if (lastRefreshTime + expiry <= Math.floor(Date.now() / 1000)) {
       // If so, refresh the access token
-      // Make a POST request to Google's OAuth2 endpoint
-      const tokenURL = "https://oauth2.googleapis.com/token"
-      // Send a POST request
-      axios.post(tokenURL, null, {
-        params: {
-          // Pass the client ID, client secret and refresh token to ask for an access token
-          client_id: get(`drives.${name}.client_id`),
-          client_secret: get(`drives.${name}.client_secret`),
-          refresh_token: get(`drives.${name}.refresh_token`),
-          grant_type: "refresh_token" // This tell Google to find the refresh token in the URL params, it does NOT mean return a refresh token
-        }
-      })
+      // Make a POST request to Microsoft's OAuth2 endpoint
+      const tokenURL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+      // Send a POST request with the required params in 
+      // the request body
+      axios.post(tokenURL, `code=${code}&client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&grant_type=${"refresh_token"}&refresh_token=${get(`drives.${name}.refresh_token`)}`)
       .then(res => {
         // Store the access token and update the expiry time
         const {access_token, expires_in} = res.data
@@ -95,53 +61,73 @@ const refreshAccessToken = (name, vars) => {
   })
 }
 
-exports.default = class GoogleDriveClient extends Client {
+exports.default = class OneDriveClient extends Client {
   constructor() {
     super()
   }
 
   init(server, name) {
-    // Ask them to setup a project and enter the path to the creds file they download
-    const reqCredFilePath = () => {
+    // Ask them to setup a project and enter the creds they got
+    const reqClientID = () => {
       return new Promise((resolve, reject) => {
         // Tell the user what they need to do to setup a project
         printInfo([
-          `Open ${link("this", "https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the")} link in a web browser. Then follow these steps:\n` +
-          `  - Click on the blue "Enable Drive API" button`,
+          `Open ${link("this", "https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the")} link in a web browser. Then do the following:\n` +
+          `  - Go to the Azure Active Directory Portal as the instructions say. Then click on app registration.`,
           `  - Fill in the following text boxes with these values`,
           `    - Name: Dabbu CLI`,
-          `    - Type: Web Server`,
+          `    - Type: Web`,
           `    - Redirect URI: http://localhost:8081`,
-          `  - Click the blue "Download Client Configuration" button and save the file somewhere safe`,
+          `  - Then click on the "Register app" button`,
+          `  - Then go to "Certificates and Secrets and create a new secret. Copy the client ID and client secret you just got on that webpage and enter them here."`,
         ].join("\n"))
 
         prompt.read({
-          ps1: `Enter the path to the file you downloaded: > `
+          ps1: `Enter the client ID you got: > `
         }, (err, args) => {
           // If there is an error, handle it
           if (err) {
             reject(err)
           } else {
             // If there is no error, get the file path
-            const credFilePath = args[0]
+            const client_id = args[0]
             // If they haven't entered anything, flag it and ask again
-            if (!credFilePath) {
-              printBright("Please enter the path to the file you just downloaded.")
-              reqCredFilePath()
+            if (!client_id) {
+              printBright("Please enter the client ID.")
+              reqClientID()
+            } else {
+              // Store the data in the config file
+              set(`drives.${name}.redirect_uri`, "http://localhost:8081")
+              set(`drives.${name}.client_id`, client_id)
+              // Return successfully
+              resolve()
+            }
+          }
+        })
+      })
+    }
+
+    // Ask them to enter the client secret they got
+    const reqClientSecret = () => {
+      return new Promise((resolve, reject) => {
+        prompt.read({
+          ps1: `Enter the client secret you got: > `
+        }, (err, args) => {
+          // If there is an error, handle it
+          if (err) {
+            reject(err)
+          } else {
+            // If there is no error, get the file path
+            const client_secret = args[0]
+            // If they haven't entered anything, flag it and ask again
+            if (!client_secret) {
+              printBright("Please enter the client secret.")
+              reqClientID()
             } else {
               // Parse it and store the data in the config file
-              fs.readFile(credFilePath)
-              .then(fileData => {
-                // Get the credentials
-                const credentials = JSON.parse(fileData)
-                // Get the client secret, ID and redirect URI
-                const {client_secret, client_id, redirect_uris} = credentials.web
-                set(`drives.${name}.client_secret`, client_secret)
-                set(`drives.${name}.client_id`, client_id)
-                set(`drives.${name}.redirect_uri`, redirect_uris[0])
-                // Return successfully
-                resolve()
-              })
+              set(`drives.${name}.client_secret`, client_secret)
+              // Return successfully
+              resolve()
             }
           }
         })
@@ -152,13 +138,11 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // Construct the URL to send the user to
-        // A random state to prevent CORS attacks
-        const randomNumber = nanoid(24)
         // The client ID and redirect URI (required in the URL)
         const clientId = get(`drives.${name}.client_id`)
         const redirectUri = get(`drives.${name}.redirect_uri`)
         // The URL
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=https%3A//www.googleapis.com/auth/drive&state=${randomNumber}&include_granted_scopes=true&response_type=code&access_type=offline`
+        const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=https%3A//graph.microsoft.com/.default&response_type=code&redirect_uri=${redirectUri}`
         // Ask the user to go there
         printInfo(`Authorize the app by visting this URL in a browser - ${authUrl}`)
 
@@ -174,17 +158,12 @@ exports.default = class GoogleDriveClient extends Client {
         app.get("/", (req, res) => {
           // Return the code only if there is no error and the state variable matches
           if (req.query.error) {
-            res.send(`The following error occurred: ${req.query.error}`)
+            res.send(`The following error occurred: ${req.query.error_description}`)
             server.close()
-            reject(req.query.error)
+            reject(req.query.error_description)
           } else {
-            if (req.query.state === randomNumber) {
-              res.send("Thank you for signing in to Dabbu CLI. You can now continue using it.")
-              resolve(req.query.code)
-            } else {
-              res.send(`The following error occurred: URL state does not match. Please try again.`)
-              reject("Error: URL state does not match. Please try again.")
-            }
+            res.send("Thank you for signing in to Dabbu CLI. You can now continue using it.")
+            resolve(req.query.code)
           }
         })
       })
@@ -195,17 +174,10 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to make a POST request to 
-        const tokenURL = "https://oauth2.googleapis.com/token"
-        // Make a POST request with the required params
-        axios.post(tokenURL, null, {
-          params: {
-            code: code,
-            client_id: get(`drives.${name}.client_id`),
-            client_secret: get(`drives.${name}.client_secret`),
-            redirect_uri: get(`drives.${name}.redirect_uri`),
-            grant_type: "authorization_code"
-          }
-        })
+        const tokenURL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+        // Make a POST request with the required params in the 
+        // request body
+        axios.post(tokenURL, `code=${code}&client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&grant_type=${"authorization_code"}`)
         .then(res => {
           // Get the access token, refresh token and expiry time
           const {access_token, refresh_token, expires_in} = res.data
@@ -224,9 +196,11 @@ exports.default = class GoogleDriveClient extends Client {
 
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-      reqCredFilePath() // Ask the user to setup a project and enter the path to the creds file
-      .then(reqAuthorizationCode) // Ask the user to give Dabbu access to Google Drive
-      .then(getToken) // Get an access and refresh token from Google
+      // Ask the user to setup a project and enter the client ID and secret
+      reqClientID()
+      .then(reqClientSecret)
+      .then(reqAuthorizationCode) // Ask the user to give Dabbu access to Microsoft OneDrive
+      .then(getToken) // Get an access and refresh token from Microsoft
       .then(resolve) // Return successfully
       .catch(reject) // Pass back the error, if any
     })
@@ -247,9 +221,9 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}?orderBy=kind&direction=asc&exportType=view`
+        const url = `${server}/dabbu/v1/api/data/one_drive/${encodeURIComponent(folderPath)}?orderBy=kind&direction=asc&exportType=view`
         // Send a GET request
-        axios.get(url, { 
+        axios.get(url, {
           headers: {
             "Authorization": `Bearer ${accessToken}`
           }
@@ -316,7 +290,7 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}?exportType=media`
+        const url = `${server}/dabbu/v1/api/data/one_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}?exportType=media`
         // Send a GET request
         return axios.get(url, {
           headers: {
@@ -431,7 +405,7 @@ exports.default = class GoogleDriveClient extends Client {
           const formHeaders = formData.getHeaders()
 
           // The URL to send the request to
-          const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
+          const url = `${server}/dabbu/v1/api/data/one_drive/${encodeURIComponent(folderPath)}/${encodeURIComponent(fileName)}`
           // Send a POST request
           axios.post(url, formData, {
             headers: {
@@ -476,7 +450,7 @@ exports.default = class GoogleDriveClient extends Client {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to send the request to
-        const url = `${server}/dabbu/v1/api/data/google_drive/${encodeURIComponent(folderPath)}/${fileName ? encodeURIComponent(fileName) : ""}`
+        const url = `${server}/dabbu/v1/api/data/one_drive/${encodeURIComponent(folderPath)}/${fileName ? encodeURIComponent(fileName) : ""}`
         // Send a DELETE request
         axios.delete(url, { 
           headers: {

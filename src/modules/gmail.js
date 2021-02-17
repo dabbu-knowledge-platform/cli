@@ -24,7 +24,7 @@ const link = require("terminal-link")
 const { nanoid } = require("nanoid")
 
 const FormData = require("form-data")
-const Client = require("./client").default
+const Client = require("./client.js").default
 const { get, set, printInfo, printBright } = require("../utils.js")
 
 const path = require("path")

@@ -23,7 +23,7 @@ const prompt = require("readcommand")
 const getUri = require("get-uri")
 
 const FormData = require("form-data")
-const Client = require("./client").default
+const Client = require("./client.js").default
 const { set, printInfo } = require("../utils.js")
 
 exports.default = class HardDriveClient extends Client {
