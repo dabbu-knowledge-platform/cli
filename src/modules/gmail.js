@@ -390,7 +390,7 @@ exports.default = class GmailClient extends Client {
         if (attachment) {
           // Download the file
           // Path to the file
-          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${attachment.fileName}`)
+          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${fileName}_${attachment.fileName}`)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
