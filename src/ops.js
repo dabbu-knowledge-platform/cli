@@ -415,7 +415,7 @@ const cp = (args) => {
           if (i === 0) {
             await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
           } else {
-            await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)
+            await uploadFile(toDrive, toDriveVars, toFolderPath, `${toFileName}_${i}`, filePath)
           }
           // Tell the user we're done with this file
           // Pause the spinner
@@ -677,7 +677,7 @@ const pst = async (args) => {
     })
   }
 
-  for (let i = 0, length = filesToPaste; i < length; i++) {
+  for (let i = 0, length = filesToPaste.length; i < length; i++) {
     const file = filesToPaste[i]
     // Parse the paths, then download and re-upload the files
     // Don't do anything if the it is a folder
@@ -753,7 +753,7 @@ const pst = async (args) => {
         if (i === 0) {
           await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
         } else {
-          await uploadFile(toDrive, toDriveVars, toFolderPath, `${i}_${toFileName}`, filePath)
+          await uploadFile(toDrive, toDriveVars, toFolderPath, `${toFileName}_${i}`, filePath)
         }
       }
     } catch (err) {
