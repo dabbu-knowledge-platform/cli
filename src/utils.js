@@ -197,7 +197,7 @@ exports.printFiles = (files, printFullPath = false) => {
 }
 
 // Recursively search and print files
-exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) => {
+exports.listFilesRecursively = (folder, dataModule, drive, driveVars, searchTerms, spinner) => {
   // Tell the user which folder we are querying
   spinner.start()
   spinner.text = `Listing files in ${chalk.blue(folder)}`
@@ -216,20 +216,36 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) =
             return item.kind !== "folder"
           })
 
+          // Add the files to matches as well
+          let matchedInThisDir = []
+          if (searchTerms) {
+            matchedInThisDir = filesOnlyList.filter((item, pos) => {
+              for (j in searchTerms) {
+                return item.name.toLowerCase().includes(searchTerms[j].toLowerCase())
+              }
+            })
+          } else {
+            matchedInThisDir = filesOnlyList
+          }
+
           // Print them out
           // Stop the spinner while we are printing
           spinner.stop()
-          
-          // Print the folder name
-          this.printInfo(folder)
+          // Print the folder name if it matches or if it has matching files
+          for (j in searchTerms) {
+            if (folder.toLowerCase().includes(searchTerms[j].toLowerCase()) || matchedInThisDir.length > 0) {
+              this.printInfo(folder)
+              break
+            }
+          }
           // Print the files (with the full path)
-          this.printFiles(filesOnlyList, true)
-
+          // It won't print anything if the array is empty
+          this.printFiles(matchedInThisDir, true)
           // Start the spinner
           spinner.start()
 
-          // Add the files to matches as well
-          matchingFiles = matchingFiles.concat(filesOnlyList)
+          // Add the matched ones to the final array
+          matchingFiles = matchingFiles.concat(matchedInThisDir)
 
           // Now recurse through the remaining folders
           let i = 0
@@ -245,8 +261,19 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, spinner) =
             if (file.kind === "folder") {
               // If it's a folder, then call the listFilesRecursively method again
               // with the folder path
-              this.listFilesRecursively(file.path, dataModule, drive, driveVars, spinner)
-                .then(files => matchingFiles = matchingFiles.concat(files))
+              this.listFilesRecursively(file.path, dataModule, drive, driveVars, searchTerms, spinner)
+                .then(files => {
+                  // Add the matching files to the matching files array
+                  if (searchTerms) {
+                    matchingFiles.concat(files.filter((item, pos) => {
+                      for (j in searchTerms) {
+                        return item.name.toLowerCase().includes(searchTerms[j].toLowerCase())
+                      }
+                    }))
+                  } else {
+                    matchingFiles = matchingFiles.concat(files)
+                  }
+                })
                 .then(() => next())
             } else {
               // We have already printed and added these files to the array, 
@@ -283,11 +310,11 @@ exports.handlePipe = (command, files, drive, driveVars) => {
         clipName = pipedCommand[1]
       
       // Store the clip
-      set(`clips.${clipName}.files`, files)
+      this.set(`clips.${clipName}.files`, files)
       // Store the current drive name along with the clip
-      set(`clips.${clipName}.drive`, drive)
+      this.set(`clips.${clipName}.drive`, drive)
       // Also store the current path of the user in the drive
-      set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
+      this.set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
       // Tell the user
       printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
     }

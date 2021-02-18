@@ -23,7 +23,7 @@ const prompt = require("readcommand")
 const getUri = require("get-uri")
 
 const FormData = require("form-data")
-const Client = require("./client").default
+const Client = require("./client.js").default
 const { set, printInfo } = require("../utils.js")
 
 exports.default = class HardDriveClient extends Client {
@@ -102,6 +102,10 @@ exports.default = class HardDriveClient extends Client {
           if (res.data.content) {
             // If there is a file, download it
             const file = res.data.content
+            // If it is a folder, error out
+            if (file.kind === "folder") {
+              reject(`Cannot download folder ${file.name}`)
+            }
             resolve(file)
           } else {
             // Else return false if there is an error

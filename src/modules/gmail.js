@@ -24,7 +24,7 @@ const link = require("terminal-link")
 const { nanoid } = require("nanoid")
 
 const FormData = require("form-data")
-const Client = require("./client").default
+const Client = require("./client.js").default
 const { get, set, printInfo, printBright } = require("../utils.js")
 
 const path = require("path")
@@ -315,6 +315,10 @@ exports.default = class GmailClient extends Client {
           if (res.data.content) {
             // If there is a file, download it
             const file = res.data.content
+            // If it is a folder, error out
+            if (file.kind === "folder") {
+              reject(`Cannot download folder ${file.name}`)
+            }
             resolve(file)
           } else {
             // Else return false if there is an error

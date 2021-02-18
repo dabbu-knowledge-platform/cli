@@ -26,7 +26,16 @@ It will contain the server address, the current drive, the ID of the provider th
   "history": [
     "ls",
     "cd .."
-  ]
+  ],
+  "clips": {
+    "default": {
+      "files": {
+        "..."
+      },
+      "drive": "c",
+      "path": "/dabbu-server"
+    }
+  }
 }
 ```
 
