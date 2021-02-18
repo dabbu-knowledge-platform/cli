@@ -1373,35 +1373,35 @@
   },
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
     "ext": ".pptx",
-    "name": "Microsoft Office - OOXML - Presentation"
+    "name": "Microsoft Office Presentation"
   },
   "application/vnd.openxmlformats-officedocument.presentationml.slide": {
     "ext": ".sldx",
-    "name": "Microsoft Office - OOXML - Presentation (Slide)"
+    "name": "Microsoft Office Presentation (Slide)"
   },
   "application/vnd.openxmlformats-officedocument.presentationml.slideshow": {
     "ext": ".ppsx",
-    "name": "Microsoft Office - OOXML - Presentation (Slideshow)"
+    "name": "Microsoft Office Presentation (Slideshow)"
   },
   "application/vnd.openxmlformats-officedocument.presentationml.template": {
     "ext": ".potx",
-    "name": "Microsoft Office - OOXML - Presentation Template"
+    "name": "Microsoft Office Presentation Template"
   },
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
     "ext": ".xlsx",
-    "name": "Microsoft Office - OOXML - Spreadsheet"
+    "name": "Microsoft Office Spreadsheet"
   },
   "application/vnd.openxmlformats-officedocument.spreadsheetml.template": {
     "ext": ".xltx",
-    "name": "Microsoft Office - OOXML - Spreadsheet Template"
+    "name": "Microsoft Office Spreadsheet Template"
   },
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
     "ext": ".docx",
-    "name": "Microsoft Office - OOXML - Word Document"
+    "name": "Microsoft Office Word Document"
   },
   "application/vnd.openxmlformats-officedocument.wordprocessingml.template": {
     "ext": ".dotx",
-    "name": "Microsoft Office - OOXML - Word Document Template"
+    "name": "Microsoft Office Word Document Template"
   },
   "application/x-msbinder": {
     "ext": ".obd",
@@ -2766,6 +2766,10 @@
   "application/vnd.google-apps.folder": {
     "ext": "",
     "name": "Google Drive Folder"
+  },
+  "application/vnd.one-drive.folder": {
+    "ext": "",
+    "name": "One Drive Folder"
   },
   "inode/directory": {
     "ext": "",

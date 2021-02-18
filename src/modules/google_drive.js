@@ -264,7 +264,7 @@ exports.default = class GoogleDriveClient extends Client {
               files.push({
                 name: "Shared",
                 kind: "folder",
-                filePath: "/Shared",
+                path: "/Shared",
                 mimeType: "application/vnd.google-apps.folder",
                 size: NaN,
                 createdAtTime: NaN,
@@ -327,6 +327,10 @@ exports.default = class GoogleDriveClient extends Client {
           if (res.data.content) {
             // If there is a file, download it
             const file = res.data.content
+            // If it is a folder, error out
+            if (file.kind === "folder") {
+              reject(`Cannot download folder ${file.name}`)
+            }
             resolve([accessToken, file])
           } else {
             // Else return false if there is an error
@@ -376,7 +380,6 @@ exports.default = class GoogleDriveClient extends Client {
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
-            console.log(downloadFilePath)
             // Open a write stream so we can write the data we got to it
             const writer = fs.createWriteStream(downloadFilePath)
             // Pipe the bytes to the file

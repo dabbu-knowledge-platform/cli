@@ -519,7 +519,7 @@ const tree = (args) => {
     const dataModule = new DataModule()
 
     // Get the files
-    listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, spinner)
+    listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, null, spinner)
     .then(files => {
       // Stop loading, we have the results
       spinner.stop()
@@ -569,7 +569,7 @@ const search = (args) => {
       const dataModule = new DataModule()
 
       // Get the files
-      listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, spinner)
+      listFilesRecursively(finalPath, dataModule, get("current_drive"), driveVars, searchTerms, spinner)
       .then(files => {
         // Stop loading, we have the results
         spinner.stop()

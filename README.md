@@ -182,6 +182,14 @@ pst [name of saved result]
 
 If you didn't specify a name while copying the files to clipboard, you do not need to specift a name while using `pst`. (It stores it under the name `default` if you didn't mention any name)
 
+### To view what files are currently copied to clipboard
+
+To view what files are copied to clipboard, type in the following:
+
+```
+cp --list
+```
+
 ## Updating the CLI
 
 To update the CLI, simply run the following commands from the terminal/command prompt:
@@ -193,6 +201,8 @@ $ git pull origin main
 ## Providers supported
 - **Hard drive**
 - **Google drive**
+- **Gmail**
+- **One Drive**
 
 *And more to come...!*
 

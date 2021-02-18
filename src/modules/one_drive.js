@@ -44,7 +44,7 @@ const refreshAccessToken = (name, vars) => {
       const tokenURL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
       // Send a POST request with the required params in 
       // the request body
-      axios.post(tokenURL, `code=${code}&client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&grant_type=${"refresh_token"}&refresh_token=${get(`drives.${name}.refresh_token`)}`)
+      axios.post(tokenURL, `client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&refresh_token=${get(`drives.${name}.refresh_token`)}&grant_type=${"refresh_token"}`)
       .then(res => {
         // Store the access token and update the expiry time
         const {access_token, expires_in} = res.data
@@ -72,14 +72,15 @@ exports.default = class OneDriveClient extends Client {
       return new Promise((resolve, reject) => {
         // Tell the user what they need to do to setup a project
         printInfo([
-          `Open ${link("this", "https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the")} link in a web browser. Then do the following:\n` +
-          `  - Go to the Azure Active Directory Portal as the instructions say. Then click on app registration.`,
+          `Open ${link("this", "https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps")} link in a web browser. Then do the following:\n` +
+          `  - Click on the "New Registration" button.`,
           `  - Fill in the following text boxes with these values`,
           `    - Name: Dabbu CLI`,
           `    - Type: Web`,
           `    - Redirect URI: http://localhost:8081`,
-          `  - Then click on the "Register app" button`,
-          `  - Then go to "Certificates and Secrets and create a new secret. Copy the client ID and client secret you just got on that webpage and enter them here."`,
+          `  - Then click on the "Register app" button. Copy the client ID you get and enter it here.`,
+          `  - Then go to "APIs permissions" and click on "Add a permission" > "Microsoft Graph API" > "Delegated permissions" > select "Offline access" and "Files.ReadWrite.All". Then click on "Add permission".`,
+          `  - Then go to "Certificates and Secrets and create a new secret and set expiry date to "Never". Copy the client secret you get on that webpage and enter it here."`,
         ].join("\n"))
 
         prompt.read({
@@ -142,7 +143,7 @@ exports.default = class OneDriveClient extends Client {
         const clientId = get(`drives.${name}.client_id`)
         const redirectUri = get(`drives.${name}.redirect_uri`)
         // The URL
-        const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=https%3A//graph.microsoft.com/.default&response_type=code&redirect_uri=${redirectUri}`
+        const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=offline_access%20https%3A//graph.microsoft.com/Files.ReadWrite.All&response_type=code&redirect_uri=${redirectUri}`
         // Ask the user to go there
         printInfo(`Authorize the app by visting this URL in a browser - ${authUrl}`)
 
@@ -163,6 +164,7 @@ exports.default = class OneDriveClient extends Client {
             reject(req.query.error_description)
           } else {
             res.send("Thank you for signing in to Dabbu CLI. You can now continue using it.")
+            server.close()
             resolve(req.query.code)
           }
         })
@@ -177,7 +179,7 @@ exports.default = class OneDriveClient extends Client {
         const tokenURL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
         // Make a POST request with the required params in the 
         // request body
-        axios.post(tokenURL, `code=${code}&client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&grant_type=${"authorization_code"}`)
+        axios.post(tokenURL, `code=${code}&client_id=${get(`drives.${name}.client_id`)}&client_secret=${get(`drives.${name}.client_secret`)}&redirect_uri=${get(`drives.${name}.redirect_uri`)}&grant_type=authorization_code`)
         .then(res => {
           // Get the access token, refresh token and expiry time
           const {access_token, refresh_token, expires_in} = res.data
@@ -238,12 +240,12 @@ exports.default = class OneDriveClient extends Client {
               files.push({
                 name: "Shared",
                 kind: "folder",
-                filePath: "/Shared",
-                mimeType: "application/vnd.google-apps.folder",
+                path: "/Shared",
+                mimeType: "inode/directory",
                 size: NaN,
                 createdAtTime: NaN,
                 lastModifiedTime: NaN,
-                contentURI: "https://drive.google.com/drive/shared-with-me"
+                contentURI: "https://onedrive.live.com/?id=root&qt=sharedby"
               })
             }
             resolve(files)
@@ -301,7 +303,11 @@ exports.default = class OneDriveClient extends Client {
           if (res.data.content) {
             // If there is a file, download it
             const file = res.data.content
-            resolve([accessToken, file])
+            // If it is a folder, error out
+            if (file.kind === "folder") {
+              reject(`Cannot download folder ${file.name}`)
+            }
+            resolve(file)
           } else {
             // Else return false if there is an error
             reject(res.response.data.error)
@@ -311,22 +317,19 @@ exports.default = class OneDriveClient extends Client {
       })
     }
 
-    const downloadFile = ([accessToken, file]) => {
+    const downloadFile = (file) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         const url = file.contentURI
         if (file && file.contentURI) {
           // If a content URI is provided, download the file
-          axios.get(url, { 
-            headers: {
-              "Authorization": `Bearer ${accessToken}`
-            },
-            responseType: "stream" 
+          axios.get(url, {
+            responseType: "stream"
           })
           .then(res => {
             // If there is data, return it
             if (res.data) {
-              resolve([file, res.data])
+              resolve(res.data)
             } else {
               reject(res)
             }
@@ -339,18 +342,16 @@ exports.default = class OneDriveClient extends Client {
       })
     }
 
-    const storeFile = ([file, fileData]) => {
+    const storeFile = (fileData) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         if (fileData) {
           // Download the file
           // Path to the file
-          const fileNameWithExt = path.normalize(`${__dirname}/../../.cache/${fileName}`)
-          const downloadFilePath = appendExtToFileName(fileNameWithExt, file.mimeType)
+          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${fileName}`)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {
-            console.log(downloadFilePath)
             // Open a write stream so we can write the data we got to it
             const writer = fs.createWriteStream(downloadFilePath)
             // Pipe the bytes to the file
