@@ -29,8 +29,7 @@ const { get, set, printInfo, printBright } = require("../utils.js")
 
 const path = require("path")
 
-// Helper function to add the appropriate extension to the file if 
-// it is a Google Workspace file (Google Doc/Sheet/Slide/App Script, etc)
+// Helper function to add the appropriate extension to the file
 const appendExtToFileName = (fileName, mimeType) => {
   let ext
   if (mimeType === "application/vnd.google-apps.document") {
@@ -49,7 +48,10 @@ const appendExtToFileName = (fileName, mimeType) => {
     // Google App Script ---> JSON (json)
     ext = ".json"
   } else {
-    ext = ""
+    ext = (require("../mimes.json")[mimeType] || {}).ext
+    if (!ext || fileName.includes(ext)) {
+      ext = ""
+    }
   }
 
   return `${fileName}${ext}`
@@ -394,7 +396,7 @@ exports.default = class GmailClient extends Client {
         if (attachment) {
           // Download the file
           // Path to the file
-          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${fileName}_${attachment.fileName}`)
+          const downloadFilePath = appendExtToFileName(path.normalize(`${__dirname}/../../.cache/${fileName} - ${attachment.fileName}`), attachment.mimeType)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {

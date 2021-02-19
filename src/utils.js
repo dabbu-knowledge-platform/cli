@@ -316,7 +316,7 @@ exports.handlePipe = (command, files, drive, driveVars) => {
       // Also store the current path of the user in the drive
       this.set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
       // Tell the user
-      printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
+      this.printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in or ${chalk.keyword("orange")(`\`rm -c ${clipName}\``)} (without quotes) to delete them`)
     }
   }
 }
