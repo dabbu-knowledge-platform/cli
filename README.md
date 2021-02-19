@@ -18,17 +18,22 @@ What you just saw there was Dabbu CLI in action - a simple program in javascript
 
 The installation can be done manually on Linux, MacOS, Android (Requires Termux) and Windows.
 
-A detailed installation guide can be found [here](./docs/Installation.md).
+- First download the proper [Dabbu Server](https://github.com/gamemaker1/dabbu-server#readme) executable for your platform from its [Releases](https://github.com/gamemaker1/dabbu-server/releases).
 
-Here is a brief install guide:
-- Install [git](https://github.com/git-guides/install-git) and [nodejs](https://nodejs.org/en/download/package-manager/).
-- Install **Dabbu Server** from [here](https://github.com/gamemaker1/dabbu-server#getting-started)
-- Then run the following commands in terminal/command prompt:
-```sh
-$ git clone https://github.com/gamemaker1/dabbu-cli
-$ npm install
-$ npm start
-```
+- Then download the proper CLI executable for your platform from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases). (Caution: releases may not work on certain versions of Android, depending on the manafacturer and version.)
+
+- On Windows, simply double click on the file to run it. 
+
+- On Linux/MacOS, run the following command in a terminal:
+  - On MacOS:
+    ```sh
+    $ ~/Downloads/dabbu-cli-macos
+    ```
+  - On Linux:
+    ```sh
+    $ ~/Downloads/dabbu-cli-linux
+    ```
+
 - And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-cli/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
 
 ## Usage
@@ -208,11 +213,7 @@ cp -l
 
 ## Updating the CLI
 
-To update the CLI, simply run the following commands from the terminal/command prompt:
-
-```sh
-$ git pull origin main
-```
+To update the CLI, simply download the new version from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases).
 
 ## Providers supported
 - **Hard drive**
