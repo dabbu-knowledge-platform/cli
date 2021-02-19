@@ -17,9 +17,12 @@ You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and
 - `git` **must** be installed to make pull requests and push changed code.
   - To check if git is already installed, type `git --version` in terminal/command prompt. You should see a version number displayed after running this command.
   - [Here](https://github.com/git-guides/install-git) are the official instructions to install git for all platforms in case you haven't installed it already.
-- `nodejs and npm` **must** be installed for the server to run.
-  - To check if git is already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command.
+- `nodejs and npm` **must** be installed to run the server locally
+  - To check if nodejs is already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command.
   - [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install nodejs and npm for all platforms in case you haven't installed it already.
+- `pkg` **must** be installed to build the server
+  - To check if pkg is installed, type `pkg --version` in terminal/command prompt. You should see a version number displayed after running this command.
+  - [Here](https://www.npmjs.com/package/pkg#usage) are the official instructions to install pkg for all platforms in case you haven't installed it already. (Requires nodejs and npm)
 
 ### Step 1: Fork**
 
@@ -36,7 +39,7 @@ $ git fetch upstream
 
 ### Step 2: Build**
 
-All you need to do to build is run `npm install`. To run, type in `npm start`.
+All you need to do to build is run `npm build`. If the command runs successfully, there should be 3 files (`dabbu-cli-linux`, `dabbu-cli-macos` and `dabbu-cli-win.exe`) in the `dist/` folder. These are the executables that can be run on linux, macos and windows respectively without installation of external dependencies.
 
 Once you've built the project locally, you're ready to start making changes!
 
@@ -51,6 +54,8 @@ $ git checkout -b my-branch-name -t upstream/main
 ### Step 4: Code**
 
 To get a decent idea of how the code is organised and what happens where, read [this](./docs/Code.md) file. Also, the code is heavily commented to allow you to understand exactly what happens. Remember to also read through the [Code Style Guidelines](./docs/CodeStyles.md) before starting to write code.
+
+To test a change without building the executables, you can type `npm start` and it will run the server directly.
 
 ### Step 5: Commit**
 
@@ -112,7 +117,7 @@ This ensures that your working branch has the latest changes from `gamemaker1/da
 
 ### Step 7: Test**
 
-Bug fixes and features should always come with tests. Please test your own code adequately. Also, before finally pushing your code, clone it into a fresh environment (different user or maybe a different computer) and make sure it works just as fine.
+Bug fixes and features should always come with tests. Please test your own code adequately. Also, before finally pushing your code, clone it into a fresh environment (different user or maybe a different computer) and make sure it works just as fine. Make sure you test the executables in the `dist/` directory, not just the *.js files.
 
 ### Step 8: Push**
 

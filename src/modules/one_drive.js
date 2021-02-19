@@ -349,7 +349,7 @@ exports.default = class OneDriveClient extends Client {
         if (fileData) {
           // Download the file
           // Path to the file
-          const downloadFilePath = path.normalize(`${__dirname}/../../.cache/${fileName}`)
+          const downloadFilePath = path.normalize(`./.cache/${fileName}`)
           // Create the file
           fs.createFile(downloadFilePath)
           .then(() => {

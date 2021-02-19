@@ -375,7 +375,7 @@ exports.default = class GoogleDriveClient extends Client {
         if (fileData) {
           // Download the file
           // Path to the file
-          const fileNameWithExt = path.normalize(`${__dirname}/../../.cache/${fileName}`)
+          const fileNameWithExt = path.normalize(`./.cache/${fileName}`)
           const downloadFilePath = appendExtToFileName(fileNameWithExt, file.mimeType)
           // Create the file
           fs.createFile(downloadFilePath)

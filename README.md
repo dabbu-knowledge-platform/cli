@@ -149,27 +149,27 @@ will copy the SomeFile.pdf file from the Test folder in `c:` to the Dabbu folder
 
 ### To copy the result of a command to clipboard
 
-Suppose you wanted to copy the result of a search command and paste it into  another location. You can do that by adding ` | cp` to the end of the search/list/tree command. For example:
+Suppose you wanted to copy the result of a search command and paste it into  another location. You can do that by adding ` | clip` to the end of the search/list/tree command. For example:
 
 Copy all the files in the current folder to clipboard. Folders will not be copied. To copy folders, use tree.
 ```
-ls | cp
+ls | clip
 ```
 
 Copy all files in the current folder recursively to clipboard
 ```
-tree | cp
+tree | clip
 ```
 
 Copy all the files returned by this search command to clipboard
 ```
-search . dabbu cli server | cp
+search . dabbu cli server | clip
 ```
 
 If you want, you can store that set of files under a specific name to be used later. For example, to store the result of a search command under the name `dabbufiles`, you can run the following:
 
 ```
-search . dabbu cli server | cp dabbufiles
+search . dabbu cli server | clip dabbufiles
 ```
 
 ### To paste your clipboard
@@ -180,7 +180,17 @@ To paste the files on your clipboard, type in the following:
 pst [name of saved result]
 ```
 
-If you didn't specify a name while copying the files to clipboard, you do not need to specift a name while using `pst`. (It stores it under the name `default` if you didn't mention any name)
+If you didn't specify a name while copying the files to clipboard, you do not need to specify a name while using `pst`. (It stores it under the name `default` if you didn't mention any name)
+
+### To delete your clipboard
+
+To delete the files on your clipboard, type in the following:
+
+```
+rm -c [name of saved result]
+```
+
+If you didn't specify a name while copying the files to clipboard, you do not need to specify a name while using `rm -c`. (It stores it under the name `default` if you didn't mention any name)
 
 ### To view what files are currently copied to clipboard
 
@@ -188,6 +198,12 @@ To view what files are copied to clipboard, type in the following:
 
 ```
 cp --list
+```
+
+OR
+
+```
+cp -l
 ```
 
 ## Updating the CLI

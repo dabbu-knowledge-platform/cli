@@ -21,7 +21,8 @@ const link = require("terminal-link")
 const chalk = require("chalk")
 const figlet = require("figlet")
 
-const config = require("data-store")({ path: `${__dirname}/config/dabbu_cli_config.json` })
+const Conf = require("conf")
+const config = new Conf()
 
 const Table = require("cli-table3")
 
@@ -300,7 +301,7 @@ exports.handlePipe = (command, files, drive, driveVars) => {
         .split(" ")
         .filter(val => val !== "" && val !== null && val !== undefined)
     
-    if (pipedCommand[0] === "cp") {
+    if (pipedCommand[0] === "clip") {
       // This list of files should be referenced by this name
       let clipName
       // If not specified, take the name as default
@@ -316,7 +317,7 @@ exports.handlePipe = (command, files, drive, driveVars) => {
       // Also store the current path of the user in the drive
       this.set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
       // Tell the user
-      printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in`)
+      this.printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in or ${chalk.keyword("orange")(`\`rm -c ${clipName}\``)} (without quotes) to delete them`)
     }
   }
 }
@@ -372,7 +373,7 @@ exports.printError = (err) => {
 
 // Exit Dabbu and delete the .cache directory
 exports.exitDabbu = () => {
-  return fs.remove(`${__dirname}/../.cache/`)
+  return fs.remove(`./.cache/`)
     .then(() => this.set("clips", {}))
     .then(() => this.printInfo("Removed cache. Exiting.."))
     .finally(() => process.exit(0))

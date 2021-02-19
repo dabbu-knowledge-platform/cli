@@ -2,7 +2,7 @@
 
 **If you want to contribute new features or fix a bug or make perfomance improvements, please do read through this document to know how the code is structured.**
 
-## **src/config/dabbu_cli_config.json**
+## **dabbu_cli_config.json**
 
 It will contain the server address, the current drive, the ID of the provider the current drive is using and all drive-specific details. It is of the following format:
 

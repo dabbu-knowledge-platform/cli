@@ -172,7 +172,7 @@ function checkSetupAndRun() {
     let currentDriveName = get("current_drive")
     let currentDriveVars = get(`drives.${currentDriveName}`)
     // Check if there is no current drive
-    if (!currentDriveName || JSON.stringify(currentDriveVars) === "{}") {
+    if (!currentDriveName || JSON.stringify(currentDriveVars) === "{}" || !currentDriveVars.provider) {
       // If not, then get all the current drives possible
       let allDrives = Object.keys(get("drives"))
       if (allDrives.length === 0) {

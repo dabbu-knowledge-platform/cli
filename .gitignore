@@ -1,4 +1,5 @@
 node_modules/
+dist/
 creds/
 .cache
-src/config/dabbu_cli_config.json
+dabbu_cli_config.json

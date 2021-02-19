@@ -81,9 +81,11 @@ exports.parseCommand = (args) => {
                 `  - ${chalk.keyword("orange")("cat <relative path to file>")} - Download and open a file`,
                 `  - ${chalk.keyword("orange")("cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Copy a file from`,
                 `    one place to another`,
-                `    Note: To copy search results or list results, you can simply add a ${chalk.keyword("orange")("\` | cp <name of set of files>\`")} (without quotes) to the end of a`,
+                `    Note: To copy search results or list results, you can simply add a ${chalk.keyword("orange")("\` | clip <name of set of files>\`")} (without quotes) to the end of a`,
                 `    list or search command. To paste the files to another location, go to that folder and type in (without quotes) the following: `,
                 `    ${chalk.keyword("orange")("\`pst <name of the set of files you copied>\`")}`,
+                `    To delete those files instead, type in:`,
+                `    ${chalk.keyword("orange")("\`rm -c <name of the set of files you copied>\`")}`,
                 `  - ${chalk.keyword("orange")("rm <relative path to file>")} - Delete a file`,
                 `  - ${chalk.keyword("orange")("search <relative path to folder> <space-separated keywords to search for>")} - Searches recursively for files and folders that contain any one of the mentioned keywords (greedy match)`,
                 `  - ${chalk.keyword("orange")("tree [relative path to directory]")} - Recursively lists files and folders in a directory`,
@@ -275,7 +277,7 @@ const cp = (args) => {
     const clips = get("clips")
     // If there are no clips, tell the user that and return
     if (JSON.stringify(clips) === "{}") {
-      printBright("Nothing copied to clipboard yet. To copy something to clipboard, add the following after a ls/tree/search command - \` | cp\`")
+      printBright("Nothing copied to clipboard yet. To copy something to clipboard, add the following after a ls/tree/search command - \` | clip\`")
       // Return successfully
       return Promise.resolve()
     }
@@ -310,7 +312,7 @@ const cp = (args) => {
   // Get the folder names and file names separately
   let fromFolders = fromInputPath.split("/")
   // Get the file name
-  const fromFileName = fromInputPath.endsWith("..") || fromInputPath.endsWith(".") ? null : fromFolders.pop()
+  const fromFileName = fromInputPath.endsWith("/..") || fromInputPath.endsWith("/.") ? null : fromFolders.pop()
   if (fromFileName === null) {
     return Promise.reject("Invalid file name")
   }
@@ -341,7 +343,7 @@ const cp = (args) => {
   // Get the folder names and file names separately
   let toFolders = toInputPath.split("/")
   // Get the file name
-  const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("..") || toInputPath.endsWith(".") ? fromFileName : toFolders.pop()
+  const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("/..") || toInputPath.endsWith("/.") ? fromFileName : toFolders.pop()
   // If only the file name was specified, set the toFolders array to have a path 
   // to the present directory
   if (toFolders.length === 0) {
@@ -415,7 +417,8 @@ const cp = (args) => {
           if (i === 0) {
             await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
           } else {
-            await uploadFile(toDrive, toDriveVars, toFolderPath, `${toFileName}_${i}`, filePath)
+            // If there is more than one file, upload that file with the name it was downloaded
+            await uploadFile(toDrive, toDriveVars, toFolderPath, filePath.split("/").pop() || toFileName, filePath)
           }
           // Tell the user we're done with this file
           // Pause the spinner
@@ -433,12 +436,101 @@ const cp = (args) => {
   })
 }
 
-const rm = (args) => {
-  // Wrap everything in a promise
-  return new Promise((resolve, reject) => {
-    // Get the current drive name, so we can get the variables from the config file
-    const driveVars = get(`drives.${get("current_drive")}`)
+const rm = async (args) => {
+  // Check if we have to delete files from a clip or the file given in user input
+  if (args.indexOf("-c") !== -1) {
+    // Get the name of the result you had copied and now want to delete
+    let clipName
+    if (args.length < 3)
+      clipName = "default"
+    else
+      clipName = args[args.indexOf("-c") + 1]
 
+    // Get everything stored in the clip
+    const clip = get(`clips.${clipName}`)
+    if (!clip) {
+      printError(`No clip was found with the name ${clipName}`)
+      return
+    }
+
+    // Get the from drive name and vars
+    const drive = clip.drive
+    const driveVars = get(`drives.${drive}`)
+
+    // The files to paste
+    const filesToPaste = clip.files
+
+    if (filesToPaste.length === 0) {
+      printError("No files to delete")
+      return
+    }
+
+    // Show a loading indicator
+    const spinner = ora(`Deleting ${chalk.blue("files and folders")}`).start()
+
+    // Initialise the provider module
+    const DataModule = require(`./modules/${driveVars.provider}`).default
+    const dataModule = new DataModule()
+    for (let i = 0, length = filesToPaste.length; i < length; i++) {
+      const file = filesToPaste[i]
+      let folderPath, fileName
+      // Parse the paths, then delete the files
+      // Delete the folder if it is one
+      if (file.kind === "folder") {
+        // Delete the folder
+        folderPath = file.path
+        fileName = null
+        spinner.text = `Deleting folder ${folderPath}`
+      } else {
+        // Get the file's path
+        let filePath = file.path
+    
+        // Get the folder names and file names separately
+        let folders = filePath.split("/")
+        // Get the file name
+        fileName = filePath.endsWith("/..") || filePath.endsWith("/.") ? null : folders.pop()
+        if (fileName === null) {
+          spinner.stop()
+          printError("Invalid file name")
+          spinner.start()
+          continue
+        }
+        // If only the file name was specified, set the folders array to have a path 
+        // to the present directory
+        if (folders.length === 0) {
+          folders = ["."]
+        }
+        // Parse the relative path and get an absolute one
+        folderPath = parsePath(folders.join("/"), driveVars.path)
+        folderPath = folderPath === "" ? "/" : folderPath
+
+        spinner.text = `Deleting file ${path.normalize(folderPath, fileName)}`
+      }
+
+      try {
+        // Using await as promises were not very reliable in the loop
+        // Delete the file
+        await dataModule.rm(get("server"), drive, folderPath, fileName, driveVars)
+      } catch (err) {
+        // If there is an error, don't return. Print it out and
+        // continue with other file uploads
+  
+        // Pause the spinner
+        spinner.stop()
+        // Print out the error
+        printError(err)
+        // Resume the spinner
+        spinner.start()
+      }
+    }
+  
+    // Stop after all files are downloaded and re-uploaded
+    spinner.stop()
+  
+    // Return successfully or partially successfully (some files may have failed)
+    return
+  } else {
+    // Delete given file path
     // The current path in that drive
     const currentPath = driveVars.path || ""
     // The user given relative path
@@ -461,29 +553,22 @@ const rm = (args) => {
 
     // Initialise the provider module
     const DataModule = require(`./modules/${driveVars.provider}`).default
-    new DataModule().rm(get("server"), get("current_drive"), folderPath, fileName, driveVars)
-      .then(deleted => {
-        // We got the result, stop loading
-        spinner.stop()
-        if (deleted) {
-          // Tell the user the file/folder was deleted
-          if (fileName) {
-            printInfo(`File ${path.join(folderPath, fileName)} was successfully deleted`)
-          } else {
-            printInfo(`Folder ${folderPath} was successfully deleted`)
-          }
-        } else {
-          // Tell the user the file/folder was not deleted
-          reject("File/folder not deleted due to unkown reason")
-        }
-        // Return successfully
-        resolve()
-      })
-      .catch((err) => {
-        spinner.stop()
-        reject(err)
-      })
-  })
+    const deleted = await new DataModule().rm(get("server"), get("current_drive"), folderPath, fileName, driveVars)
+    // We got the result, stop loading
+    spinner.stop()
+    if (deleted) {
+      // Tell the user the file/folder was deleted
+      if (fileName) {
+        printInfo(`File ${path.join(folderPath, fileName)} was successfully deleted`)
+      } else {
+        printInfo(`Folder ${folderPath} was successfully deleted`)
+      }
+    } else {
+      // Tell the user the file/folder was not deleted
+      printError("File/folder not deleted due to unkown reason")
+      return
+    }
+  }
 }
 
 const tree = (args) => {
@@ -683,7 +768,7 @@ const pst = async (args) => {
     // Don't do anything if the it is a folder
     if (file.kind === "folder") {
       spinner.stop()
-      printBright(`Skipping \`${file.name}\` as it is a folder. To recursively copy files, use \`tree <folder name> | cp\` (without quotes).`)
+      printBright(`Skipping \`${file.name}\` as it is a folder. To recursively copy files, use \`tree <folder name> | clip\` (without quotes).`)
       spinner.start()
       continue
     }
@@ -702,9 +787,13 @@ const pst = async (args) => {
     // Get the folder names and file names separately
     let fromFolders = fromFilePath.split("/")
     // Get the file name
-    const fromFileName = fromFilePath.endsWith("..") || fromFilePath.endsWith(".") ? null : fromFolders.pop()
+    const fromFileName = fromFilePath.endsWith("/..") || fromFilePath.endsWith("/.") ? null : fromFolders.pop()
     if (fromFileName === null) {
-      return Promise.reject("Invalid file name")
+      spinner.stop()
+      console.log(fromFilePath)
+      printError("Invalid file name")
+      spinner.start()
+      return
     }
     // If only the file name was specified, set the fromFolders array to have a path 
     // to the present directory
@@ -726,7 +815,7 @@ const pst = async (args) => {
     // Get the folder names and file names separately
     let toFolders = toFilePath.split("/")
     // Get the file name
-    const toFileName = toFilePath.endsWith("/") || toFilePath.endsWith("..") || toFilePath.endsWith(".") ? fromFileName : toFolders.pop()
+    const toFileName = toFilePath.endsWith("/") || toFilePath.endsWith("/..") || toFilePath.endsWith("/.") ? fromFileName : toFolders.pop()
     // If only the file name was specified, set the toFolders array to have a path 
     // to the present directory
     if (toFolders.length === 0) {
@@ -748,12 +837,12 @@ const pst = async (args) => {
       const downloadedFilePaths = await downloadFile(fromDrive, fromDriveVars, fromFolderPath, fromFileName)
       // Then upload it
       // Using async-await as promises are unreliable in loops
-      for (let i = 0, length = filePaths.length; i < length; i++) {
-        const filePath = filePaths[i]
+      for (let i = 0, length = downloadedFilePaths.length; i < length; i++) {
+        const filePath = downloadedFilePaths[i]
         if (i === 0) {
           await uploadFile(toDrive, toDriveVars, toFolderPath, toFileName, filePath)
         } else {
-          await uploadFile(toDrive, toDriveVars, toFolderPath, `${toFileName}_${i}`, filePath)
+          await uploadFile(toDrive, toDriveVars, toFolderPath, filePath.split("/").pop() || toFileName, filePath)
         }
       }
     } catch (err) {

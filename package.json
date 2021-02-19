@@ -1,11 +1,14 @@
 {
   "name": "dabbu-cli",
-  "version": "1.0.0",
+  "version": "1.4.4",
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "clear && node src/index.js"
+    "start": "clear && node src/index.js",
+    "clean": "rm -r dist && mkdir dist",
+    "prebuild": "npm run clean",
+    "build": "pkg --output dist/dabbu-cli .",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -21,18 +24,28 @@
     "axios": "^0.21.1",
     "chalk": "^4.1.0",
     "cli-table3": "^0.6.0",
-    "data-store": "^4.0.3",
+    "conf": "^9.0.2",
     "express": "^4.17.1",
     "figlet": "^1.5.0",
     "form-data": "^3.0.0",
     "fs-extra": "^9.1.0",
     "get-uri": "^3.0.2",
     "nanoid": "^3.1.20",
-    "node-summarizer": "^1.0.7",
-    "node-tika": "0.0.1",
     "open": "^7.4.0",
     "ora": "^5.3.0",
     "readcommand": "^0.3.0",
     "terminal-link": "^2.1.1"
+  },
+  "bin": "src/index.js",
+  "pkg": {
+    "assets": [
+      "node_modules/**/*",
+      "src/**/*"
+    ],
+    "targets": [
+      "node14-linux-x64",
+      "node14-macos-x64",
+      "node14-win-x64"
+    ]
   }
 }
