@@ -77,6 +77,7 @@ exports.default = class OneDriveClient extends Client {
           `  - Fill in the following text boxes with these values`,
           `    - Name: Dabbu CLI`,
           `    - Type: Web`,
+          `    - Accounts: Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)`,
           `    - Redirect URI: http://localhost:8081`,
           `  - Then click on the "Register app" button. Copy the client ID you get and enter it here.`,
           `  - Then go to "APIs permissions" and click on "Add a permission" > "Microsoft Graph API" > "Delegated permissions" > select "Offline access" and "Files.ReadWrite.All". Then click on "Add permission".`,
