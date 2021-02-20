@@ -24,12 +24,15 @@ The installation can be done manually on Linux, MacOS, Android (Requires Termux)
 
 - On Windows, simply double click on the file to run it. 
 
-- On Linux/MacOS, run the following command in a terminal:
+- On Linux/MacOS, run the following command in a terminal (assuming you have downloaded the executable to your Downloads folder):
   - On MacOS:
+
     ```sh
     $ ~/Downloads/dabbu-cli-macos
     ```
+
   - On Linux:
+  
     ```sh
     $ ~/Downloads/dabbu-cli-linux
     ```

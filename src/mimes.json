@@ -2744,23 +2744,23 @@
     "name": "Zzaz Deck"
   },
   "application/vnd.google-apps.document": {
-    "ext": "gdoc",
+    "ext": "docx",
     "name": "Google Document"
   },
   "application/vnd.google-apps.spreadsheet": {
-    "ext": "gsheet",
+    "ext": "xlsx",
     "name": "Google Sheet"
   },
   "application/vnd.google-apps.presentation": {
-    "ext": "gslide",
+    "ext": "pptx",
     "name": "Google Slide"
   },
   "application/vnd.google-apps.drawing": {
-    "ext": "gdraw",
+    "ext": "png",
     "name": "Google Drawing"
   },
   "application/vnd.google-apps.script+json": {
-    "ext": "gs",
+    "ext": "json",
     "name": "Google App Script"
   },
   "application/vnd.google-apps.folder": {
@@ -2774,5 +2774,9 @@
   "inode/directory": {
     "ext": "",
     "name": "Folder"
+  },
+  "mail/thread": {
+    "ext": "zip",
+    "name": "Zipped Markdown Mail File With Attachments"
   }
 }

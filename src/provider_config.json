@@ -1,0 +1,82 @@
+{
+  "providers": {
+    "hard_drive": {
+      "auth": null,
+      "request": {
+        "body": {
+          "base_path": {
+            "user_input_needed": true,
+            "description": "The root folder path on your hard drive (on Windows, it is C:\\Users\\<user name>\\) (on Linux, it is /home/<user name>/) (on MacOS, it is /Users/<user name>/)",
+            "prompt": "Enter the base path",
+            "type": "string",
+            "path": "vars.base_path"
+          }
+        },
+        "headers": null
+      }
+    },
+    "google_drive": {
+      "auth": {
+        "process": "oauth2",
+        "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "scopes": "https://www.googleapis.com/auth/drive",
+        "instructions": "Open \"https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the\" in a web browser. Then follow these steps:\n  - Click on the blue \"Enable Drive API\" button,\n  - Fill in the following text boxes with these values,\n    - Name: Dabbu CLI,\n    - Type: Web Server,\n    - Redirect URI: http://localhost:8081,\n  - Copy the client ID and secret given there and paste it here.",
+        "path": "auth"
+      },
+      "request": {
+        "body": null,
+        "headers": {
+          "authorization": {
+            "user_input_needed": false,
+            "description": "The access token retrieved from OAuth servers upon user consent",
+            "type": "string",
+            "path": "auth.access_token"
+          }
+        }
+      }
+    },
+    "gmail": {
+      "auth": {
+        "process": "oauth2",
+        "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "scopes": "https://www.googleapis.com/auth/gmail.readonly",
+        "instructions": "Open \"https://developers.google.com/gmail/api/quickstart/nodejs#step_1_turn_on_the\" in a web browser. Then follow these steps:\n  - Click on the blue \"Enable Drive API\" button,\n  - Fill in the following text boxes with these values,\n    - Name: Dabbu CLI,\n    - Type: Web Server,\n    - Redirect URI: http://localhost:8081,\n  - Copy the client ID and secret given there and paste it here.",
+        "path": "auth"
+      },
+      "request": {
+        "body": null,
+        "headers": {
+          "authorization": {
+            "user_input_needed": false,
+            "description": "The access token retrieved from OAuth servers upon user consent",
+            "type": "string",
+            "path": "auth.access_token"
+          }
+        }
+      }
+    },
+    "one_drive": {
+      "auth": {
+        "process": "oauth2",
+        "auth_uri": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_uri": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "scopes": "offline_access https://graph.microsoft.com/Files.ReadWrite.All",
+        "instructions": "Open \"https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps\" in a web browser. Then do the following:\n  - Click on the \"New Registration\" button.\n  - Fill in the following text boxes with these values\n    - Name: Dabbu CLI\n    - Type: Web\n    - Accounts: Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)\n    - Redirect URI: http://localhost:8081\n  - Then click on the \"Register app\" button. Copy the client ID you get and enter it here.\n  - Then go to \"APIs permissions\" and click on \"Add a permission\" > \"Microsoft Graph API\" > \"Delegated permissions\" > select \"Offline access\" and \"Files.ReadWrite.All\". Then click on \"Add permission\".\n  - Then go to \"Certificates and Secrets and create a new secret and set expiry date to \"Never\". Copy the client secret you get on that webpage and enter it here.",
+        "path": "auth"
+      },
+      "request": {
+        "body": null,
+        "headers": {
+          "authorization": {
+            "user_input_needed": false,
+            "description": "The access token retrieved from OAuth servers upon user consent",
+            "type": "string",
+            "path": "auth.access_token"
+          }
+        }
+      }
+    }
+  }
+}
