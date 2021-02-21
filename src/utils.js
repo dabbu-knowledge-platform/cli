@@ -84,7 +84,7 @@ exports.parsePath = (inputPath, currentPath) => {
   const folders = inputPath.split("/")
   // The final path should begin with the current path 
   // only if the user hasn't mentioned an absolute path
-  let finalPath = inputPath.startsWith("/") ? ["/"] : currentPath.split("/")
+  let finalPath = inputPath.startsWith("/") ? ["/"] : currentPath ? currentPath.split("/") : ["/"]
 
   // Loop through the input path
   for (let i = 0, length = folders.length; i < length; i++) {
@@ -114,6 +114,10 @@ exports.removeOriginalAndDuplicates = (array) => {
   return array.filter((item, pos) => {
     return array.lastIndexOf(item) == array.indexOf(item)
   })
+}
+
+exports.escapeRegex = (str) => {
+  return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1")
 }
 
 // Convert a file size in bytes to a human readable format (with units)
@@ -146,10 +150,27 @@ exports.getNameForMime = (mime) => {
   return value || mime || "Unknown"
 }
 
+// Get a file extension from the mime type
+exports.getExtForMime = (mime) => {
+  const types = require("./mimes.json")
+  const value = (types[mime] || {}).ext
+  return `.${value}` || ""
+}
+
 // Display a set of files in a tabular format
-exports.printFiles = (files, printFullPath = false) => {
+exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
   // Append the files to a table and then display them
-  const table = new Table({head: [chalk.green("Name"), chalk.green("Size"), chalk.green("Type"), chalk.green("Last modified"), chalk.green("Action(s)")], colWidths: [null, null, null, null, null]})
+  const meta = showHeaders ? {
+    head: [
+      chalk.green("Name"),
+      chalk.green("Size"),
+      chalk.green("Type"),
+      chalk.green("Last modified"),
+      chalk.green("Action(s)")
+    ], 
+    colWidths: [null, null, null, null, null]
+  } : null
+  const table = new Table(meta)
   for (let i = 0, length = files.length; i < length; i++) {
     const file = files[i]
 
@@ -198,7 +219,7 @@ exports.printFiles = (files, printFullPath = false) => {
 }
 
 // Recursively search and print files
-exports.listFilesRecursively = (folder, dataModule, drive, driveVars, searchTerms, spinner) => {
+exports.listFilesRecursively = (folder, searchTerms, spinner) => {
   // Tell the user which folder we are querying
   spinner.start()
   spinner.text = `Listing files in ${chalk.blue(folder)}`
@@ -207,8 +228,10 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, searchTerm
   let matchingFiles = []
   // Wrap everything in a promise
   return new Promise((resolve, reject) => {
-    // Call the module's list function
-    dataModule.ls(this.get("server"), drive, folder, driveVars)
+    const Client = require("./client.js").Client
+    const client = new Client()
+    // Call the module's list function with the folder path
+    client.list(["ls", folder])
       .then(list => {
         if (list) {
           // First get all of the files not folders (we do !=== folder)
@@ -262,7 +285,7 @@ exports.listFilesRecursively = (folder, dataModule, drive, driveVars, searchTerm
             if (file.kind === "folder") {
               // If it's a folder, then call the listFilesRecursively method again
               // with the folder path
-              this.listFilesRecursively(file.path, dataModule, drive, driveVars, searchTerms, spinner)
+              this.listFilesRecursively(file.path, searchTerms, spinner)
                 .then(files => {
                   // Add the matching files to the matching files array
                   if (searchTerms) {
@@ -341,6 +364,7 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
+  //console.log(err)
   if (err.isAxiosError) {
     if (err.code === "ECONNRESET") {
       this.print(
@@ -351,7 +375,7 @@ exports.printError = (err) => {
       this.print(
         chalk.red.bold(err.response.data.error.message)
       )
-    } else if (err.statusText) {
+    } else if (err.status) {
       this.print(
         chalk.red.bold(`${err.status}: ${err.statusText}`)
       )
