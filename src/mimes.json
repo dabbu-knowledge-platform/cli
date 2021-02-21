@@ -2455,6 +2455,10 @@
     "ext": ".txt",
     "name": "Text File"
   },
+  "text/markdown": {
+    "ext": ".md",
+    "name": "Markdown File"
+  },
   "application/vnd.spotfire.dxp": {
     "ext": ".dxp",
     "name": "TIBCO Spotfire"

@@ -84,7 +84,7 @@ exports.parsePath = (inputPath, currentPath) => {
   const folders = inputPath.split("/")
   // The final path should begin with the current path 
   // only if the user hasn't mentioned an absolute path
-  let finalPath = inputPath.startsWith("/") ? ["/"] : currentPath.split("/")
+  let finalPath = inputPath.startsWith("/") ? ["/"] : currentPath ? currentPath.split("/") : ["/"]
 
   // Loop through the input path
   for (let i = 0, length = folders.length; i < length; i++) {
@@ -114,6 +114,10 @@ exports.removeOriginalAndDuplicates = (array) => {
   return array.filter((item, pos) => {
     return array.lastIndexOf(item) == array.indexOf(item)
   })
+}
+
+exports.escapeRegex = (str) => {
+  return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1")
 }
 
 // Convert a file size in bytes to a human readable format (with units)
@@ -360,6 +364,7 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
+  //console.log(err)
   if (err.isAxiosError) {
     if (err.code === "ECONNRESET") {
       this.print(
