@@ -159,6 +159,11 @@ exports.getExtForMime = (mime) => {
 
 // Display a set of files in a tabular format
 exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
+  // If there are no files, print out empty folder and return
+  if (!files) {
+    this.printBright("Folder is empty")
+    return
+  }
   // Append the files to a table and then display them
   const meta = showHeaders ? {
     head: [
@@ -314,35 +319,6 @@ exports.listFilesRecursively = (folder, searchTerms, spinner) => {
       })
       .catch(reject) // Pass the error back on
   })
-}
-
-exports.handlePipe = (command, files, drive, driveVars) => {
-  const splitCommand = command.split("|")
-  if (splitCommand.length >= 2) {
-    // The part after the |
-    const pipedCommand = splitCommand[1]
-        .split(" ")
-        .filter(val => val !== "" && val !== null && val !== undefined)
-    
-    if (pipedCommand[0] === "clip") {
-      // This list of files should be referenced by this name
-      let clipName
-      // If not specified, take the name as default
-      if (pipedCommand.length === 1) 
-        clipName = "default"
-      else
-        clipName = pipedCommand[1]
-      
-      // Store the clip
-      this.set(`clips.${clipName}.files`, files)
-      // Store the current drive name along with the clip
-      this.set(`clips.${clipName}.drive`, drive)
-      // Also store the current path of the user in the drive
-      this.set(`clips.${clipName}.path`, driveVars.path === "" ? "/" : driveVars.path)
-      // Tell the user
-      this.printInfo(`Files stored under name ${chalk.keyword("orange")(clipName)}. Use the commmand ${chalk.keyword("orange")(`\`pst ${clipName}\``)} (without quotes) to paste the files in the folder you are in or ${chalk.keyword("orange")(`\`rm -c ${clipName}\``)} (without quotes) to delete them`)
-    }
-  }
 }
 
 // Wrap the console.log in a print function

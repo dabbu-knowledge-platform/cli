@@ -2735,6 +2735,10 @@
     "ext": ".zip",
     "name": "Zip Archive"
   },
+  "application/x-zip": {
+    "ext": ".zip",
+    "name": "Zip Archive"
+  },
   "application/gzip": {
     "ext": ".tar.gz",
     "name": "GZip Archive"
