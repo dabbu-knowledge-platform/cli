@@ -135,7 +135,7 @@ const Client = class {
       "upl": this.create,
       "upd": this.update,
       "cp": this.copy,
-      //"mv": this.move,
+      "mv": this.move,
       "rm": this.delete,
       "del": this.delete,
     }
@@ -441,6 +441,8 @@ const Client = class {
           headers: headers // The appropriate headers for this provider
         })
         .then(res => {
+          // Stop loading
+          spinner.stop()
           if (res.data.content.length > 0) {
             // Get the files from the response
             let files = res.data.content
@@ -450,8 +452,6 @@ const Client = class {
                 return new RegExp("^" + regexPart.split("*").map(escapeRegex).join(".*") + "$").test(file.name)
               })
             }
-            // Stop loading
-            spinner.stop()
             // Return successfully
             resolve(files)
           } else {
@@ -556,11 +556,17 @@ const Client = class {
             .catch(reject) // Pass the error back up, if any
           } else {
             // Else it is a normal url, fetch it using axios
-            axios.get(url, {
-              data: body,
-              headers: headers,
-              responseType: "stream" 
-            })
+            // Add the headers and body only if they really are
+            // needed, else risk getting a 400 Bad request
+            let meta = {}
+            if (Object.keys(body || {}).length > 0) {
+              meta["data"] = body
+            }
+            if (Object.keys(headers || {}).length > 0) {
+              meta["headers"] = headers
+            }
+            meta["responseType"] = "stream"
+            axios.get(url, meta)
             .then(res => {
               // If there is data, return it
               if (res.data) {
@@ -780,7 +786,8 @@ const Client = class {
     // Generate the request body and headers for the provider
     let [body, headers] = generateBodyAndHeaders(get("current_drive"))
 
-    const makeUploadRequest = () => {
+    // Update the file's name OR path OR lastModifiedTime OR content
+    const makeUpdateRequest = () => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // Make a form data object to upload the file's contents
@@ -849,7 +856,7 @@ const Client = class {
     return new Promise((resolve, reject) => {
       // First refresh the access token (if provider requires it and it has expired)
       return refreshAccessToken(get("current_drive"))
-        .then(makeUploadRequest) // Upload the file
+        .then(makeUpdateRequest) // Upload the file
         .then(resolve) // Return successfully
         .catch(reject) // Pass back the error, if any
     })
@@ -922,7 +929,7 @@ const Client = class {
             if (file.kind === "folder") {
               reject(`Cannot download folder ${file.name}`)
             }
-            resolve(file)
+            resolve([file, fromBody, fromHeaders])
           } else {
             // Else return false if there is an error
             reject(res.response.data.error)
@@ -933,7 +940,7 @@ const Client = class {
     }
 
     // Download the file's data from the content URI
-    const downloadFile = (file) => {
+    const downloadFile = ([file, fromBody, fromHeaders]) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         const url = file.contentURI
@@ -954,11 +961,17 @@ const Client = class {
             .catch(reject) // Pass the error back up, if any
           } else {
             // Else it is a normal url, fetch it using axios
-            axios.get(url, {
-              data: fromBody,
-              headers: fromHeaders,
-              responseType: "stream" 
-            })
+            // Add the headers and body only if they really are
+            // needed, else risk getting a 400 Bad request
+            let meta = {}
+            if (Object.keys(fromBody || {}).length > 0) {
+              meta["data"] = fromBody
+            }
+            if (Object.keys(fromHeaders || {}).length > 0) {
+              meta["headers"] = fromHeaders
+            }
+            meta["responseType"] = "stream"
+            axios.get(url, meta)
             .then(res => {
               // If there is data, return it
               if (res.data) {
@@ -1008,6 +1021,7 @@ const Client = class {
       })
     }
 
+    // Upload a file
     const makeUploadRequest = (toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner) => {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
@@ -1046,8 +1060,6 @@ const Client = class {
         })
         .then(res => {
           if (res.status === 200) {
-            // Stop loading
-            spinner.stop()
             // If there is no error, return
             resolve()
           } else {
@@ -1061,7 +1073,6 @@ const Client = class {
     
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-
       // Parse the from file path
       let fromInput = args[1]
       if (!fromInput) fromInput = "."
@@ -1089,7 +1100,7 @@ const Client = class {
         .then(() => {
           return new Promise((resolve, reject) => {
             if (args[1].includes("*")) {
-              let fromBaseFolderPath = args[1] || "."
+              let fromBaseFolderPath = fromSplit.length === 2 ? fromSplit[1] : fromSplit[0]
               if (!fromBaseFolderPath.startsWith("/")) fromBaseFolderPath = `./${fromBaseFolderPath}`
               // If so, parse it to get a base folder to search in
               const paths = fromBaseFolderPath.split("*")
@@ -1126,20 +1137,9 @@ const Client = class {
                   // Surround everything in a try-catch as there is no reject
                   try {
                     // Get the file's metadata and content URI from the server
-                    let fileObj = await getFileData(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
-                    let [_, fileData] = await downloadFile(fileObj) // Download the file from its content URI
+                    let [fileObj, _, __] = await getFileData(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
+                    let [___, fileData] = await downloadFile([fileObj, fromBody, fromHeaders]) // Download the file from its content URI
                     let localFilePath = await storeFile([fileObj, fileData]) // Store the file's contents (streamed from the content URI) into a local file
-                    // Parse the to file path
-                    let toInput = args[2]
-                    if (!toInput) toInput = "."
-
-                    let toSplit = toInput.split(":")
-                    let toDrive = toSplit[0]
-                    if (!toDrive || toSplit.length === 1) toDrive = get("current_drive")
-
-                    // Get the current drive name, so we can get the variables to the config file
-                    const toDriveVars = get(`drives.${toDrive}`)
-
                     // The current path in that drive
                     const toCurrentPath = toDriveVars.path || ""
                     // The user given relative path
@@ -1154,7 +1154,7 @@ const Client = class {
                       toFolders = ["."]
                     }
                     // Parse the relative path and get an absolute one
-                    let toFolderPath = parsePath(toFolders.join("/"), toCurrentPath)
+                    let toFolderPath = parsePath(`${toInput.startsWith("/") ? "/" : ""}${toFolders.join("/")}`, toCurrentPath)
                     toFolderPath = toFolderPath === "" ? "/" : toFolderPath
 
                     // Show a loading indicator
@@ -1165,6 +1165,10 @@ const Client = class {
 
                     // Upload the file to the other drive
                     await makeUploadRequest(toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner)
+                    // Tell the user
+                    spinner.stop()
+                    printInfo(`Copied ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`)
+                    spinner.start()
                   } catch (err) {
                     // Print the error, but continue
                     spinner.stop()
@@ -1172,7 +1176,9 @@ const Client = class {
                     spinner.start()
                   }
                 }
+                // Stop loading
                 spinner.stop()
+                // Return successfully
                 return
               })
               .then(resolve) // Return
@@ -1196,7 +1202,7 @@ const Client = class {
               }
               
               // Parse the relative path and get an absolute one
-              let fromFolderPath = parsePath(fromFolders.join("/"), fromCurrentPath)
+              let fromFolderPath = parsePath(`${fromInputPath.startsWith("/") ? "/" : ""}${fromFolders.join("/")}`, fromCurrentPath)
               fromFolderPath = fromFolderPath === "" ? "/" : fromFolderPath
 
               // Show a loading indicator
@@ -1205,37 +1211,39 @@ const Client = class {
               // Generate the request body and headers for the provider
               let [fromBody, fromHeaders] = generateBodyAndHeaders(fromDrive)
 
+              // The current path in that drive
+              const toCurrentPath = toDriveVars.path || ""
+              // The user given relative path
+              const toInputPath = toSplit.length === 2 ? toSplit[1] : toSplit[0]
+              // Get the folder names and file names separately
+              let toFolders = toInputPath.split("/")
+              // Get the file name
+              const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("/..") || toInputPath.endsWith("/.") || toInputPath === "." || toInputPath === ".." || toInputPath === "/" ? fromFileName : toFolders.pop()
+              // If only the file name was specified, set the toFolders array to have a path 
+              // to the present directory
+              if (toFolders.length === 0) {
+                toFolders = ["."]
+              }
+              // Parse the relative path and get an absolute one
+              let toFolderPath = parsePath(`${toInputPath.startsWith("/") ? "/" : ""}${toFolders.join("/")}`, toCurrentPath)
+              toFolderPath = toFolderPath === "" ? "/" : toFolderPath
+
+              // Show a loading indicator
+              spinner.text = `Copying file ${toFolderPath}/${toFileName}`
+
+              // Generate the request body and headers for the provider
+              let [toBody, toHeaders] = generateBodyAndHeaders(toDrive)
+
               // Get the file's metadata and content URI from the server
               getFileData(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
               .then(downloadFile) // Download the file from its content URI
               .then(storeFile) // Store the file's contents (streamed from the content URI) into a local file
               .then(localFilePath => {
-                // The current path in that drive
-                const toCurrentPath = toDriveVars.path || ""
-                // The user given relative path
-                const toInputPath = toSplit.length === 2 ? toSplit[1] : toSplit[0]
-                // Get the folder names and file names separately
-                let toFolders = toInputPath.split("/")
-                // Get the file name
-                const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("/..") || toInputPath.endsWith("/.") ? fromFileName : toFolders.pop()
-                // If only the file name was specified, set the toFolders array to have a path 
-                // to the present directory
-                if (toFolders.length === 0) {
-                  toFolders = ["."]
-                }
-                // Parse the relative path and get an absolute one
-                let toFolderPath = parsePath(toFolders.join("/"), toCurrentPath)
-                toFolderPath = toFolderPath === "" ? "/" : toFolderPath
-
-                // Show a loading indicator
-                spinner.text = `Uploading file ${toFolderPath}/${toFileName}`
-
-                // Generate the request body and headers for the provider
-                let [toBody, toHeaders] = generateBodyAndHeaders(toDrive)
-
                 // Upload the file to the other drive
-                makeUploadRequest(toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner)
+                resolve(makeUploadRequest(toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner))
               })
+              .then(() => spinner.stop())
+              .then(() => printInfo(`Copied ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`))
               .then(resolve) // Return successfully
               .catch(reject) // Pass back the error, if any
             }
@@ -1246,7 +1254,520 @@ const Client = class {
     })
   }
 
-  move(args) {}
+  move(args) {
+    // Define the required functions first
+    // List out the files and folders matching a regular expression
+    const makeListRequest = (drive, folderPath, regexPart, body, headers, spinner) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // The URL to send the request to
+        let server = get("server")
+        let provider = get(`drives.${drive}.provider`)
+        folderPath = encodeURIComponent(folderPath === "" ? "/" : folderPath)
+        const url = `${server}/dabbu/v1/api/data/${provider}/${folderPath}?orderBy=kind&direction=asc&exportType=view`
+        // Send a GET request
+        axios.get(url, {
+          data: body, // The appropriate request body for this provider
+          headers: headers // The appropriate headers for this provider
+        })
+        .then(res => {
+          if (res.data.content.length > 0) {
+            // Get the files from the response
+            let files = res.data.content
+            if (regexPart) {
+              // Filter using the regex (if any)
+              files = files.filter(file => {
+                return new RegExp("^" + regexPart.split("*").map(escapeRegex).join(".*") + "$").test(file.name)
+              })
+            }
+            // Return successfully
+            resolve(files)
+          } else {
+            // Else return null if it is an empty folder
+            resolve(null)
+          }
+        })
+        .catch(err => {
+          // Stop loading
+          spinner.stop()
+          // Pass the error back on
+          reject(err)
+        })
+      })
+    }
+    
+    // Make a request to the server, fetching data from the server
+    const getFileData = (fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Update the spinner text
+        spinner.text = `Fetching ${chalk.blue(fromFileName)}`
+        // The URL to send the request to
+        let server = get("server")
+        let provider = get(`drives.${fromDrive}.provider`)
+        let folderPath = encodeURIComponent(fromFolderPath === "" ? "/" : fromFolderPath)
+        let fileName = encodeURIComponent(fromFileName)
+        const url = `${server}/dabbu/v1/api/data/${provider}/${folderPath}/${fileName}?exportType=media`
+        // Send a GET request
+        return axios.get(url, {
+          data: fromBody,
+          headers: fromHeaders
+        })
+        .then(res => {
+          if (res.data.content) {
+            // If there is a file, download it
+            const file = res.data.content
+            // If it is a folder, error out
+            if (file.kind === "folder") {
+              reject(`Cannot download folder ${file.name}`)
+            }
+            resolve([file, fromBody, fromHeaders])
+          } else {
+            // Else return false if there is an error
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject)
+      })
+    }
+
+    // Download the file's data from the content URI
+    const downloadFile = ([file, fromBody, fromHeaders]) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        const url = file.contentURI
+        if (file && file.contentURI) {
+          // If a content URI is provided, download the file
+          // Check if it is a file:// URI
+          if (file.contentURI.startsWith("file://")) {
+            // If so, parse the file path and fetch that using the get-uri library
+            getUri(file.contentURI)
+            .then(res => {
+              // If there is data, return it
+              if (res) {
+                resolve([file, res])
+              } else {
+                reject("No data received from file's contentURI")
+              }
+            })
+            .catch(reject) // Pass the error back up, if any
+          } else {
+            // Else it is a normal url, fetch it using axios
+            // Add the headers and body only if they really are
+            // needed, else risk getting a 400 Bad request
+            let meta = {}
+            if (Object.keys(fromBody || {}).length > 0) {
+              meta["data"] = fromBody
+            }
+            if (Object.keys(fromHeaders || {}).length > 0) {
+              meta["headers"] = fromHeaders
+            }
+            meta["responseType"] = "stream"
+            axios.get(url, meta)
+            .then(res => {
+              // If there is data, return it
+              if (res.data) {
+                resolve([file, res.data])
+              } else if (res) {
+                resolve([file, res])
+              } else {
+                reject("No data received from file's contentURI")
+              }
+            })
+            .catch(reject) // Pass the error back up, if any
+          }
+        } else {
+          // Else return null
+          reject("No such file/folder was found.")
+        }
+      })
+    }
+
+    // Pipe the data to a local file
+    const storeFile = ([file, fileData]) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        if (fileData) {
+          // Download the file
+          // Path to the file
+          let downloadToFilePath = `./.cache/${file.name || file.fileName}`
+          downloadToFilePath = `${downloadToFilePath}${getExtForMime(file.mimeType)}`
+          // Create the file
+          fs.createFile(downloadToFilePath)
+          .then(() => {
+            // Open a write stream so we can write the data we got to it
+            const writer = fs.createWriteStream(downloadToFilePath)
+            // Pipe the bytes to the file
+            fileData.pipe(writer)
+            writer.on("finish", () => {
+              // Return successfully
+              resolve(downloadToFilePath)
+            })
+            writer.on("error", reject) // Pass the error back on, if any
+          })
+          .catch(reject)
+        } else {
+          // Else return null
+          resolve("No such file/folder was found.")
+        }
+      })
+    }
+
+    // Upload a file
+    const makeUploadRequest = (toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Make a form data object to upload the file's contents
+        const formData = new FormData()
+        // Add the file's data as a readable stream to the content field
+        formData.append("content", fs.createReadStream(localFilePath), { filename: toFileName })
+
+        // Add the fields from the body to the form data
+        const bodyVariables = Object.keys(toBody || {})
+        for (let i = 0, length = bodyVariables.length; i < length; i++) {
+          // Get the name and value
+          const variableName = bodyVariables[i]
+          const variableValue = toBody[variableName]
+          // Add it to the form data
+          formData.append(variableName, variableValue)
+        }
+
+        // Use the headers that the form-data modules sets
+        const formHeaders = formData.getHeaders()
+
+        // The URL to send the request to
+        let server = get("server")
+        let provider = get(`drives.${toDrive}.provider`)
+        let folderPath = encodeURIComponent(toFolderPath)
+        let fileName = encodeURIComponent(toFileName)
+        const url = `${server}/dabbu/v1/api/data/${provider}/${folderPath}/${fileName}`
+        // Send a POST request
+        axios.post(url, formData, {
+          headers: {
+            ...formHeaders,
+            ...toHeaders
+          }
+        })
+        .then(res => {
+          if (res.status === 200) {
+            // If there is no error, return
+            resolve()
+          } else {
+            // Else error out
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
+    }
+
+    // Update the file's name OR path OR lastModifiedTime OR content
+    const makeUpdateRequest = (drive, folderPath, fileName, body, headers, name, path, lastModifiedTime, localFilePath, spinner) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // Make a form data object to upload the file's contents
+        const formData = new FormData()
+
+        // Add the fields from the body to the form data
+        const bodyVariables = Object.keys(body || {})
+        for (let i = 0, length = bodyVariables.length; i < length; i++) {
+          // Get the name and value
+          const variableName = bodyVariables[i]
+          const variableValue = body[variableName]
+          // Add it to the form data
+          formData.append(variableName, variableValue)
+        }
+
+        // Add fields from the user to the form data as well
+        if (name) {
+          // Tell the server to rename the file
+          formData.append("name", name)
+        }
+        if (path) {
+          // Tell the server to move the file to this path
+          formData.append("path", path)
+        }
+        if (lastModifiedTime) {
+          // Add the last modified time to set on the file
+          formData.append("lastModifiedTime", lastModifiedTime)
+        }
+        if (localFilePath) {
+          // Add the file's data as a readable stream to the content field
+          formData.append("content", fs.createReadStream(localFilePath), { filename: fileName })
+        }
+
+        // Use the headers that the form-data modules sets
+        const formHeaders = formData.getHeaders()
+
+        // The URL to send the request to
+        let server = get("server")
+        let provider = get(`drives.${drive}.provider`)
+        folderPath = encodeURIComponent(folderPath)
+        fileName = encodeURIComponent(fileName)
+        const url = `${server}/dabbu/v1/api/data/${provider}/${folderPath}/${fileName}`
+        // Send a POST request
+        axios.put(url, formData, {
+          headers: {
+            ...formHeaders,
+            ...headers
+          }
+        })
+        .then(res => {
+          if (res.status === 200) {
+            // If there is no error, return
+            resolve()
+          } else {
+            // Else error out
+            reject(res.response.data.error)
+          }
+        })
+        .catch(reject) // Pass error back if any
+      })
+    }
+
+    // Delete a file
+    const makeDeleteRequest = (fromDrive, folderPath, fileName, body, headers, spinner) => {
+      // Wrap everything in a promise
+      return new Promise((resolve, reject) => {
+        // The URL to send the request to
+        let server = get("server")
+        let provider = get(`drives.${fromDrive}.provider`)
+        folderPath = encodeURIComponent(folderPath === "" ? "/" : folderPath)
+        fileName = encodeURIComponent(fileName ? fileName : "")
+        const url = `${server}/dabbu/v1/api/data/${provider}/${folderPath}/${fileName}`
+        // Send a DELETE request
+        axios.delete(url, {
+          data: body, // The appropriate request body for this provider
+          headers: headers // The appropriate headers for this provider
+        })
+        .then(res => {
+          // Return successfully
+          resolve()
+        })
+        .catch(err => {
+          // Stop loading
+          spinner.stop()
+          // Pass the error back on
+          reject(err)
+        })
+      })
+    }
+    
+    // Wrap everything in a promise
+    return new Promise((resolve, reject) => {
+      // Parse the from file path
+      let fromInput = args[1]
+      if (!fromInput) fromInput = "."
+
+      let fromSplit = fromInput.split(":")
+      let fromDrive = fromSplit[0]
+      if (!fromDrive || fromSplit.length === 1) fromDrive = get("current_drive")
+
+      // Get the current drive name, so we can get the variables from the config file
+      const fromDriveVars = get(`drives.${fromDrive}`)
+
+      // Parse the to file path
+      let toInput = args[2]
+      if (!toInput) toInput = "."
+
+      let toSplit = toInput.split(":")
+      let toDrive = toSplit[0]
+      if (!toDrive || toSplit.length === 1) toDrive = get("current_drive")
+
+      // Get the current drive name, so we can get the variables to the config file
+      const toDriveVars = get(`drives.${toDrive}`)
+
+      // First refresh the access token (if provider requires it and it has expired)
+      return Promise.all([refreshAccessToken(fromDrive), refreshAccessToken(toDrive)])
+        .then(() => {
+          return new Promise((resolve, reject) => {
+            if (args[1].includes("*")) {
+              let fromBaseFolderPath = fromSplit.length === 2 ? fromSplit[1] : fromSplit[0]
+              if (!fromBaseFolderPath.startsWith("/")) fromBaseFolderPath = `./${fromBaseFolderPath}`
+              // If so, parse it to get a base folder to search in
+              const paths = fromBaseFolderPath.split("*")
+              // Get an absolute path
+              fromBaseFolderPath = parsePath(paths[0].substring(0, paths[0].lastIndexOf("/")), get(`drives.${fromDrive}.path`))
+              // Add the part with the asterix at the end of the folder path so we
+              // can filter the list later
+              let regexPart = `${paths[0].substring(paths[0].lastIndexOf("/") + 1)}*${paths.slice(1).join("*")}`
+
+              // Show a loading indicator
+              const spinner = ora(`Fetching files matching regex ${regexPart}`).start()
+
+              // Generate the request body and headers for the provider
+              let [fromBody, fromHeaders] = generateBodyAndHeaders(fromDrive)
+
+              // List out all possible files
+              return makeListRequest(fromDrive, fromBaseFolderPath, regexPart, fromBody, fromHeaders, spinner)
+              .then(async (files) => {
+                // Loop through the files and copy them
+                for (let i = 0, length = files.length; i < length; i++) {
+                  const file = files[i]
+                  // Get the from and to file paths
+                  // Get the from file path
+                  let fromFolderPath, fromFileName
+                  // TODO: add recursive copy here
+                  if (file.kind === "folder") {
+                    spinner.stop()
+                    printBright("Moving folders is not yet supported. This feature is a work in progress.")
+                    spinner.start()
+                    continue
+                  } else {
+                    fromFolderPath = file.path.split("/")
+                    fromFileName = fromFolderPath.pop()
+                    fromFolderPath = fromFolderPath.join("/")
+                  }
+                  // Get the to file path
+                  // The current path in that drive
+                  const toCurrentPath = toDriveVars.path || ""
+                  // The user given relative path
+                  const toInputPath = toSplit.length === 2 ? toSplit[1] : toSplit[0]
+                  // Get the folder names and file names separately
+                  let toFolders = toInputPath.split("/")
+                  // Get the file name
+                  const toFileName = fromFileName
+                  // If only the file name was specified, set the toFolders array to have a path 
+                  // to the present directory
+                  if (toFolders.length === 0) {
+                    toFolders = ["."]
+                  }
+                  // Parse the relative path and get an absolute one
+                  let toFolderPath = parsePath(`${toInput.startsWith("/") ? "/" : ""}${toFolders.join("/")}`, toCurrentPath)
+                  toFolderPath = toFolderPath === "" ? "/" : toFolderPath
+                  
+                  // Surround everything in a try-catch as there is no reject
+                  try {  
+                    if (fromDrive === toDrive) {
+                      // Show a loading indicator
+                      spinner.text = `Moving file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+                      // Call update instead
+                      await makeUpdateRequest(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, toFileName, toFolderPath, null, null, spinner)
+                      // Tell the user
+                      spinner.stop()
+                      printInfo(`Moved ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`)
+                      spinner.start()
+                    } else {
+                      // Manually move it
+                      // Get the file's metadata and content URI from the server
+                      let [fileObj, _, __] = await getFileData(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
+                      let [___, fileData] = await downloadFile([fileObj, fromBody, fromHeaders]) // Download the file from its content URI
+                      let localFilePath = await storeFile([fileObj, fileData]) // Store the file's contents (streamed from the content URI) into a local file
+
+                      // Show a loading indicator
+                      spinner.text = `Moving file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+
+                      // Generate the request body and headers for the provider
+                      let [toBody, toHeaders] = generateBodyAndHeaders(toDrive)
+
+                      // Upload the file to the other drive
+                      await makeUploadRequest(toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner)
+                      // Delete the original file
+                      await makeDeleteRequest(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
+                      // Tell the user
+                      spinner.stop()
+                      printInfo(`Moved ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`)
+                      spinner.start()
+                    }
+                  } catch (err) {
+                    // Print the error, but continue
+                    spinner.stop()
+                    printError(err)
+                    spinner.start()
+                  }
+                }
+                // Stop loading
+                spinner.stop()
+                // Return successfully
+                return
+              })
+              .then(resolve) // Return
+              .then(reject) // Pass the error back on
+            } else {
+              // The current path in that drive
+              const fromCurrentPath = fromDriveVars.path || ""
+              // The user given relative path
+              const fromInputPath = fromSplit.length === 2 ? fromSplit[1] : fromSplit[0]
+              // Get the folder names and file names separately
+              let fromFolders = fromInputPath.split("/")
+              // Get the file name
+              const fromFileName = fromInputPath.endsWith("/..") || fromInputPath.endsWith("/.") ? null : fromFolders.pop()
+              if (fromFileName === null) {
+                return Promise.reject("Invalid file name")
+              }
+              // If only the file name was specified, set the fromFolders array to have a path 
+              // to the present directory
+              if (fromFolders.length === 0) {
+                fromFolders = ["."]
+              }
+              
+              // Parse the relative path and get an absolute one
+              let fromFolderPath = parsePath(`${fromInputPath.startsWith("/") ? "/" : ""}${fromFolders.join("/")}`, fromCurrentPath)
+              fromFolderPath = fromFolderPath === "" ? "/" : fromFolderPath
+
+              // Show a loading indicator
+              const spinner = ora(`Fetching file ${fromFolderPath}/${fromFileName}`).start()
+
+              // Generate the request body and headers for the provider
+              let [fromBody, fromHeaders] = generateBodyAndHeaders(fromDrive)
+
+              // The current path in that drive
+              const toCurrentPath = toDriveVars.path || ""
+              // The user given relative path
+              const toInputPath = toSplit.length === 2 ? toSplit[1] : toSplit[0]
+              // Get the folder names and file names separately
+              let toFolders = toInputPath.split("/")
+              // Get the file name
+              const toFileName = toInputPath.endsWith("/") || toInputPath.endsWith("/..") || toInputPath.endsWith("/.") || toInputPath === "." || toInputPath === ".." || toInputPath === "/" ? fromFileName : toFolders.pop()
+              // If only the file name was specified, set the toFolders array to have a path 
+              // to the present directory
+              if (toFolders.length === 0) {
+                toFolders = ["."]
+              }
+              // Parse the relative path and get an absolute one
+              let toFolderPath = parsePath(`${toInputPath.startsWith("/") ? "/" : ""}${toFolders.join("/")}`, toCurrentPath)
+              toFolderPath = toFolderPath === "" ? "/" : toFolderPath
+
+              // Show a loading indicator
+              spinner.text = `Moving file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+
+              // Generate the request body and headers for the provider
+              let [toBody, toHeaders] = generateBodyAndHeaders(toDrive)
+
+              if (fromDrive === toDrive) {
+                // Call update instead
+                makeUpdateRequest(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, toFileName, toFolderPath, null, null, spinner)
+                .then(() => {
+                  // Tell the user
+                  spinner.stop()
+                  printInfo(`Moved ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`)
+                })
+                .then(resolve)
+                .catch(reject)
+              } else {
+                // Get the file's metadata and content URI from the server
+                getFileData(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
+                .then(downloadFile) // Download the file from its content URI
+                .then(storeFile) // Store the file's contents (streamed from the content URI) into a local file
+                .then(localFilePath => {
+                  // Upload the file to the other drive
+                  return makeUploadRequest(toDrive, toFolderPath, toFileName, toBody, toHeaders, localFilePath, spinner)
+                })
+                .then(() => {
+                  return makeDeleteRequest(fromDrive, fromFolderPath, fromFileName, fromBody, fromHeaders, spinner)
+                })
+                .then(() => spinner.stop())
+                .then(() => printInfo(`Moved ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`))
+                .then(resolve) // Return successfully
+                .catch(reject) // Pass back the error, if any 
+              }
+            }
+          })
+        })
+        .then(resolve) // Return successfully
+        .catch(reject) // Pass back the error, if any
+    })
+  }
 
   delete(args) {
     // Check if any argument has been specified
@@ -1311,8 +1832,6 @@ const Client = class {
           headers: headers // The appropriate headers for this provider
         })
         .then(res => {
-          // Stop loading
-          spinner.stop()
           // Return successfully
           resolve()
         })
@@ -1354,24 +1873,31 @@ const Client = class {
             return makeListRequest(folderPath, regexPart, body, headers, spinner)
           }) // Then run the list request
           .then(async (files) => {
-            try {
-              // Loop through the files and delete them
-              for (let i = 0, length = files.length; i < length; i++) {
-                const file = files[i]
-                let folderPath, fileName
-                if (file.kind === "folder") {
-                  folderPath = file.path
-                  fileName = null
-                } else {
-                  folderPath = file.path.split("/")
-                  fileName = folderPath.pop()
-                  folderPath = folderPath.join("/")
-                }
-                await makeDeleteRequest(folderPath, fileName, body, headers, spinner)
+            // Loop through the files and delete them
+            for (let i = 0, length = files.length; i < length; i++) {
+              const file = files[i]
+              let folderPath, fileName
+              if (file.kind === "folder") {
+                folderPath = file.path
+                fileName = null
+              } else {
+                folderPath = file.path.split("/")
+                fileName = folderPath.pop()
+                folderPath = folderPath.join("/")
               }
-            } catch (err) {
-              reject(err)
+              try {
+                await makeDeleteRequest(folderPath, fileName, body, headers, spinner)
+              } catch (err) {
+                // Print the error, but continue
+                spinner.stop()
+                printError(err)
+                spinner.start()
+                continue
+              }
             }
+            // Stop loading
+            spinner.stop()
+            // Return successfully
             return
           })
           .then(resolve) // Then return successfully
@@ -1394,7 +1920,7 @@ const Client = class {
       let folderPath = parsePath(folders.join("/"), get(`drives.${get("current_drive")}.path`))
 
       // Show a loading indicator
-      const spinner = ora(`Deleting ${chalk.blue("files and folders")}`).start()
+      const spinner = ora(`Deleting ${chalk.blue(fileName)}`).start()
 
       // Generate the request body and headers for the provider
       let [body, headers] = generateBodyAndHeaders(get("current_drive"))
@@ -1406,6 +1932,8 @@ const Client = class {
           .then(() => {
             return makeDeleteRequest(folderPath, fileName, body, headers, spinner)
           })
+          .then(() => spinner.stop())
+          .then(() => printInfo(`Deleted ${folderPath}/${filePath}`))
           .then(resolve) // Then return successfully
           .catch(reject) // Else pass the error back on
       })

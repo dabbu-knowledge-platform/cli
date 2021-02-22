@@ -201,6 +201,8 @@ function createNewDrive() {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       client.init(name)
+        .then(() => printBright(`Created ${name}:`))
+        .then(() => help())
         .then(() => resolve(name))
         .catch(reject)
     })
@@ -235,6 +237,30 @@ function switchDrive(args) {
       reject(`Invalid drive name - choose one of these - ${Object.keys(drives).join(", ")}`)
     }
   })
+}
+
+// Print out the help message
+function help() {
+  return printInfo([
+    `${chalk.keyword("orange")(`Dabbu CLI v${require("../package.json").version}`)}`,
+    "",
+    "Usage: command [options]",
+    "Anything in <> must be mentioned, while if it is in [], it is optional.",
+    "",
+    `  ${chalk.keyword("orange")("pwd")} - Know your current drive and directory`,
+    `  ${chalk.keyword("orange")("cd <relative path to directory>")} - Move into a directory`,
+    `  ${chalk.keyword("orange")("ls [relative path to directory]")} - List files in a directory`,
+    `  ${chalk.keyword("orange")("cat <relative path to file>")} - Download and open a file`,
+    `  ${chalk.keyword("orange")("cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Copy a file from one place to another`,
+    `  ${chalk.keyword("orange")("mv <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Move a file from one place to another`,
+    `  ${chalk.keyword("orange")("rm <relative path to file>")} - Delete a file`,
+    `  ${chalk.keyword("orange")("upd <relative path to file> name=[new name] path=[new relative path (folder path)] lastModifiedTime=[time in any format]")} - Rename/Move/Set the last modified time of a file`,
+    `  ${chalk.keyword("orange")("<drive name>:")} - Switch drives (Notice the colon at the end of the drive name)`,
+    `  ${chalk.keyword("orange")("::")} - Create a new drive`,
+    `  ${chalk.keyword("orange")("clear")} - Clear the screen`,
+    `  ${chalk.keyword("orange")("q or quit or exit or CTRL+C")} - Exit`,
+    ""
+  ].join("\n"))
 }
 
 // Show the user a prompt to enter input
@@ -296,28 +322,7 @@ function showPrompt(err = null) {
         // Check if the command is `help`
         if (args[0] === "help") {
           // If so, print help
-          printInfo([
-            `${chalk.keyword("orange")(`Dabbu CLI v${require("../package.json").version}`)}`,
-            "",
-            "Usage: command [options]",
-            "Anything in <> must be mentioned, while if it is in [], it is optional.",
-            "",
-            `  ${chalk.keyword("orange")("pwd")} - Know your current drive and directory`,
-            `  ${chalk.keyword("orange")("cd <relative path to directory>")} - Move into a directory`,
-            `  ${chalk.keyword("orange")("ls [relative path to directory]")} - List files in a directory`,
-            `  ${chalk.keyword("orange")("cat <relative path to file>")} - Download and open a file`,
-            `  ${chalk.keyword("orange")("cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Copy a file from`,
-            `    one place to another`,
-            //`  ${chalk.keyword("orange")("mv <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Move a file from`,
-            //`    one place to another`,
-            `  ${chalk.keyword("orange")("rm <relative path to file>")} - Delete a file`,
-            `  ${chalk.keyword("orange")("upd <relative path to file> name=[new name] path=[new relative path (folder path)] lastModifiedTime=[time in any format]")} - Rename/Move/Set the last modified time of a file`,
-            `  ${chalk.keyword("orange")("<drive name>:")} - Switch drives (Notice the colon at the end of the drive name)`,
-            `  ${chalk.keyword("orange")("::")} - Create a new drive`,
-            `  ${chalk.keyword("orange")("clear")} - Clear the screen`,
-            `  ${chalk.keyword("orange")("q or quit or exit or CTRL+C")} - Exit`,
-            ""
-          ].join("\n"))
+          help()
           return showPrompt()
         }
         // Check if there is a function for that command
