@@ -245,20 +245,22 @@ function help() {
     `${chalk.keyword("orange")(`Dabbu CLI v${require("../package.json").version}`)}`,
     "",
     "Usage: command [options]",
-    "Anything in <> must be mentioned, while if it is in [], it is optional.",
+    "  - Anything in <> must be mentioned, while if it is in [], it is optional.",
+    "  - All file/folder paths may include drive names.",
+    "  - While specifying a folder, please add a / at the end of the folder name.",
+    "  - Escape spaces in the file name by surrounding it in quotes.",
     "",
     `  ${chalk.keyword("orange")("pwd")} - Know your current drive and directory`,
     `  ${chalk.keyword("orange")("cd <relative path to directory>")} - Move into a directory`,
     `  ${chalk.keyword("orange")("ls [relative path to directory]")} - List files in a directory`,
     `  ${chalk.keyword("orange")("cat <relative path to file>")} - Download and open a file`,
-    `  ${chalk.keyword("orange")("cp <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Copy a file from one place to another`,
-    `  ${chalk.keyword("orange")("mv <relative path to file (can include drive name)> <relative path to place to copy to (can include drive name)>")} - Move a file from one place to another`,
+    `  ${chalk.keyword("orange")("cp <relative path to file> <relative path to place to copy to>")} - Copy a file from one place to another`,
+    `  ${chalk.keyword("orange")("mv <relative path to file> <relative path to place to copy to>")} - Move a file from one place to another`,
     `  ${chalk.keyword("orange")("rm <relative path to file>")} - Delete a file`,
-    `  ${chalk.keyword("orange")("upd <relative path to file> name=[new name] path=[new relative path (folder path)] lastModifiedTime=[time in any format]")} - Rename/Move/Set the last modified time of a file`,
     `  ${chalk.keyword("orange")("<drive name>:")} - Switch drives (Notice the colon at the end of the drive name)`,
     `  ${chalk.keyword("orange")("::")} - Create a new drive`,
     `  ${chalk.keyword("orange")("clear")} - Clear the screen`,
-    `  ${chalk.keyword("orange")("q or quit or exit or CTRL+C")} - Exit`,
+    `  ${chalk.keyword("orange")("CTRL+C")} - Exit`,
     ""
   ].join("\n"))
 }
@@ -274,14 +276,21 @@ function showPrompt(err = null) {
       history: getPromptHistory() // Past commands can be accessed with the up key
     }, (err, args) => {
       // Add the command to history
-      if (args.join(" ") !== "") {
+      let command = args.map(arg => {
+        if (arg.includes(" ")) {
+          return `"${arg}"`
+        } else {
+          return arg
+        }
+      }).join(" ")
+      if (command !== "") {
         // Get current history
         let history = get("history") || []
         // Trim the length to the last 20 commands
         if (history.length > 19) {
-          history = [...history.slice(history.length - 18, history.length - 1), args.join(" ")]
+          history = [...history.slice(history.length - 18, history.length - 1), command]
         } else {
-          history = [...history, args.join(" ")]
+          history = [...history, command]
         }
         // Set it in config
         set("history", history)

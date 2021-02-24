@@ -20,6 +20,7 @@ const fs = require("fs-extra")
 const link = require("terminal-link")
 const chalk = require("chalk")
 const figlet = require("figlet")
+const axios = require("axios")
 
 const Conf = require("conf")
 const config = new Conf()
@@ -71,9 +72,95 @@ exports.deleteConfig = () => {
   return config.clear()
 }
 
+// A helper function to generate the body and headers of a request for
+// a provider
+exports.generateBodyAndHeaders = (drive) => {
+  let body = {}
+  let headers = {}
+  // The provider config
+  const providerConfigJSON = require("./provider_config.json").providers
+  // Get the config for the respective provider ID of the drive
+  const providerConfig = providerConfigJSON[this.get(`drives.${drive}.provider`)]
+  // Get a list of variables from the provider config
+  let bodyVariables = Object.keys(providerConfig.request.body || {})
+  let headerVariables = Object.keys(providerConfig.request.headers || {})
+
+  // Loop through them and get their value
+  for (let i = 0, length = bodyVariables.length; i < length; i++) {
+    const variable = providerConfig.request.body[bodyVariables[i]]
+    body[bodyVariables[i]] = this.get(`drives.${drive}.${[variable["path"]]}`)
+  }
+
+  // Loop through them and get their value
+  for (let i = 0, length = headerVariables.length; i < length; i++) {
+    const variable = providerConfig.request.headers[headerVariables[i]]
+    headers[headerVariables[i]] = this.get(`drives.${drive}.${[variable["path"]]}`)
+  }
+
+  // Return successfully
+  return [body, headers]
+}
+
+// A helper function to regenerate the access token in case
+// it has expired
+exports.refreshAccessToken = async (drive) => {
+  // The provider config
+  const providerConfigJSON = require("./provider_config.json").providers
+  // Get the config for the respective provider ID of the drive
+  const providerConfig = providerConfigJSON[this.get(`drives.${drive}.provider`)]
+  // Get a list of variables from the provider config
+  let headerVariables = Object.keys(providerConfig.request.headers || {})
+  
+  // Check if the provider has a authorization field in its headers and auth is enabled
+  const authHeaderIndex = headerVariables.indexOf("authorization") === -1 ? headerVariables.indexOf("Authorization") : headerVariables.indexOf("authorization")
+  if (authHeaderIndex !== -1 && providerConfig.auth && providerConfig.auth.process === "oauth2") {
+    // Refresh only if expired
+    let date = parseInt(Date.now())
+    let expiresAtDate = parseInt(this.get(`drives.${drive}.${providerConfig.auth.path}.expires_at`))
+    if (expiresAtDate < date) {
+      // If it has expired, get the auth metadata and the refresh token first
+      let refreshToken = this.get(`drives.${drive}.${providerConfig.auth.path}.refresh_token`)
+
+      // Get the URL to make a POST request to refresh the access token
+      const tokenURL = providerConfig.auth.token_uri
+      // Make a POST request with the required params
+      // Put the params as query params in the URL and in the request
+      // body too, Microsoft requires the params as a string in the body
+      const res = await axios.post(tokenURL,
+        // In the body
+        `refresh_token=${refreshToken}&client_id=${this.get(`drives.${drive}.auth_meta.client_id`)}&client_secret=${this.get(`drives.${drive}.auth_meta.client_secret`)}&redirect_uri=${this.get(`drives.${drive}.auth_meta.redirect_uri`)}&grant_type=${"refresh_token"}`,
+        // In the URL query parameters
+        {
+          params: {
+            refresh_token: refreshToken,
+            client_id: this.get(`drives.${drive}.auth_meta.client_id`),
+            client_secret: this.get(`drives.${drive}.auth_meta.client_secret`),
+            redirect_uri: this.get(`drives.${drive}.auth_meta.redirect_uri`),
+            grant_type: "refresh_token"
+          }
+        }
+      )
+      // Store the access token and update the expiry time
+      const {token_type, access_token, expires_in} = res.data
+      this.set(`drives.${drive}.${providerConfig.auth.path}.access_token`, `${token_type || "Bearer"} ${access_token}`)
+      this.set(`drives.${drive}.${providerConfig.auth.path}.expires_at`, (parseInt(Date.now()) + (expires_in * 1000))) // Multiply by thousands to keep milliseconds)
+      // Tell the user
+      this.printInfo(`\nRefreshed access token, expires at ${new Date(this.get(`drives.${drive}.${providerConfig.auth.path}.expires_at`)).toLocaleString()}`)
+      // Return successfully
+      return
+    } else {
+      // If it is not expired, return successfully
+      return
+    }
+  } else {
+    // If there is no auth required for that provider, return successfully
+    return
+  }
+}
+
 // Return an absolute path based on the current path in
 // the drive and the user-entered path
-exports.parsePath = (inputPath, currentPath) => {
+exports.getAbsolutePath = (inputPath, currentPath) => {
   // If there is no path given, or the path is /, return 
   // nothing (which means /)
   if (!inputPath || inputPath === "/") {
@@ -107,6 +194,83 @@ exports.parsePath = (inputPath, currentPath) => {
     .replace(/\/\/\/\//g, "/")
     .replace(/\/\/\//g, "/")
     .replace(/\/\//g, "/")
+}
+
+exports.parseUserInputForPath = async (input, allowRegex, fallbackDriveName, fallbackFileName) => {
+  // Assume the input to be "." if there is none
+  // Don't throw an error as there might be a fallback
+  // file name
+  let inputPath = input || "."
+  // Split it to check if there is a drive specified there
+  let splitPath = inputPath.split(":")
+  // Get the drive name
+  let drive = splitPath.length === 1 ? fallbackDriveName ? fallbackDriveName : this.get("current_drive") : splitPath[0]
+
+  // Get the file/folder path
+  let originalPath = splitPath.length === 1 ? splitPath[0] : splitPath[1]
+
+  // First (before parsing further) refresh the access token
+  await this.refreshAccessToken(drive)
+
+  // Check if there is some regex (only asterix for now) included
+  if (originalPath.includes("*")) {
+    if (!allowRegex) throw new Error("Regex not allowed for this command")
+    if (!originalPath.startsWith("/")) originalPath = `./${originalPath}`
+    // If so, parse it to get a base folder to search in
+    const paths = originalPath.split("*")
+    // Get the last folder without the regex part
+    const baseFolderPath = paths[0].substring(0, paths[0].lastIndexOf("/"))
+    // Get an absolute path
+    let folderPath = this.getAbsolutePath(baseFolderPath, this.get(`drives.${drive}.path`))
+    // Add the part with the asterix at the end of the folder path so we
+    // can filter the list later
+    regexPart = `${paths[0].substring(paths[0].lastIndexOf("/") + 1)}*${paths.slice(1).join("*")}`
+
+    // Return successfully
+    return {
+      drive: drive,
+      folderPath: folderPath,
+      fileName: null,
+      regex: "^" + regexPart.split("*").map(this.escapeRegex).join(".*") + "$"
+    }
+  } else {
+    // Get the folder names and file names separately
+    let foldersArray = originalPath.split("/")
+    // Get the file name
+    let fileName
+    if (originalPath.endsWith("/") 
+    || originalPath.endsWith("/..") 
+    || originalPath.endsWith("/.") 
+    || originalPath === "." 
+    || originalPath === ".." 
+    || originalPath === "/" ) {
+      if (fallbackFileName) {
+        fileName = fallbackFileName
+      }
+    } 
+    
+    if (!fileName) {
+      fileName = foldersArray.pop()
+    }
+
+    // If only the file name was specified, set the folders array to have a path 
+    // to the present directory
+    if (foldersArray.length === 0) {
+      foldersArray = ["."]
+    }
+    
+    // Parse the relative path and get an absolute one
+    let folderPath = this.getAbsolutePath(`${originalPath.startsWith("/") ? "/" : ""}${foldersArray.join("/")}`, this.get(`drives.${drive}.path`))
+    folderPath = folderPath === "" ? "/" : folderPath
+
+    // Return the file name and path
+    return {
+      drive: drive,
+      folderPath: folderPath,
+      fileName: fileName,
+      regex: null
+    }
+  }
 }
 
 // Remove any duplicates (and the original too) from an array
@@ -340,7 +504,6 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
-  //console.log(err)
   if (err.isAxiosError) {
     if (err.code === "ECONNRESET") {
       this.print(
