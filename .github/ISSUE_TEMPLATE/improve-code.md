@@ -1,10 +1,9 @@
 ---
 name: Improve code
 about: Have any ideas on how code could be re-written to look better or perform better?
-title: "[CODE]:"
+title: '[CODE]:'
 labels: code-refactor
 assignees: ''
-
 ---
 
 **Describe the issue**

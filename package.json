@@ -1,12 +1,17 @@
 {
   "name": "dabbu-cli",
-  "version": "2.2.0",
-  "description": "",
+  "version": "2.2.1",
+  "description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
   "main": "src/index.js",
+  "directories": {
+    "doc": "docs"
+  },
   "scripts": {
-    "start": "clear; node src/index.js",
-    "clean": "rm -r dist; mkdir dist",
-    "prebuild": "npm run clean",
+    "start": "node src/index.js",
+    "clean": "rm -r dist/ && mkdir dist/",
+    "check-format": "npx prettier --check .",
+    "format": "npx prettier --write .",
+    "prebuild": "npm run check-format",
     "build": "pkg --output dist/dabbu-cli .",
     "test": "echo \"Error: no test specified\"; exit 1"
   },
@@ -34,6 +39,9 @@
     "ora": "^5.3.0",
     "readcommand": "^0.3.0",
     "terminal-link": "^2.1.1"
+  },
+  "devDependencies": {
+    "prettier": "2.2.1"
   },
   "bin": "src/index.js",
   "pkg": {

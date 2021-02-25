@@ -23,7 +23,7 @@ These are the style guidelines for coding in Dabbu.
   `provider_id.js` rather than `provider-id.js`.
 - Use newer ES6/ES2015 syntax where appropriate
   - [`const`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const)
-    for requires and other constants.  If the value is a primitive, use uppercase naming (eg `const NUMBER_OF_RETRIES = 5`).
+    for requires and other constants. If the value is a primitive, use uppercase naming (eg `const NUMBER_OF_RETRIES = 5`).
   - [Arrow functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
     instead of `function () { }`
   - [Template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)

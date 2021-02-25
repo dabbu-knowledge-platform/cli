@@ -22,9 +22,10 @@ The installation can be done manually on Linux, MacOS, Android (Requires Termux)
 
 - Then download the proper CLI executable for your platform from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases). (Caution: releases may not work on certain versions of Android, depending on the manafacturer and version.)
 
-- On Windows, simply double click on the file to run it. 
+- On Windows, simply double click on the file to run it.
 
 - On Linux/MacOS, run the following command in a terminal (assuming you have downloaded the executable to your Downloads folder):
+
   - On MacOS:
 
     ```sh
@@ -32,7 +33,7 @@ The installation can be done manually on Linux, MacOS, Android (Requires Termux)
     ```
 
   - On Linux:
-  
+
     ```sh
     $ ~/Downloads/dabbu-cli-linux
     ```
@@ -44,12 +45,13 @@ The installation can be done manually on Linux, MacOS, Android (Requires Termux)
 To update the CLI, simply download the new version from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases).
 
 ## Providers supported
+
 - **Hard drive**
 - **Google drive**
 - **Gmail**
 - **One Drive**
 
-*And more to come...!*
+_And more to come...!_
 
 ### Creating a new provider
 
@@ -71,7 +73,7 @@ To contribute code, have a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
 
-Copyright (C) 2021  gamemaker1
+Copyright (C) 2021 gamemaker1
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -80,8 +82,8 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+along with this program. If not, see <https://www.gnu.org/licenses/>.

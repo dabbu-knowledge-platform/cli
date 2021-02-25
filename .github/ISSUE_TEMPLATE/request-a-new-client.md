@@ -1,10 +1,9 @@
 ---
 name: Request a client for a new provider
 about: Ask for a new client to be added to Dabbu CLI that is supported by Dabbu server
-title: "[NCLIENT]:"
+title: '[NCLIENT]:'
 labels: enhancement, new-client
 assignees: gamemaker1
-
 ---
 
 **Name of provider**

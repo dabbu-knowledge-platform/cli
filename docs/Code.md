@@ -47,6 +47,7 @@ The config file's fields are all set by the CLI itself and it will reset the fil
 ## **src/index.js**
 
 This will contain most of the CLI code. Here is what will happen there:
+
 - First, it will setup the UI - by drawing the Dabbu logo in yellow
 - Then it will check if the CLI has been setup by checking for the `setup_done` field. If not, then it will begin setup.
 - Then it will go into a REPL loop, reading the command line input, parsing it, calling the appropriate function or the client module, and then repeating this process again.
@@ -58,6 +59,7 @@ This file contains all utility methods used by the CLI.
 ## **src/client.js**
 
 This file contains all code for parsing and handling the user's commands (list, read, create, update, copy, delete)
+
 - Each function will be provided the with the user's command (separated by spaces; the space-escaping part is taken care of). It parses these and sends appropriate requests to the Dabbu Server. It is independent of providers. To add support for a new provider, add it to `src/provider_config.json`
 
 ## **src/provider_config.json**
