@@ -2,6 +2,8 @@
 
 These are the style guidelines for coding in Dabbu.
 
+Run `npm run format` before committing changes to Github to make sure it passes style checks once pushed to the repository.
+
 ## General Code
 
 - Heavily comment your code after it works, explaining exactly what each line does.

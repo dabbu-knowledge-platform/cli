@@ -55,7 +55,7 @@ $ git checkout -b my-branch-name -t upstream/main
 
 To get a decent idea of how the code is organised and what happens where, read [this](./docs/Code.md) file. Also, the code is heavily commented to allow you to understand exactly what happens. Remember to also read through the [Code Style Guidelines](./docs/CodeStyles.md) before starting to write code.
 
-To test a change without building the executables, you can type `npm start` and it will run the server directly.
+To test a change without building the executables, you can type `npm start` and it will run the server directly. To format the code using prettier, run `npm run format`.
 
 ### Step 5: Commit
 
