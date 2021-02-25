@@ -1,5 +1,7 @@
 # Dabbu CLI
 
+[![Node.js CI](https://github.com/gamemaker1/dabbu-cli/actions/workflows/node.js.yml/badge.svg)](https://github.com/gamemaker1/dabbu-cli/actions/workflows/node.js.yml)
+
 A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 
 ## Intro
