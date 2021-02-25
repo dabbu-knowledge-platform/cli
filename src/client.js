@@ -163,7 +163,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
     // Get the file's extension based on its mime type first
     let ext = getExtForMime(file.mimeType)
     // Path to the file
-    localPath = `./.cache/${file.name || file.fileName}`
+    localPath = `./.cache/_cli/_${provider}/${file.name || file.fileName}`
     localPath = `${localPath}${localPath.includes(ext) ? '' : ext}`
     // Create the file
     await fs.createFile(localPath)
@@ -781,12 +781,7 @@ const Client = class {
       drive: toDrive,
       folderPath: toFolderPath,
       fileName: toFileName,
-    } = await parseUserInputForPath(
-      args[2],
-      false,
-      null,
-      fromFileName || 'dabbu_fallback_file_id'
-    )
+    } = await parseUserInputForPath(args[2], false)
 
     // Check if the user has given some regex and matching files are to
     // be copied
@@ -1067,15 +1062,13 @@ const Client = class {
     // Get the path the user entered, default to current directory
     let { drive, folderPath, fileName, regex } = await parseUserInputForPath(
       args[1],
-      true,
-      null,
-      'dabbu_fallback_file_id'
+      true
     )
 
     spinner.text = `Deleting ${chalk.blue(
       regex
         ? `all files matching regex ${regex}`
-        : `file ${folderPath}/${fileName ? fileName : ''}`
+        : `${folderPath}/${fileName || ''}`
     )}`
 
     // Delete the files
@@ -1094,7 +1087,7 @@ const Client = class {
       `Deleted ${chalk.blue(
         regex
           ? `all files matching regex ${regex}`
-          : `file ${folderPath}/${fileName ? fileName : ''}`
+          : `${folderPath}/${fileName ? fileName : ''}`
       )}`
     )
     // Return successfully

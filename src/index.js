@@ -90,6 +90,8 @@ function checkSetupAndRun() {
         )
       }
     }
+    // Then print help
+    help()
     // Then show them the command line
     showPrompt()
   }
@@ -236,7 +238,7 @@ function createNewDrive() {
     return new Promise((resolve, reject) => {
       client
         .init(name)
-        .then(() => printBright(`Created ${name}:`))
+        .then(() => printBright(`\nCreated ${name}:\n`))
         .then(() => help())
         .then(() => resolve(name))
         .catch(reject)

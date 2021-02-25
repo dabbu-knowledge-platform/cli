@@ -291,12 +291,15 @@ exports.parseUserInputForPath = async (
     // Get the file name
     let fileName
     if (
+      // If the path is a folder, add a file name at the end
       originalPath.endsWith('/') ||
       originalPath.endsWith('/..') ||
       originalPath.endsWith('/.') ||
       originalPath === '.' ||
       originalPath === '..' ||
-      originalPath === '/'
+      originalPath === '/' ||
+      // If only a folder name/only a file name is mentioned
+      foldersArray.length === 1
     ) {
       if (fallbackFileName) {
         fileName = fallbackFileName
@@ -380,7 +383,7 @@ exports.getNameForMime = (mime) => {
 exports.getExtForMime = (mime) => {
   const types = require('./mimes.json')
   const value = (types[mime] || {}).ext
-  return `.${value}` || ''
+  return value || ''
 }
 
 // Display a set of files in a tabular format
@@ -457,114 +460,6 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
   }
 }
 
-// Recursively search and print files
-exports.listFilesRecursively = (folder, searchTerms, spinner) => {
-  // Tell the user which folder we are querying
-  spinner.start()
-  spinner.text = `Listing files in ${chalk.blue(folder)}`
-  // An array to hold all the files whose names contain any
-  // one of the search terms
-  let matchingFiles = []
-  // Wrap everything in a promise
-  return new Promise((resolve, reject) => {
-    const Client = require('./client.js').Client
-    const client = new Client()
-    // Call the module's list function with the folder path
-    client
-      .list(['ls', folder])
-      .then((list) => {
-        if (list) {
-          // First get all of the files not folders (we do !=== folder)
-          // as we might have the "file" and "other" types
-          let filesOnlyList = list.filter((item, pos) => {
-            return item.kind !== 'folder'
-          })
-
-          // Add the files to matches as well
-          let matchedInThisDir = []
-          if (searchTerms) {
-            matchedInThisDir = filesOnlyList.filter((item, pos) => {
-              for (j in searchTerms) {
-                return item.name
-                  .toLowerCase()
-                  .includes(searchTerms[j].toLowerCase())
-              }
-            })
-          } else {
-            matchedInThisDir = filesOnlyList
-          }
-
-          // Print them out
-          // Stop the spinner while we are printing
-          spinner.stop()
-          // Print the folder name if it matches or if it has matching files
-          for (j in searchTerms) {
-            if (
-              folder.toLowerCase().includes(searchTerms[j].toLowerCase()) ||
-              matchedInThisDir.length > 0
-            ) {
-              this.printInfo(folder)
-              break
-            }
-          }
-          // Print the files (with the full path)
-          // It won't print anything if the array is empty
-          this.printFiles(matchedInThisDir, true)
-          // Start the spinner
-          spinner.start()
-
-          // Add the matched ones to the final array
-          matchingFiles = matchingFiles.concat(matchedInThisDir)
-
-          // Now recurse through the remaining folders
-          let i = 0
-          // Create a function that will walk through the directories
-          const next = () => {
-            // Current file
-            let file = list[i++]
-            // If there is no such file, return all the matching
-            // files found so far (we've reached the end)
-            if (!file) {
-              return resolve(matchingFiles)
-            }
-            if (file.kind === 'folder') {
-              // If it's a folder, then call the listFilesRecursively method again
-              // with the folder path
-              this.listFilesRecursively(file.path, searchTerms, spinner)
-                .then((files) => {
-                  // Add the matching files to the matching files array
-                  if (searchTerms) {
-                    matchingFiles.concat(
-                      files.filter((item, pos) => {
-                        for (j in searchTerms) {
-                          return item.name
-                            .toLowerCase()
-                            .includes(searchTerms[j].toLowerCase())
-                        }
-                      })
-                    )
-                  } else {
-                    matchingFiles = matchingFiles.concat(files)
-                  }
-                })
-                .then(() => next())
-            } else {
-              // We have already printed and added these files to the array,
-              // so continue
-              next()
-            }
-          }
-
-          // Start the chain
-          next()
-        } else {
-          resolve([])
-        }
-      })
-      .catch(reject) // Pass the error back on
-  })
-}
-
 // Wrap the console.log in a print function
 exports.print = console.log
 
@@ -610,7 +505,7 @@ exports.printError = (err) => {
 // Exit Dabbu and delete the .cache directory
 exports.exitDabbu = () => {
   return fs
-    .remove(`./.cache/`)
+    .remove(`./.cache/_cli/`)
     .then(() => this.set('clips', {}))
     .then(() => this.printInfo('Removed cache. Exiting..'))
     .finally(() => process.exit(0))
