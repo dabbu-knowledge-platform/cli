@@ -61,7 +61,7 @@ _And more to come...!_
 
 ## Docs
 
-The code structure is documented in the file [docs/Code.md](./docs/Code.md).
+The documentation for the API can be found [here](https://gamemaker1.github.io/dabbu-cli)
 
 ## Issues and pull requests
 
