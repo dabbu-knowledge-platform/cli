@@ -1,12 +1,12 @@
 # Dabbu CLI
 
-[![Node.js CI](https://github.com/gamemaker1/dabbu-cli/actions/workflows/node.js.yml/badge.svg)](https://github.com/gamemaker1/dabbu-cli/actions/workflows/node.js.yml)
+[![Code Style and Build Check](https://github.com/gamemaker1/dabbu-server/actions/workflows/style_and_build_check.yml/badge.svg)](https://github.com/gamemaker1/dabbu-server/actions/workflows/style_and_build_check.yml)
 
 A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 
 ## Intro
 
-Tired of having your files and folders randomly scattered about online with multiple companies from Google to Dropbox? Want to access your Google Drive or OneDrive as fast and easily as your hard drive? Well, that's exactly what we have tried doing with Dabbu. We'll let this GIF do the talking:
+Tired of having your files and folders randomly scattered about online with multiple providers like Google Drive and One Drive? Want to access all your files and folders using a single, unified interface? Dabbu’s APIs (Application Programming Interfaces) allow you to access your files and folders from any provider (Google Drive, Gmail, Microsoft OneDrive, etc) from a single, unified interface. Behind these APIs is a software layer that connects to these providers and returns your files and folders in one unified format. We'll let this GIF do the talking:
 
 ![](./media/DabbuCLI.gif)
 

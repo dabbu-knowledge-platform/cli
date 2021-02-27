@@ -1,0 +1,27 @@
+# Site Settings
+title: Dabbu CLI
+description: A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
+
+# Local Settings
+baseurl: '/dabbu-cli'
+
+# Theme
+theme: 'just-the-docs'
+remote_theme: pmarsceill/just-the-docs
+
+# Theme settings
+# Color scheme currently only supports "dark" or "light" (default)
+color_scheme: light
+
+# Enable or disable the site search
+# Use this command to update index: bundle exec just-the-docs rake search:init
+search_enabled: true
+
+# Aux links for the upper right navigation
+aux_links:
+  'View on GitHub':
+    - 'https://github.com/gamemaker1/dabbu-cli'
+  'Download latest source code':
+    - 'https://github.com/gamemaker1/dabbu-cli/archive/main.zip'
+  'Download latest release':
+    - 'https://github.com/gamemaker1/dabbu-cli/releases/latest'

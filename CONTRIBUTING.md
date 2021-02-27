@@ -2,9 +2,7 @@
 
 First off, thanks for taking the time to contribute!
 
-The following is a set of guidelines for contributing to Dabbu.
-These are just guidelines, not rules, use your best judgment and feel free to
-propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to Dabbu. These are just guidelines, not rules, use your best judgment and feel free to propose changes to this document in a pull request.
 
 ## Issues
 
@@ -20,9 +18,6 @@ You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and
 - `nodejs and npm` **must** be installed to run the server locally
   - To check if nodejs is already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command.
   - [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install nodejs and npm for all platforms in case you haven't installed it already.
-- `pkg` **must** be installed to build the server
-  - To check if pkg is installed, type `pkg --version` in terminal/command prompt. You should see a version number displayed after running this command.
-  - [Here](https://www.npmjs.com/package/pkg#usage) are the official instructions to install pkg for all platforms in case you haven't installed it already. (Requires nodejs and npm)
 
 ### Step 1: Fork
 
@@ -39,7 +34,7 @@ $ git fetch upstream
 
 ### Step 2: Build
 
-All you need to do to build is run `npm build`. If the command runs successfully, there should be 3 files (`dabbu-cli-linux`, `dabbu-cli-macos` and `dabbu-cli-win.exe`) in the `dist/` folder. These are the executables that can be run on linux, macos and windows respectively without installation of external dependencies.
+All you need to do to build is run `npm run build`. If the command runs successfully, there should be 3 files (`dabbu-server-linux`, `dabbu-server-macos` and `dabbu-server-win.exe`) in the `dist/` folder. These are the executables that can be run on linux, macos and windows respectively without installation of external dependencies.
 
 Once you've built the project locally, you're ready to start making changes!
 
@@ -48,14 +43,16 @@ Once you've built the project locally, you're ready to start making changes!
 To keep your development environment organized, create local branches to hold your work. These should be branched directly off of the `main` branch. While naming branches, try to name it according to the bug it fixes or the feature it adds.
 
 ```sh
-$ git checkout -b my-branch-name -t upstream/main
+$ git checkout -b fix-buggy-bug -t upstream/main
 ```
 
 ### Step 4: Code
 
-To get a decent idea of how the code is organised and what happens where, read [this](./docs/Code.md) file. Also, the code is heavily commented to allow you to understand exactly what happens. Remember to also read through the [Code Style Guidelines](./docs/CodeStyles.md) before starting to write code.
+To get a decent idea of how the code is organised and what happens where, the code is heavily commented to allow you to understand exactly what happens. Remember to always format the code using `prettier` once you're done.
 
-To test a change without building the executables, you can type `npm start` and it will run the server directly. To format the code using prettier, run `npm run format`.
+To test a change without building the executables, you can type `npm start` and it will run the server directly.
+
+To check if the code is formatted correctly, run `npm run check-format`. To format the code using prettier, run `npm run format`.
 
 ### Step 5: Commit
 
@@ -119,19 +116,27 @@ This ensures that your working branch has the latest changes from `gamemaker1/da
 
 Bug fixes and features should always come with tests. Please test your own code adequately. Also, before finally pushing your code, clone it into a fresh environment (different user or maybe a different computer) and make sure it works just as fine. Make sure you test the executables in the `dist/` directory, not just the \*.js files.
 
-### Step 8: Push
+### Step 8: Document
 
-Once your commits are ready to go - with adequate testing - begin the process of opening a pull request by pushing your working branch to your fork on GitHub.
+Once your commits are ready to go - with adequate testing - begin the process of documenting your code. All the docs are located in the `docs/` folder.
+
+If you feel the documentation is a bit unfriendly to beginners, feel free to change it as you wish.
+
+The documentation uses jekyll. To set up jekyll on your computer and make changes to the documentation, follow [this](https://docs.github.com/en/github/working-with-github-pages/testing-your-github-pages-site-locally-with-jekyll) guide.
+
+### Step 9: Push
+
+Once you have documented your code as required, begin the process of opening a pull request by pushing your working branch to your fork on GitHub.
 
 ```sh
-$ git push origin my-branch-name
+$ git push origin fix-buggy-bug
 ```
 
-### Step 9: Opening the Pull Request
+### Step 10: Opening the Pull Request
 
 From within GitHub, opening a new pull request will present you with a template that should be filled out.
 
-### Step 10: Discuss and update
+### Step 11: Discuss and update
 
 You will probably get feedback or requests for changes to your pull request. This is a big part of the submission process so don't be discouraged! Some contributors may sign off on the pull request right away. Others may have detailed comments or feedback. This is a necessary part of the process in order to evaluate whether the changes are correct and necessary.
 
@@ -140,7 +145,7 @@ To make changes to an existing pull request, make the changes to your local bran
 ```sh
 $ git add my/changed/files
 $ git commit
-$ git push origin my-branch-name
+$ git push origin fix-buggy-bug
 ```
 
 There are a number of more advanced mechanisms for managing commits using `git rebase` that can be used, but are beyond the scope of this README.
@@ -153,7 +158,7 @@ All pull requests require approval from a [Code Owner](https://github.com/dabbu-
 
 Try not to be discouraged. Try asking the maintainer for advice on how to implement it. If you feel that a review is unfair, say so or seek the input of another project contributor. Often such comments are the result of a reviewer having taken insufficient time to review and are not ill-intended. Such difficulties can often be resolved with a bit of patience. That said, reviewers should be expected to provide helpful feedback.
 
-### Step 11: Landing
+### Step 12: Landing
 
 In order to land, a pull request needs to be reviewed and approved by at least one Code Owner. After that, if there are no objections from other contributors, the pull request can be merged.
 

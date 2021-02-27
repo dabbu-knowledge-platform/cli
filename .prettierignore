@@ -1,5 +1,8 @@
 node_modules/
 dist/
 creds/
-.cache*
+docs/
+.cache/
+.git/
+.heroku*
 dabbu_cli_config.json
