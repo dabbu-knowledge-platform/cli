@@ -2,7 +2,7 @@
 title: Dabbu CLI
 description: A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 
-# Local Settings
+# Base URL
 baseurl: '/dabbu-cli'
 
 # Theme
