@@ -61,7 +61,7 @@ _And more to come...!_
 
 ## Docs
 
-The documentation for the API can be found [here](https://gamemaker1.github.io/dabbu-cli)
+The documentation is a work in progress, keep an eye on this page to know more.
 
 ## Issues and pull requests
 
