@@ -43,7 +43,7 @@ const {
 
 const listRequest = async (drive, folderPath, regex) => {
   // Generate request body and headers
-  let [body, headers] = generateBodyAndHeaders(drive)
+  let [body, headers] = await generateBodyAndHeaders(drive)
 
   // Get the server address, provider ID and URL encode the folder path
   let server = get('server')
@@ -53,7 +53,7 @@ const listRequest = async (drive, folderPath, regex) => {
   )
 
   // The URL to send the request to
-  let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}?exportType=view`
+  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}?exportType=view`
   // Send a GET request
   let res = await axios.get(url, {
     data: body, // The appropriate request body for this provider
@@ -83,7 +83,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
   // contentURI and the path on the local disk where the file is downloaded
   let file, fileData, localPath
   // Generate request body and headers
-  let [body, headers] = generateBodyAndHeaders(drive)
+  let [body, headers] = await generateBodyAndHeaders(drive)
 
   // Get the server address, provider ID and URL encode the folder path and file name
   let server = get('server')
@@ -93,7 +93,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
   )
   let encodedFileName = encodeURIComponent(fileName)
   // The URL to send the GET request to
-  let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
+  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
   // Send a GET request
   let res = await axios.get(url, {
     data: body,
@@ -188,7 +188,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
 
 const uploadRequest = async (drive, folderPath, fileName, localPath) => {
   // Generate request body and headers
-  let [body, headers] = generateBodyAndHeaders(drive)
+  let [body, headers] = await generateBodyAndHeaders(drive)
 
   // Get the server address, provider ID and URL encode the folder path
   let server = get('server')
@@ -219,7 +219,7 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
   const formHeaders = formData.getHeaders()
 
   // The URL to send the request to
-  let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
   // Send a POST request
   let res = await axios.post(url, formData, {
     headers: {
@@ -227,12 +227,12 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
       ...headers, // The provider-specific headers
     },
   })
-  if (res.status === 200) {
+  if (res.status === 201) {
     // If there is no error, return
     return
   } else {
     // Else error out
-    throw new Error(res.response.data.error.message)
+    throw new Error(res.data.error.message)
   }
 }
 
@@ -244,7 +244,7 @@ const updateRequest = async (
   toFileName
 ) => {
   // Generate request body and headers
-  let [body, headers] = generateBodyAndHeaders(drive)
+  let [body, headers] = await generateBodyAndHeaders(drive)
 
   // Get the server address, provider ID and URL encode the folder path
   let server = get('server')
@@ -263,7 +263,7 @@ const updateRequest = async (
   }
 
   // The URL to send the request to
-  let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
   // Send a POST request
   let res = await axios.put(url, body, {
     headers: headers,
@@ -279,7 +279,7 @@ const updateRequest = async (
 
 const deleteRequest = async (drive, folderPath, fileName, regex) => {
   // Generate request body and headers
-  let [body, headers] = generateBodyAndHeaders(drive)
+  let [body, headers] = await generateBodyAndHeaders(drive)
 
   // Get the server address, provider ID and URL encode the folder path
   let server = get('server')
@@ -291,7 +291,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
   if (!fileName) {
     if (regex) {
       // The URL to send the request to
-      let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}?exportType=view`
+      let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}?exportType=view`
       // Send a GET request
       let res = await axios.get(url, {
         data: body, // The appropriate request body for this provider
@@ -313,7 +313,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
         for (let file of files) {
           let encodedFileName = encodeURIComponent(file.name)
           // The URL to send the request to
-          let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+          let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
           // Send a GET request
           let res = await axios.delete(url, {
             data: body, // The appropriate request body for this provider
@@ -329,7 +329,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
       }
     } else {
       // The URL to send the request to
-      let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}`
+      let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}`
       // Send a GET request
       let res = await axios.delete(url, {
         data: body, // The appropriate request body for this provider
@@ -341,7 +341,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
   } else {
     let encodedFileName = encodeURIComponent(fileName)
     // The URL to send the request to
-    let url = `${server}/dabbu/v1/api/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+    let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
     // Send a GET request
     let res = await axios.delete(url, {
       data: body, // The appropriate request body for this provider
@@ -382,7 +382,11 @@ const Client = class {
     // First get the provider, so we can get the related variables
     // from the provider_config.json file
     // The provider config
-    const providerConfigJSON = require('./provider_config.json').providers
+    let providerConfigJSON = await axios.get(
+      'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+    )
+    providerConfigJSON = providerConfigJSON.data.providers
+
     const provider = get(`drives.${drive}.provider`)
     const providerConfig = providerConfigJSON[provider]
 
@@ -661,7 +665,7 @@ const Client = class {
   // Show the user their current drive and path
   async pwd(args) {
     // Current drive
-    const drive = get('current_drive')
+    const drive = (args[1] || get('current_drive')).replace(/:/g, '')
     // Print the drive name and path as a promise
     printInfo(
       `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
@@ -699,8 +703,7 @@ const Client = class {
     let { drive, folderPath, regex } = await parseUserInputForPath(
       args[1],
       true,
-      null,
-      'dabbu_fallback_file_id'
+      true
     )
 
     spinner.text = `Loading all files ${chalk.blue(

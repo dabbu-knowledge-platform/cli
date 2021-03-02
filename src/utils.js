@@ -74,11 +74,14 @@ exports.deleteConfig = () => {
 
 // A helper function to generate the body and headers of a request for
 // a provider
-exports.generateBodyAndHeaders = (drive) => {
+exports.generateBodyAndHeaders = async (drive) => {
   let body = {}
   let headers = {}
   // The provider config
-  const providerConfigJSON = require('./provider_config.json').providers
+  let providerConfigJSON = await axios.get(
+    'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+  )
+  providerConfigJSON = providerConfigJSON.data.providers
   // Get the config for the respective provider ID of the drive
   const providerConfig =
     providerConfigJSON[this.get(`drives.${drive}.provider`)]
@@ -108,7 +111,10 @@ exports.generateBodyAndHeaders = (drive) => {
 // it has expired
 exports.refreshAccessToken = async (drive) => {
   // The provider config
-  const providerConfigJSON = require('./provider_config.json').providers
+  let providerConfigJSON = await axios.get(
+    'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+  )
+  providerConfigJSON = providerConfigJSON.data.providers
   // Get the config for the respective provider ID of the drive
   const providerConfig =
     providerConfigJSON[this.get(`drives.${drive}.provider`)]
@@ -236,6 +242,7 @@ exports.getAbsolutePath = (inputPath, currentPath) => {
 exports.parseUserInputForPath = async (
   input,
   allowRegex,
+  returnFolderPath,
   fallbackDriveName,
   fallbackFileName
 ) => {
@@ -306,7 +313,7 @@ exports.parseUserInputForPath = async (
       }
     }
 
-    if (!fileName) {
+    if (!fileName && !returnFolderPath) {
       fileName = foldersArray.pop()
     }
 

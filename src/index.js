@@ -138,7 +138,7 @@ function createNewDrive() {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to
-      const url = `${server}/dabbu/v1/api/providers`
+      const url = `${server}/files-api/v1/providers`
       // Send a GET request
       axios
         .get(url)
