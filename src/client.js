@@ -164,7 +164,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
     let ext = getExtForMime(file.mimeType)
     // Path to the file
     localPath = `./.cache/_cli/_${provider}/${file.name || file.fileName}`
-    localPath = `${localPath}${localPath.includes(ext) ? '' : ext}`
+    localPath = `${localPath}${localPath.includes(ext) ? '' : `.${ext}`}`
     // Create the file
     await fs.createFile(localPath)
     // Open a write stream so we can write the data we got to it
@@ -859,7 +859,7 @@ const Client = class {
         let res = await uploadRequest(
           toDrive,
           toFolderPath,
-          toFileName,
+          toFileName || fromFileName,
           localPath
         )
         // Tell the user
@@ -1037,7 +1037,7 @@ const Client = class {
           let res = await uploadRequest(
             toDrive,
             toFolderPath,
-            toFileName,
+            toFileName || fromFileName,
             localPath
           )
           // Tell the user
