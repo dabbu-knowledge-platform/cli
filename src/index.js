@@ -227,7 +227,7 @@ function createNewDrive() {
               set(`drives.${name}.provider`, provider)
               set(`drives.${name}.path`, '')
               // Return successfully
-              resolve(name)
+              resolve([name, provider])
             }
           }
         }
@@ -236,15 +236,24 @@ function createNewDrive() {
   }
 
   // Let the provider do the rest
-  const providerInit = (name) => {
+  const providerInit = ([name, provider]) => {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
-      client
-        .init(name)
-        .then(() => printBright(`\nCreated ${name}:\n`))
-        .then(() => help())
-        .then(() => resolve(name))
-        .catch(reject)
+      if (provider === 'knowledge') {
+        klient
+          .init(name)
+          .then(() => printBright(`\nCreated ${name}:\n`))
+          .then(() => help())
+          .then(() => resolve(name))
+          .catch(reject)
+      } else {
+        client
+          .init(name)
+          .then(() => printBright(`\nCreated ${name}:\n`))
+          .then(() => help())
+          .then(() => resolve(name))
+          .catch(reject)
+      }
     })
   }
 

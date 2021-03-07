@@ -59,15 +59,15 @@ const Klient = class {
     }
   }
 
-  async init() {
+  async init(drive) {
     // Ask the user which providers we should index
     const reqDrivesToIndex = () => {
       return new Promise((resolve, reject) => {
         // Get the user's drives
         let drives = ''
         let driveJSON = get('drives')
-        for (const drive of driveJSON) {
-          drives += `${drive} (${driveJSON[drive].provider})`
+        for (const drive of Object.keys(driveJSON)) {
+          drives += `${drive} (${driveJSON[drive].provider}), `
         }
         // Tell the user what they need to do
         printInfo(
@@ -94,11 +94,17 @@ const Klient = class {
               const varVal = args[0]
               // If they haven't entered anything, flag it and ask again
               if (!varVal) {
-                printBright(`Please ${varInfo.prompt.toLowerCase()}`)
-                _reqVariable(variable)
+                printBright(`Please enter the names of the drives`)
+                resolve(reqDrivesToIndex())
               } else {
                 // Store its value in the config file
-                set(`drives.${drive}.${varInfo.path}`, varVal)
+                set(
+                  `drives.${drive}.${drives}`,
+                  varVal
+                    .split(',')
+                    .map((val) => val.replace(/:/g, ''))
+                    .filter((val) => val && val !== '')
+                )
                 // Return successfully
                 resolve()
               }
@@ -107,24 +113,33 @@ const Klient = class {
         )
       })
     }
+
+    // Ask the user which drives they want to index, then return
+    return await reqDrivesToIndex()
   }
 
   // Show the user their current drive and path
   async pwd(args) {
+    // Current drive
+    const drive = (args[1] || get('current_drive')).replace(/:/g, '')
     // Print the drive name and path
-    printInfo(`(knowledge) k:${get(`drives.k.path`)}`)
+    printInfo(
+      `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
+        `drives.${drive}.path`
+      )}`
+    )
 
     // Return
     return
   }
 
-  // Change the user's topic
+  // Change the topic the user is viewing
   async cd(args) {
-    // The user given topic
+    // The user given relative path
     const inputPath = args[1]
 
-    // Set the topic
-    set(`drives.k.path`, inputPath)
+    // Set the path
+    set(`drives.${get('current_drive')}.path`, inputPath)
 
     // Return
     return
