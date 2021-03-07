@@ -23,6 +23,9 @@ const prompt = require('readcommand')
 const Client = require('./client.js').Client
 const client = new Client()
 
+const Klient = require('./knowledge.js').Klient
+const klient = new Klient()
+
 const {
   getDrawableText,
   handleInputError,
@@ -53,7 +56,7 @@ function checkSetupAndRun() {
     // First check if the current drive is valid, as someone may have
     // deleted a provider and not changed the current drive
     let currentDriveName = get('current_drive')
-    let currentDriveVars = get(`drives.${currentDriveName}`)
+    let currentDriveVars = get(`drives.${currentDriveName}`) || {}
     // Check if there is no current drive
     if (
       !currentDriveName ||
@@ -79,15 +82,15 @@ function checkSetupAndRun() {
           // Make sure it is not the current drive and has at least the provider field
           if (driveName != currentDriveName && driveVars.provider) {
             set('current_drive', driveName)
+            printError(
+              `Current drive was not set to a valid drive or current drive configuration was corrupt. Changing to ${driveName}:`
+            )
             break
           } else {
             // Empty that drive so it never gets picked, it is not properly configured
             set(`drives.${drive}`, {})
           }
         }
-        printError(
-          `Current drive was not set to a valid drive or current drive configuration was corrupt. Changing to ${drive}:`
-        )
       }
     }
     // Then print help
@@ -145,7 +148,7 @@ function createNewDrive() {
         .then((res) => {
           if (res.data.content.providers.length > 0) {
             // If there are some providers, return them
-            resolve(res.data.content.providers)
+            resolve([...res.data.content.providers, 'knowledge'])
           } else {
             // Else error out
             reject(
@@ -397,15 +400,29 @@ function showPrompt(err = null) {
           help()
           return showPrompt()
         }
-        // Check if there is a function for that command
-        if (typeof client.ops[args[0]] !== 'function') {
-          return showPrompt(new Error('Invalid command'))
-        }
 
-        // Else execute the function
-        return client.ops[args[0]](args)
-          .then(showPrompt) // Then show prompt again
-          .catch(showPrompt) // Show prompt again, but pass the error to it
+        // Check if we are in the knowledge drive
+        if (get(`drives.${get('current_drive')}.provider`) === 'knowledge') {
+          // If so, execute the function according to the knowledge drive
+          // Check if there is a function for that command
+          if (typeof klient.ops[args[0]] !== 'function') {
+            return showPrompt(new Error('Invalid command'))
+          }
+          // If there is, run it
+          return klient.ops[args[0]](args)
+            .then(showPrompt) // Then show prompt again
+            .catch(showPrompt) // Show prompt again, but pass the error to it
+        } else {
+          // Else execute the function normally
+          // Check if there is a function for that command
+          if (typeof client.ops[args[0]] !== 'function') {
+            return showPrompt(new Error('Invalid command'))
+          }
+          // If there is, run it
+          return client.ops[args[0]](args)
+            .then(showPrompt) // Then show prompt again
+            .catch(showPrompt) // Show prompt again, but pass the error to it
+        }
       }
     }
   )
@@ -414,10 +431,9 @@ function showPrompt(err = null) {
 function getPromptPs() {
   // Current drive
   const drive = get('current_drive')
-  const driveVars = get(`drives.${drive}`)
+  const driveVars = get(`drives.${drive}`) || {}
   // Return the drive and the current path as the PS
-  //return `(${driveVars.provider}) ${chalk.cyan(`${drive}:${driveVars.path}$`)} `
-  return chalk.cyan(`${drive}:${driveVars.path}$ `)
+  return chalk.cyan(`${drive}:${driveVars.path || ''}$ `)
 }
 
 function getPromptHistory() {

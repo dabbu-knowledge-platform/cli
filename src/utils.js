@@ -482,6 +482,7 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
+  console.error(err)
   if (err.isAxiosError) {
     if (err.code === 'ECONNRESET') {
       this.print(

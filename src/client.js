@@ -665,8 +665,8 @@ const Client = class {
   // Show the user their current drive and path
   async pwd(args) {
     // Current drive
-    const drive = (args[1] || get('current_drive')).replace(/:/g, '')
-    // Print the drive name and path as a promise
+    const drive = args[1] || get('current_drive')
+    // Print the drive name and path
     printInfo(
       `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
         `drives.${drive}.path`
