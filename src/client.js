@@ -382,13 +382,13 @@ const Client = class {
     // First get the provider, so we can get the related variables
     // from the provider_config.json file
     // The provider config
-    let providerConfigJSON = await axios.get(
+    let providerConfigJson = await axios.get(
       'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
     )
-    providerConfigJSON = providerConfigJSON.data.providers
+    providerConfigJson = providerConfigJson.data.providers
 
     const provider = get(`drives.${drive}.provider`)
-    const providerConfig = providerConfigJSON[provider]
+    const providerConfig = providerConfigJson[provider]
 
     // Request a variable from the user
     const _reqVariable = (variable) => {

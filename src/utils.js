@@ -78,13 +78,14 @@ exports.generateBodyAndHeaders = async (drive) => {
   let body = {}
   let headers = {}
   // The provider config
-  let providerConfigJSON = await axios.get(
+  let providerConfigJson = await axios.get(
     'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
   )
-  providerConfigJSON = providerConfigJSON.data.providers
+  providerConfigJson = providerConfigJson.data.providers
   // Get the config for the respective provider ID of the drive
-  const providerConfig =
-    providerConfigJSON[this.get(`drives.${drive}.provider`)]
+  const providerConfig = providerConfigJson[
+    this.get(`drives.${drive}.provider`)
+  ] || { request: {} }
   // Get a list of variables from the provider config
   let bodyVariables = Object.keys(providerConfig.request.body || {})
   let headerVariables = Object.keys(providerConfig.request.headers || {})
@@ -111,13 +112,13 @@ exports.generateBodyAndHeaders = async (drive) => {
 // it has expired
 exports.refreshAccessToken = async (drive) => {
   // The provider config
-  let providerConfigJSON = await axios.get(
+  let providerConfigJson = await axios.get(
     'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
   )
-  providerConfigJSON = providerConfigJSON.data.providers
+  providerConfigJson = providerConfigJson.data.providers
   // Get the config for the respective provider ID of the drive
   const providerConfig =
-    providerConfigJSON[this.get(`drives.${drive}.provider`)]
+    providerConfigJson[this.get(`drives.${drive}.provider`)]
   // Get a list of variables from the provider config
   let headerVariables = Object.keys(providerConfig.request.headers || {})
 
@@ -482,7 +483,6 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
-  console.error(err)
   if (err.isAxiosError) {
     if (err.code === 'ECONNRESET') {
       this.print(
