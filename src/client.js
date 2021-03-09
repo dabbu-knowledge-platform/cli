@@ -412,7 +412,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!varVal) {
                 printBright(`Please ${varInfo.prompt.toLowerCase()}`)
-                _reqVariable(variable)
+                resolve(_reqVariable(variable))
               } else {
                 // Store its value in the config file
                 set(`drives.${drive}.${varInfo.path}`, varVal)
@@ -476,7 +476,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!clientID) {
                 printBright('Please enter the client ID.')
-                reqClientID()
+                resolve(reqClientID())
               } else {
                 // Store its value in the config file
                 set(
@@ -510,7 +510,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!clientSecret) {
                 printBright('Please enter the client secret.')
-                reqClientSecret()
+                resolve(reqClientSecret())
               } else {
                 // Store its value in the config file
                 set(`drives.${drive}.auth_meta.client_secret`, clientSecret)

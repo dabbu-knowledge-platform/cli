@@ -189,7 +189,7 @@ function createNewDrive() {
                 -1
             ) {
               printError(`Choose a provider to setup first - ${providerString}`)
-              reqProvider(providers)
+              resolve(reqProvider(providers))
             } else {
               provider = provider.replace(/\ /g, '_').toLowerCase()
               // Return successfully
@@ -220,7 +220,7 @@ function createNewDrive() {
             // If they haven't entered anything, flag it and ask again
             if (!name) {
               printError('Please enter a name for the drive. (e.g.: c, d, e)')
-              reqDriveName(provider)
+              resolve(reqDriveName(provider))
             } else {
               // Else create a drive in config by setting the provider and path
               name = name.replace(/\ /g, '_').replace(/:/g, '')
