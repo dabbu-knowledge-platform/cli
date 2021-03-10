@@ -128,7 +128,7 @@ exports.refreshAccessToken = async (drive) => {
       ? headerVariables.indexOf('Authorization')
       : headerVariables.indexOf('authorization')
   if (
-    authHeaderIndex !== -1 &&
+    authHeaderIndex > -1 &&
     providerConfig.auth &&
     providerConfig.auth.process === 'oauth2'
   ) {

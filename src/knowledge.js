@@ -27,12 +27,14 @@ const FormData = require('form-data')
 const {
   get,
   set,
+  getAbsolutePath,
   refreshAccessToken,
   generateBodyAndHeaders,
   printInfo,
   printBright,
   getExtForMime,
   printError,
+  printFiles,
 } = require('./utils')
 
 // A helper function to list files in a folder
@@ -176,7 +178,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
     throw new Error('No such file/folder was found.')
   }
 
-  return localPath
+  return { localPath: localPath, fileMeta: file }
 }
 
 // A helper function to list files recursively
@@ -321,7 +323,7 @@ const Klient = class {
     const spinner = ora('Loading...').start()
 
     // The file in which to store the index data
-    let indexFilePath = `./.cache/_knowledge/index.json`
+    let indexFilePath = `./_dabbu/dabbu_knowledge_index.json`
     // Create that file
     await fs.createFile(indexFilePath)
     // The json object to write to that file
@@ -334,16 +336,21 @@ const Klient = class {
 
       // Fetch the file's metadata recursively
       const files = await listFilesRecursively(driveToIndex, '/', spinner)
-      // Now add it to the JSON
+      // Add the files to the JSON
       indexJson.files.push(...files)
 
+      // Number of files skipped due to errors
+      let skippedFiles = 0
+
       // Check if there are some files
-      if (files && files.length !== 0) {
+      if (files && files.length > 0) {
         // If so, fetch the contents of each file using the content URI and index them
         for (const file of files) {
           if (file.kind === 'file') {
             // Tell the user what we are doing
-            spinner.text = `Indexing file ${chalk.blue(file.path)}`
+            spinner.text = `Indexing file ${chalk.blue(
+              driveToIndex + ':' + file.path
+            )}`
             // Get the file name and the folder path
             let fileName = file.name
             let folderPath = file.path.split('/')
@@ -352,11 +359,12 @@ const Klient = class {
             // Surround with a try-catch
             try {
               // Download the file based on its content URI
-              let localPath = await downloadRequest(
+              let { localPath, fileMeta } = await downloadRequest(
                 driveToIndex,
                 folderPath,
                 fileName
               )
+
               // Now get the topics, people and places from the files
 
               // Make a form data object to upload the files
@@ -367,52 +375,64 @@ const Klient = class {
               })
 
               let extractedData = await axios.post(
-                'https://dabbu-intel.herokuapp.com/intel-api/v1/extract-info',
+                'http://localhost:8079/intel-api/v1/extract-info',
                 formData,
                 {
                   headers: formData.getHeaders(),
+                  maxContentLength: Infinity,
+                  maxBodyLength: Infinity,
                 }
               )
 
               // Check if data was returned
               if (extractedData.data && extractedData.data.content) {
                 // Check if there were topics extracted
-                if (extractedData.data.content.topics) {
+                if (
+                  extractedData.data.content.topics &&
+                  extractedData.data.content.topics.length > 0
+                ) {
                   for (const topic of extractedData.data.content.topics) {
                     if (!indexJson.topics[topic.text]) {
                       indexJson.topics[topic.text] = []
                     }
 
-                    indexJson.topics[topic.text].push(topic.file)
+                    indexJson.topics[topic.text].push(fileMeta)
                   }
                 }
 
                 // Check if there were people-related details extracted
-                if (extractedData.data.content.people) {
+                if (
+                  extractedData.data.content.people &&
+                  extractedData.data.content.people.length > 0
+                ) {
                   for (const person of extractedData.data.content.people) {
                     if (!indexJson.people[person.email]) {
                       indexJson.people[person.email] = []
                     }
 
-                    indexJson.people[person.email].push(person.file)
+                    indexJson.people[person.email].push(fileMeta)
                   }
                 }
 
                 // Check if there were places extracted
-                if (extractedData.data.content.places) {
+                if (
+                  extractedData.data.content.places &&
+                  extractedData.data.content.places.length > 0
+                ) {
                   for (const place of extractedData.data.content.places) {
                     if (!indexJson.places[place.name]) {
                       indexJson.places[place.name] = []
                     }
 
-                    indexJson.places[place.name].push(place.file)
+                    indexJson.places[place.name].push(fileMeta)
                   }
                 }
               }
             } catch (err) {
               // Just print out the error if any one of the files fails and continue
               spinner.stop()
-              printError(err)
+              printError(`Skipping ${fileName}, error encountered: ${err}`)
+              skippedFiles++
               spinner.start()
             }
           }
@@ -423,11 +443,14 @@ const Klient = class {
       }
 
       // Write the data to the file (save progress)
-      await fs.writeFile(indexFilePath, JSON.stringify(indexJson, null, 4))
+      await fs.writeFile(indexFilePath, JSON.stringify(indexJson, null, 2))
 
+      // Tell the user we are finished with that drive
+      spinner.stop()
       printBright(
-        'Indexing finished successfully (any files with which errors were encountered were skipped)'
+        `Successfully indexed all files in ${driveToIndex}: (${skippedFiles} skipped due to errors)`
       )
+      spinner.start()
     }
 
     spinner.stop()
@@ -454,18 +477,106 @@ const Klient = class {
   // Change the topic the user is viewing
   async cd(args) {
     // The user given relative path
-    const inputPath = args[1] || ''
+    const inputPath = args[1]
+    // The current path in that drive
+    const currentPath = get(`drives.${get('current_drive')}.path`) || ''
 
+    // Parse the relative path and get an absolute one
+    const finalPath = getAbsolutePath(inputPath, currentPath)
     // Set the path
-    set(`drives.${get('current_drive')}.path`, inputPath)
+    set(`drives.${get('current_drive')}.path`, finalPath)
 
     // Return
     return
   }
 
-  async list(args) {}
+  async list(args) {
+    // // The user given keyword
+    const keyword = args[1] || get(`drives.${get('current_drive')}.path`)
 
-  async read(args) {}
+    // Get the indexed files
+    let indexJson
+    try {
+      indexJson = await fs.readJSON('./_dabbu/dabbu_knowledge_index.json')
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        throw new Error(
+          `Could not find the index file, ${chalk.yellow(
+            './_dabbu/dabbu_knowledge_index.json'
+          )}. Try recreating the drive with the same settings again.`
+        )
+      }
+    }
+
+    if (indexJson) {
+      if (indexJson.topics && Object.keys(indexJson.topics).length > 0) {
+        // First check what the path is
+        // For the root path, simply show them topics, places and people
+        if (keyword === '') {
+          printInfo('topics  people  places')
+        } else if (keyword === '/topics' || keyword === 'topics') {
+          printInfo(
+            indexJson.topics && Object.keys(indexJson.topics).length > 0
+              ? `${Object.keys(indexJson.topics).join('  ')}`
+              : 'No topics found'
+          )
+        } else if (keyword === '/people' || keyword === 'people') {
+          printInfo(
+            indexJson.people && Object.keys(indexJson.people).length > 0
+              ? `${Object.keys(indexJson.people).join('  ')}`
+              : 'No people found'
+          )
+        } else if (keyword === '/places' || keyword === 'places') {
+          printInfo(
+            indexJson.places && Object.keys(indexJson.places).length > 0
+              ? `${Object.keys(indexJson.places).join('  ')}`
+              : 'No places found'
+          )
+        } else {
+          // Else find the files with the topic/person/place and show their info
+          let path = keyword.split('/')
+          if (path.length < 3) {
+            set(`drives.${get('current_drive')}.path`, '')
+            throw new Error('Invalid path')
+          }
+
+          // Each folder is a topic/place/person that the file must have to get listed
+          let matchingFiles = []
+          let names = []
+          for (let i = 2; i < path.length; i++) {
+            let files = indexJson[path[1]][path[i]]
+            for (const file of files) {
+              matchingFiles.push(file)
+              names.push(file.path)
+            }
+          }
+
+          // Get only ones that are duplicate, as it is an AND query
+          names = names.filter(function (file) {
+            return names.indexOf(file) !== names.lastIndexOf(file)
+          })
+          // Now get the file objects with those paths
+          matchingFiles = matchingFiles.filter(function (file) {
+            return names.indexOf(file.path) > -1
+          })
+
+          printFiles(matchingFiles)
+        }
+      } else {
+        printBright('No topics were extracted from the files')
+      }
+    } else {
+      throw new Error(
+        `Could not read the index file, ${chalk.yellow(
+          './_dabbu/dabbu_knowledge_index.json'
+        )}. Try recreating the drive with the same settings again.`
+      )
+    }
+  }
+
+  async read(args) {
+    throw new Error('Not yet implemented')
+  }
 }
 
 // Export the class
