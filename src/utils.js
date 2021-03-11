@@ -78,13 +78,14 @@ exports.generateBodyAndHeaders = async (drive) => {
   let body = {}
   let headers = {}
   // The provider config
-  let providerConfigJSON = await axios.get(
+  let providerConfigJson = await axios.get(
     'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
   )
-  providerConfigJSON = providerConfigJSON.data.providers
+  providerConfigJson = providerConfigJson.data.providers
   // Get the config for the respective provider ID of the drive
-  const providerConfig =
-    providerConfigJSON[this.get(`drives.${drive}.provider`)]
+  const providerConfig = providerConfigJson[
+    this.get(`drives.${drive}.provider`)
+  ] || { request: {} }
   // Get a list of variables from the provider config
   let bodyVariables = Object.keys(providerConfig.request.body || {})
   let headerVariables = Object.keys(providerConfig.request.headers || {})
@@ -111,13 +112,13 @@ exports.generateBodyAndHeaders = async (drive) => {
 // it has expired
 exports.refreshAccessToken = async (drive) => {
   // The provider config
-  let providerConfigJSON = await axios.get(
+  let providerConfigJson = await axios.get(
     'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
   )
-  providerConfigJSON = providerConfigJSON.data.providers
+  providerConfigJson = providerConfigJson.data.providers
   // Get the config for the respective provider ID of the drive
   const providerConfig =
-    providerConfigJSON[this.get(`drives.${drive}.provider`)]
+    providerConfigJson[this.get(`drives.${drive}.provider`)]
   // Get a list of variables from the provider config
   let headerVariables = Object.keys(providerConfig.request.headers || {})
 
@@ -127,7 +128,7 @@ exports.refreshAccessToken = async (drive) => {
       ? headerVariables.indexOf('Authorization')
       : headerVariables.indexOf('authorization')
   if (
-    authHeaderIndex !== -1 &&
+    authHeaderIndex > -1 &&
     providerConfig.auth &&
     providerConfig.auth.process === 'oauth2'
   ) {
@@ -418,7 +419,7 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
     const file = files[i]
 
     // File name - blue if folder, magenta if file
-    const name = printFullPath ? file.path : file.name
+    const name = printFullPath ? `${file.provider}:${file.path}` : file.name
     const fileName =
       file.kind === 'folder'
         ? `${chalk.blueBright(name)} (folder)`
@@ -509,10 +510,10 @@ exports.printError = (err) => {
   }
 }
 
-// Exit Dabbu and delete the .cache directory
+// Exit Dabbu and delete the _dabbu directory
 exports.exitDabbu = () => {
   return fs
-    .remove(`./.cache/_cli/`)
+    .remove(`./_dabbu/_cli/`)
     .then(() => this.set('clips', {}))
     .then(() => this.printInfo('Removed cache. Exiting..'))
     .finally(() => process.exit(0))

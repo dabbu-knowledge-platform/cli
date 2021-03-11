@@ -20,27 +20,7 @@ What you just saw there was Dabbu CLI in action - a simple program in javascript
 
 The installation can be done manually on Linux, MacOS, Android (Requires Termux) and Windows.
 
-- First download the proper [Dabbu Server](https://github.com/gamemaker1/dabbu-server#readme) executable for your platform from its [Releases](https://github.com/gamemaker1/dabbu-server/releases).
-
-- Then download the proper CLI executable for your platform from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases). (Caution: releases may not work on certain versions of Android, depending on the manafacturer and version.)
-
-- On Windows, simply double click on the file to run it.
-
-- On Linux/MacOS, run the following command in a terminal (assuming you have downloaded the executable to your Downloads folder):
-
-  - On MacOS:
-
-    ```sh
-    $ ~/Downloads/dabbu-cli-macos
-    ```
-
-  - On Linux:
-
-    ```sh
-    $ ~/Downloads/dabbu-cli-linux
-    ```
-
-- And the CLI should be running! If there is a problem, post a message on [Github discussions](https://github.com/gamemaker1/dabbu-cli/discussions/categories/q-a) asking for help. We'll only be glad to help you :)
+Follow the instructions [here](https://dabbu-knowledge-platform.github.io/impls/cli) to install it on your computer.
 
 ## Updating the CLI
 

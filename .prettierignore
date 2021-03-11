@@ -2,7 +2,6 @@ node_modules/
 dist/
 creds/
 docs/
-.cache/
+_dabbu/
 .git/
 .heroku*
-dabbu_cli_config.json

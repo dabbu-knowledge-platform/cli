@@ -163,7 +163,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
     // Get the file's extension based on its mime type first
     let ext = getExtForMime(file.mimeType)
     // Path to the file
-    localPath = `./.cache/_cli/_${provider}/${file.name || file.fileName}`
+    localPath = `./_dabbu/_cli/_${provider}/${file.name || file.fileName}`
     localPath = `${localPath}${localPath.includes(ext) ? '' : `.${ext}`}`
     // Create the file
     await fs.createFile(localPath)
@@ -382,13 +382,13 @@ const Client = class {
     // First get the provider, so we can get the related variables
     // from the provider_config.json file
     // The provider config
-    let providerConfigJSON = await axios.get(
+    let providerConfigJson = await axios.get(
       'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
     )
-    providerConfigJSON = providerConfigJSON.data.providers
+    providerConfigJson = providerConfigJson.data.providers
 
     const provider = get(`drives.${drive}.provider`)
-    const providerConfig = providerConfigJSON[provider]
+    const providerConfig = providerConfigJson[provider]
 
     // Request a variable from the user
     const _reqVariable = (variable) => {
@@ -412,7 +412,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!varVal) {
                 printBright(`Please ${varInfo.prompt.toLowerCase()}`)
-                _reqVariable(variable)
+                resolve(_reqVariable(variable))
               } else {
                 // Store its value in the config file
                 set(`drives.${drive}.${varInfo.path}`, varVal)
@@ -476,7 +476,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!clientID) {
                 printBright('Please enter the client ID.')
-                reqClientID()
+                resolve(reqClientID())
               } else {
                 // Store its value in the config file
                 set(
@@ -510,7 +510,7 @@ const Client = class {
               // If they haven't entered anything, flag it and ask again
               if (!clientSecret) {
                 printBright('Please enter the client secret.')
-                reqClientSecret()
+                resolve(reqClientSecret())
               } else {
                 // Store its value in the config file
                 set(`drives.${drive}.auth_meta.client_secret`, clientSecret)
@@ -666,7 +666,7 @@ const Client = class {
   async pwd(args) {
     // Current drive
     const drive = (args[1] || get('current_drive')).replace(/:/g, '')
-    // Print the drive name and path as a promise
+    // Print the drive name and path
     printInfo(
       `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
         `drives.${drive}.path`
