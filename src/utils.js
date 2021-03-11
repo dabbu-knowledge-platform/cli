@@ -510,10 +510,10 @@ exports.printError = (err) => {
   }
 }
 
-// Exit Dabbu and delete the .cache directory
+// Exit Dabbu and delete the _dabbu directory
 exports.exitDabbu = () => {
   return fs
-    .remove(`./.cache/_cli/`)
+    .remove(`./_dabbu/_cli/`)
     .then(() => this.set('clips', {}))
     .then(() => this.printInfo('Removed cache. Exiting..'))
     .finally(() => process.exit(0))

@@ -3,6 +3,5 @@ dist/
 creds/
 docs/
 _dabbu/
-.cache/
 .git/
 .heroku*

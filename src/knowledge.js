@@ -158,7 +158,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
     // Get the file's extension based on its mime type first
     let ext = getExtForMime(file.mimeType)
     // Path to the file
-    localPath = `./.cache/_cli/_${provider}/${file.name || file.fileName}`
+    localPath = `./_dabbu/_cli/_${provider}/${file.name || file.fileName}`
     localPath = `${localPath}${localPath.includes(ext) ? '' : `.${ext}`}`
     // Create the file
     await fs.createFile(localPath)
