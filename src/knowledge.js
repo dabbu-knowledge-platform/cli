@@ -377,7 +377,7 @@ const Klient = class {
               })
 
               let extractedData = await axios.post(
-                'http://localhost:8079/intel-api/v1/extract-info',
+                'http://dabbu-intel.herokuapp.com/intel-api/v1/extract-info',
                 formData,
                 {
                   headers: formData.getHeaders(),
