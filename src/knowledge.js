@@ -398,7 +398,7 @@ const Klient = class {
                       indexJson.topics[topic.text] = []
                     }
 
-                    indexJson.topics[topic.text].push(fileMeta)
+                    indexJson.topics[topic.text].push(file)
                   }
                 }
 
@@ -412,7 +412,7 @@ const Klient = class {
                       indexJson.people[person.email] = []
                     }
 
-                    indexJson.people[person.email].push(fileMeta)
+                    indexJson.people[person.email].push(file)
                   }
                 }
 
@@ -426,7 +426,7 @@ const Klient = class {
                       indexJson.places[place.name] = []
                     }
 
-                    indexJson.places[place.name].push(fileMeta)
+                    indexJson.places[place.name].push(file)
                   }
                 }
               }
