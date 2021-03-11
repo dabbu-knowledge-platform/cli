@@ -1,6 +1,6 @@
 {
   "name": "dabbu-cli",
-  "version": "2.3.0-alpha7",
+  "version": "2.3.0-alpha8",
   "description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
   "main": "src/index.js",
   "directories": {
