@@ -247,14 +247,16 @@ const Klient = class {
       pwd: this.pwd,
       whereami: this.pwd,
       cd: this.cd,
+      ct: this.cd,
       changedir: this.cd,
+      changetopic: this.cd,
       l: this.list,
       ls: this.list,
       ll: this.list,
       dir: this.list,
       list: this.list,
-      cat: this.read,
-      read: this.read,
+      op: this.onepager,
+      onepager: this.onepager,
     }
   }
 
@@ -509,61 +511,87 @@ const Klient = class {
     }
 
     if (indexJson) {
-      if (indexJson.topics && Object.keys(indexJson.topics).length > 0) {
-        // First check what the path is
-        // For the root path, simply show them topics, places and people
-        if (keyword === '') {
-          printInfo('topics  people  places')
-        } else if (keyword === '/topics' || keyword === 'topics') {
-          printInfo(
-            indexJson.topics && Object.keys(indexJson.topics).length > 0
-              ? `${Object.keys(indexJson.topics).join('  ')}`
-              : 'No topics found'
-          )
-        } else if (keyword === '/people' || keyword === 'people') {
-          printInfo(
-            indexJson.people && Object.keys(indexJson.people).length > 0
-              ? `${Object.keys(indexJson.people).join('  ')}`
-              : 'No people found'
-          )
-        } else if (keyword === '/places' || keyword === 'places') {
-          printInfo(
-            indexJson.places && Object.keys(indexJson.places).length > 0
-              ? `${Object.keys(indexJson.places).join('  ')}`
-              : 'No places found'
-          )
-        } else {
-          // Else find the files with the topic/person/place and show their info
-          let path = keyword.split('/')
-          if (path.length < 3) {
-            set(`drives.${get('current_drive')}.path`, '')
-            throw new Error('Invalid path')
-          }
+      // First check what the path is
+      // For the root path, simply show them topics, places and people
+      if (keyword === '') {
+        printInfo('topics  people  places')
+      } else if (keyword === '/topics' || keyword === 'topics') {
+        printInfo(
+          indexJson.topics && Object.keys(indexJson.topics).length > 0
+            ? `${Object.keys(indexJson.topics).join('  ')}`
+            : 'No topics found'
+        )
+      } else if (keyword === '/people' || keyword === 'people') {
+        printInfo(
+          indexJson.people && Object.keys(indexJson.people).length > 0
+            ? `${Object.keys(indexJson.people).join('  ')}`
+            : 'No people found'
+        )
+      } else if (keyword === '/places' || keyword === 'places') {
+        printInfo(
+          indexJson.places && Object.keys(indexJson.places).length > 0
+            ? `${Object.keys(indexJson.places).join('  ')}`
+            : 'No places found'
+        )
+      } else {
+        // Else find the files with the topic/person/place and show their info
+        let path = keyword.split('/')
+        if (path.length < 3) {
+          set(`drives.${get('current_drive')}.path`, '')
+          throw new Error('Invalid path')
+        }
 
-          // Each folder is a topic/place/person that the file must have to get listed
-          let matchingFiles = []
-          let names = []
-          for (let i = 2; i < path.length; i++) {
+        // Each folder is a topic/place/person that the file must be
+        // related to to get listed
+        let allFiles = []
+        let matchingFiles = []
+        let numberOfTopics = path.slice(2).length
+        for (let i = 2; i < path.length; i++) {
+          // If there is a trailing slash, don't consider it a topic
+          if (path[i] && path[i] !== '') {
             let files = indexJson[path[1]][path[i]]
-            for (const file of files) {
-              matchingFiles.push(file)
-              names.push(file.path)
+            if (files) {
+              allFiles.push(...files)
+            } else {
+              printBright(`Couldn't find topic ${path[i]}`)
+            }
+          } else {
+            // If there is a trailing slash, don't consider it a topic
+            numberOfTopics -= 1
+          }
+        }
+
+        // Check if the user has specified multiple topics
+        if (path.length > 3) {
+          // Get the files that appear more than once (AND query)
+          // Make an array of provider+name of file
+          let fileIds = allFiles.map((file) => {
+            return `${file.provider}:${file.path}`
+          })
+
+          // Get the number of times each file appears
+          let occurrences = {}
+
+          let count = (keys) => {
+            occurrences[keys] = ++occurrences[keys] || 1
+          }
+          fileIds.forEach(count)
+
+          // Get the ones that appear n number of times, where
+          // n is the number of topics it should match
+          for (const fileId of Object.keys(occurrences)) {
+            if (occurrences[fileId] === numberOfTopics) {
+              // Add it to the final array
+              matchingFiles.push(allFiles[fileIds.indexOf(fileId)])
             }
           }
-
-          // Get only ones that are duplicate, as it is an AND query
-          names = names.filter(function (file) {
-            return names.indexOf(file) !== names.lastIndexOf(file)
-          })
-          // Now get the file objects with those paths
-          matchingFiles = matchingFiles.filter(function (file) {
-            return names.indexOf(file.path) > -1
-          })
-
-          printFiles(matchingFiles)
+        } else {
+          // Else just return the files for the topic we got
+          matchingFiles = allFiles
         }
-      } else {
-        printBright('No topics were extracted from the files')
+
+        // Print out the files
+        printFiles(matchingFiles, true)
       }
     } else {
       throw new Error(
@@ -574,7 +602,7 @@ const Klient = class {
     }
   }
 
-  async read(args) {
+  async onepager(args) {
     throw new Error('Not yet implemented')
   }
 }

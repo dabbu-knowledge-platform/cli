@@ -419,7 +419,7 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
     const file = files[i]
 
     // File name - blue if folder, magenta if file
-    const name = printFullPath ? file.path : file.name
+    const name = printFullPath ? `${file.provider}:${file.path}` : file.name
     const fileName =
       file.kind === 'folder'
         ? `${chalk.blueBright(name)} (folder)`
