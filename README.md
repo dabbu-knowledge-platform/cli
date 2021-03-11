@@ -24,6 +24,8 @@ The installation can be done manually on Linux, MacOS, Android (Requires Termux)
 
 - Then download the proper CLI executable for your platform from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases). (Caution: releases may not work on certain versions of Android, depending on the manafacturer and version.)
 
+> **Note**: It is **recommended** that you move the executable to a separate folder (the servers and CLI can be put in the same folder) and run it from there. This is because the server will create a folder `_dabbu` which contains several important files. When moving the executable anywhere else, make sure you move the `_dabbu` folder as well.
+
 - On Windows, simply double click on the file to run it.
 
 - On Linux/MacOS, run the following command in a terminal (assuming you have downloaded the executable to your Downloads folder):
