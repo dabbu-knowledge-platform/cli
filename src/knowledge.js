@@ -329,7 +329,7 @@ const Klient = class {
     // Create that file
     await fs.createFile(indexFilePath)
     // The json object to write to that file
-    let indexJson = { files: [], topics: {}, people: {}, places: {} }
+    let indexJson = { files: [], keywords: {} }
 
     // For each drive, index all its files
     for (const driveToIndex of drivesToIndex) {
@@ -394,11 +394,11 @@ const Klient = class {
                   extractedData.data.content.topics.length > 0
                 ) {
                   for (const topic of extractedData.data.content.topics) {
-                    if (!indexJson.topics[topic.text]) {
-                      indexJson.topics[topic.text] = []
+                    if (!indexJson.keywords[topic.text]) {
+                      indexJson.keywords[topic.text] = []
                     }
 
-                    indexJson.topics[topic.text].push(file)
+                    indexJson.keywords[topic.text].push(file)
                   }
                 }
 
@@ -408,11 +408,11 @@ const Klient = class {
                   extractedData.data.content.people.length > 0
                 ) {
                   for (const person of extractedData.data.content.people) {
-                    if (!indexJson.people[person.email]) {
-                      indexJson.people[person.email] = []
+                    if (!indexJson.keywords[person.email]) {
+                      indexJson.keywords[person.email] = []
                     }
 
-                    indexJson.people[person.email].push(file)
+                    indexJson.keywords[person.email].push(file)
                   }
                 }
 
@@ -422,11 +422,11 @@ const Klient = class {
                   extractedData.data.content.places.length > 0
                 ) {
                   for (const place of extractedData.data.content.places) {
-                    if (!indexJson.places[place.name]) {
-                      indexJson.places[place.name] = []
+                    if (!indexJson.keywords[place.name]) {
+                      indexJson.keywords[place.name] = []
                     }
 
-                    indexJson.places[place.name].push(file)
+                    indexJson.keywords[place.name].push(file)
                   }
                 }
               }
@@ -493,7 +493,7 @@ const Klient = class {
   }
 
   async list(args) {
-    // // The user given keyword
+    // The user given keyword
     const keyword = args[1] || get(`drives.${get('current_drive')}.path`)
 
     // Get the indexed files
@@ -514,42 +514,21 @@ const Klient = class {
       // First check what the path is
       // For the root path, simply show them topics, places and people
       if (keyword === '') {
-        printInfo('topics  people  places')
-      } else if (keyword === '/topics' || keyword === 'topics') {
-        printInfo(
-          indexJson.topics && Object.keys(indexJson.topics).length > 0
-            ? `${Object.keys(indexJson.topics).join('  ')}`
-            : 'No topics found'
-        )
-      } else if (keyword === '/people' || keyword === 'people') {
-        printInfo(
-          indexJson.people && Object.keys(indexJson.people).length > 0
-            ? `${Object.keys(indexJson.people).join('  ')}`
-            : 'No people found'
-        )
-      } else if (keyword === '/places' || keyword === 'places') {
-        printInfo(
-          indexJson.places && Object.keys(indexJson.places).length > 0
-            ? `${Object.keys(indexJson.places).join('  ')}`
-            : 'No places found'
-        )
+        printInfo(Object.keys(indexJson.keywords).join('   '))
       } else {
         // Else find the files with the topic/person/place and show their info
         let path = keyword.split('/')
-        if (path.length < 3) {
-          set(`drives.${get('current_drive')}.path`, '')
-          throw new Error('Invalid path')
-        }
 
         // Each folder is a topic/place/person that the file must be
         // related to to get listed
         let allFiles = []
         let matchingFiles = []
-        let numberOfTopics = path.slice(2).length
-        for (let i = 2; i < path.length; i++) {
+        let numberOfTopics = path.slice(1).length
+
+        for (let i = 1; i < path.length; i++) {
           // If there is a trailing slash, don't consider it a topic
           if (path[i] && path[i] !== '') {
-            let files = indexJson[path[1]][path[i]]
+            let files = indexJson['keywords'][path[i]]
             if (files) {
               allFiles.push(...files)
             } else {
@@ -562,7 +541,7 @@ const Klient = class {
         }
 
         // Check if the user has specified multiple topics
-        if (path.length > 3) {
+        if (path.length > 2) {
           // Get the files that appear more than once (AND query)
           // Make an array of provider+name of file
           let fileIds = allFiles.map((file) => {
