@@ -493,8 +493,13 @@ const Klient = class {
   }
 
   async list(args) {
-    // The user given keyword
-    const keyword = args[1] || get(`drives.${get('current_drive')}.path`)
+    // The user given relative path
+    const inputPath = args[1] || '.'
+    // The current path in that drive
+    const currentPath = get(`drives.${get('current_drive')}.path`) || ''
+
+    // Parse the relative path and get an absolute one
+    const keywords = getAbsolutePath(inputPath, currentPath)
 
     // Get the indexed files
     let indexJson
@@ -513,11 +518,11 @@ const Klient = class {
     if (indexJson) {
       // First check what the path is
       // For the root path, simply show them topics, places and people
-      if (keyword === '') {
+      if (keywords === '/') {
         printInfo(Object.keys(indexJson.keywords).join('   '))
       } else {
         // Else find the files with the topic/person/place and show their info
-        let path = keyword.split('/')
+        let path = keywords.split('/')
 
         // Each folder is a topic/place/person that the file must be
         // related to to get listed
@@ -525,14 +530,32 @@ const Klient = class {
         let matchingFiles = []
         let numberOfTopics = path.slice(1).length
 
+        // For AND queries between two or more topics, just keep `cd`ing into
+        // the topics/people/places. For OR queries, `cd` into:
+        // `cd "{topic1}|{topic2}"`
+        // Quotes neccessary only if the topics contain spaces.
         for (let i = 1; i < path.length; i++) {
           // If there is a trailing slash, don't consider it a topic
           if (path[i] && path[i] !== '') {
-            let files = indexJson['keywords'][path[i]]
-            if (files) {
-              allFiles.push(...files)
+            // Check if the path has an OR operator (|)
+            if (path[i].includes('|')) {
+              let orTopics = path[i].split('|')
+              for (let j = 0; j < orTopics.length; j++) {
+                // Add all files matching each topic to the list
+                let files = indexJson['keywords'][orTopics[j]]
+                if (files) {
+                  allFiles.push(...files)
+                } else {
+                  printBright(`Couldn't find topic ${orTopics[j]}`)
+                }
+              }
             } else {
-              printBright(`Couldn't find topic ${path[i]}`)
+              let files = indexJson['keywords'][path[i]]
+              if (files) {
+                allFiles.push(...files)
+              } else {
+                printBright(`Couldn't find topic ${path[i]}`)
+              }
             }
           } else {
             // If there is a trailing slash, don't consider it a topic
@@ -542,7 +565,6 @@ const Klient = class {
 
         // Check if the user has specified multiple topics
         if (path.length > 2) {
-          // Get the files that appear more than once (AND query)
           // Make an array of provider+name of file
           let fileIds = allFiles.map((file) => {
             return `${file.provider}:${file.path}`
