@@ -86,6 +86,10 @@ exports.generateBodyAndHeaders = async (drive) => {
   const providerConfig = providerConfigJson[
     this.get(`drives.${drive}.provider`)
   ] || { request: {} }
+
+  // First refresh the access token, if any
+  await this.refreshAccessToken(drive)
+
   // Get a list of variables from the provider config
   let bodyVariables = Object.keys(providerConfig.request.body || {})
   let headerVariables = Object.keys(providerConfig.request.headers || {})
@@ -117,8 +121,9 @@ exports.refreshAccessToken = async (drive) => {
   )
   providerConfigJson = providerConfigJson.data.providers
   // Get the config for the respective provider ID of the drive
-  const providerConfig =
-    providerConfigJson[this.get(`drives.${drive}.provider`)]
+  const providerConfig = providerConfigJson[
+    this.get(`drives.${drive}.provider`)
+  ] || { request: {} }
   // Get a list of variables from the provider config
   let headerVariables = Object.keys(providerConfig.request.headers || {})
 

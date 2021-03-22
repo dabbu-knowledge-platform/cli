@@ -77,7 +77,6 @@ const listRequest = async (drive, folderPath, regex) => {
     return null
   }
 }
-
 const downloadRequest = async (drive, folderPath, fileName) => {
   // The file object (from Dabbu Server), the file data retrieved from its
   // contentURI and the path on the local disk where the file is downloaded
@@ -221,18 +220,25 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
   // The URL to send the request to
   let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
   // Send a POST request
-  let res = await axios.post(url, formData, {
-    headers: {
-      ...formHeaders, // The form headers
-      ...headers, // The provider-specific headers
-    },
-  })
-  if (res.status === 201) {
-    // If there is no error, return
-    return
-  } else {
-    // Else error out
-    throw new Error(res.data.error.message)
+  try {
+    let res = await axios.post(url, formData, {
+      headers: {
+        ...formHeaders, // The form headers
+        ...headers, // The provider-specific headers
+      },
+    })
+    if (res.status === 201) {
+      // If there is no error, return
+      return
+    } else {
+      // Else error out
+      throw new Error(res.data.error.message)
+    }
+  } catch (err) {
+    if (err.code === 409 || err.status === 409) {
+      printInfo(`\nOverwriting file ${folderPath}/${fileName}`)
+      return await updateRequest(drive, folderPath, fileName)
+    }
   }
 }
 
@@ -758,14 +764,6 @@ const Client = class {
     return
   }
 
-  async create(args) {
-    // No need for it yet
-  }
-
-  async update(args) {
-    // No need for it yet
-  }
-
   async copy(args) {
     // Show a loading indicator
     const spinner = ora(
@@ -859,7 +857,11 @@ const Client = class {
         let res = await uploadRequest(
           toDrive,
           toFolderPath,
-          toFileName || fromFileName,
+          toFileName
+            ? toFileName === '.' || toFileName === '..'
+              ? fromFileName
+              : toFileName
+            : fromFileName,
           localPath
         )
         // Tell the user
@@ -975,7 +977,11 @@ const Client = class {
               let res = await uploadRequest(
                 toDrive,
                 toFolderPath,
-                toFileName || file.name,
+                toFileName
+                  ? toFileName === '.' || toFileName === '..'
+                    ? file.name
+                    : toFileName
+                  : file.name,
                 localPath
               )
               // Tell the user
