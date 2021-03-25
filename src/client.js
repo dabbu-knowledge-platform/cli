@@ -381,6 +381,7 @@ const Client = class {
       rm: this.delete,
       del: this.delete,
       delete: this.delete,
+      sync: this.sync,
     }
   }
 
@@ -1099,6 +1100,133 @@ const Client = class {
           : `${folderPath}/${fileName ? fileName : ''}`
       )}`
     )
+    // Return successfully
+    return
+  }
+
+  async sync(args) {
+    // Show a loading indicator
+    const spinner = ora(
+      `Listing files in the ${chalk.blue('source and target folders')}`
+    ).start()
+
+    // Get the path the user entered, default to current directory (to sync from)
+    let {
+      drive: fromDrive,
+      folderPath: fromFolderPath,
+    } = await parseUserInputForPath(args[1], false, true)
+
+    // Get the path the user entered, default to current directory (to sync to)
+    let {
+      drive: toDrive,
+      folderPath: toFolderPath,
+    } = await parseUserInputForPath(args[2], false, true)
+
+    spinner.text = `Listing all files in source folder ${chalk.blue(
+      fromFolderPath
+    )}`
+
+    // Fetch the files from the server
+    let fromFiles = (await listRequest(fromDrive, fromFolderPath)) || []
+
+    spinner.text = `Listing existing files in target folder ${chalk.blue(
+      toFolderPath
+    )}`
+
+    // Now list all those that exist in the target folder already
+    let toFiles
+    try {
+      toFiles = (await listRequest(toDrive, toFolderPath)) || []
+    } catch (err) {
+      // If the user wants to sync to a new folder, catch the 404
+      toFiles = []
+    }
+
+    // Now compare the two lists and create a list of files to update
+    // First get all files only
+    fromFiles = fromFiles.filter((file) => file.kind === 'file')
+    toFiles = toFiles.filter((file) => file.kind === 'file')
+
+    // Get duplicates first, those will need to be checked and replaced if the
+    // last modified time is greater
+    let filesToUpdate = []
+
+    // Get the number of times each file appears
+    let occurrences = {}
+
+    let count = (key) => {
+      occurrences[key.name] = ++occurrences[key.name] || 1
+    }
+    fromFiles.forEach(count)
+    toFiles.forEach(count)
+
+    // Get the ones that appear 2 or more times
+    for (const fileName of Object.keys(occurrences)) {
+      if (occurrences[fileName] >= 2) {
+        // Add it to the final array
+        filesToUpdate.push(
+          fromFiles.filter((file) => file.name === fileName)[0]
+        )
+      }
+    }
+
+    // Update the files only if needed
+    let checkLastModifiedTime = (key) => {
+      let existingFile = toFiles.filter((file) => file.name === key.name)[0]
+      if (existingFile) {
+        let existingDate = new Date(existingFile.lastModifiedTime)
+        let newDate = new Date(key.lastModifiedTime)
+        if (newDate > existingDate) {
+          return key
+        }
+      }
+      return null
+    }
+
+    filesToUpdate =
+      filesToUpdate.length > 0
+        ? filesToUpdate
+            .map(checkLastModifiedTime)
+            .filter((file) => file !== null)
+        : []
+
+    // Now get those that need to be added
+    let filesToAdd = fromFiles.filter((file) => {
+      return occurrences[file.name] < 2
+    })
+
+    // Copy paste all the files now
+    let filesToSync = filesToAdd.concat(filesToUpdate)
+    for (const fileToSync of filesToSync) {
+      spinner.text = `Syncing file ${fromDrive}:${fromFolderPath}/${fileToSync.name} to ${toDrive}:${toFolderPath}/${fileToSync.name}`
+
+      // Fetch the file
+      let localPath = await downloadRequest(
+        fromDrive,
+        fromFolderPath,
+        fileToSync.name
+      )
+      // Upload the file
+      let res = await uploadRequest(
+        toDrive,
+        toFolderPath,
+        fileToSync.name,
+        localPath
+      )
+
+      // Tell the user
+      spinner.stop()
+      printInfo(
+        `Synced file ${fromDrive}:${fromFolderPath}/${fileToSync.name} to ${toDrive}:${toFolderPath}/${fileToSync.name}`
+      )
+      spinner.start()
+    }
+
+    // Stop loading
+    spinner.stop()
+
+    printInfo(`All files up to date!`)
+
     // Return successfully
     return
   }
