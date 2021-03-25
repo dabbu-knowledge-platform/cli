@@ -248,7 +248,6 @@ exports.getAbsolutePath = (inputPath, currentPath) => {
 exports.parseUserInputForPath = async (
   input,
   allowRegex,
-  returnFolderPath,
   fallbackDriveName,
   fallbackFileName
 ) => {
@@ -295,43 +294,22 @@ exports.parseUserInputForPath = async (
     return {
       drive: drive,
       folderPath: folderPath,
-      fileName: null,
       regex: '^' + regexPart.split('*').map(this.escapeRegex).join('.*') + '$',
     }
   } else {
     // Get the folder names and file names separately
     let foldersArray = originalPath.split('/')
-    // Get the file name
-    let fileName
-    if (
-      // If the path is a folder, add a file name at the end
-      originalPath.endsWith('/') ||
-      originalPath.endsWith('/..') ||
-      originalPath.endsWith('/.') ||
-      originalPath === '.' ||
-      originalPath === '..' ||
-      originalPath === '/' ||
-      // If only a folder name/only a file name is mentioned
-      foldersArray.length === 1
-    ) {
-      if (fallbackFileName) {
-        fileName = fallbackFileName
-      }
-    }
-
-    if (!fileName && !returnFolderPath) {
-      fileName = foldersArray.pop()
-    }
-
-    // If only the file name was specified, set the folders array to have a path
-    // to the present directory
-    if (foldersArray.length === 0) {
-      foldersArray = ['.']
-    }
 
     // Parse the relative path and get an absolute one
     let folderPath = this.getAbsolutePath(
-      `${originalPath.startsWith('/') ? '/' : ''}${foldersArray.join('/')}`,
+      `${
+        originalPath.startsWith('./') ||
+        originalPath.startsWith('../') ||
+        originalPath === '.' ||
+        originalPath === '..'
+          ? ''
+          : '/'
+      }${foldersArray.join('/')}`,
       this.get(`drives.${drive}.path`)
     )
     folderPath = folderPath === '' ? '/' : folderPath
@@ -340,7 +318,6 @@ exports.parseUserInputForPath = async (
     return {
       drive: drive,
       folderPath: folderPath,
-      fileName: fileName,
       regex: null,
     }
   }
@@ -427,7 +404,7 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
     const name = printFullPath ? `${file.provider}:${file.path}` : file.name
     const fileName =
       file.kind === 'folder'
-        ? `${chalk.blueBright(name)} (folder)`
+        ? `${chalk.blue(name)} (folder)`
         : chalk.magenta(name)
     // File size in a human readable unit
     const fileSize =
@@ -469,12 +446,16 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
   }
   // Print out the table
   if (table.length > 0) {
+    this.printInfo(`${table.length} files/folders`)
     console.log(table.toString())
   }
 }
 
 // Wrap the console.log in a print function
 exports.print = console.log
+
+// Highlight something in orange
+exports.highlight = chalk.keyword('orange')
 
 // Print out information in yellow
 exports.printInfo = (anything) => {
@@ -483,7 +464,7 @@ exports.printInfo = (anything) => {
 
 // Print out something important in orange
 exports.printBright = (anything) => {
-  this.print(chalk.keyword('orange').bold(anything))
+  this.print(this.highlight.bold(anything))
 }
 
 // Print out an error in red
@@ -519,7 +500,6 @@ exports.printError = (err) => {
 exports.exitDabbu = () => {
   return fs
     .remove(`./_dabbu/_cli/`)
-    .then(() => this.set('clips', {}))
     .then(() => this.printInfo('Removed cache. Exiting..'))
     .finally(() => process.exit(0))
 }

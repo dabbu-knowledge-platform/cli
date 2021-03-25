@@ -33,12 +33,13 @@ const {
   set,
   getAbsolutePath,
   generateBodyAndHeaders,
+  getExtForMime,
+  parseUserInputForPath,
   printInfo,
   printBright,
-  printFiles,
-  getExtForMime,
   printError,
-  parseUserInputForPath,
+  printFiles,
+  highlight,
 } = require('./utils')
 
 const listRequest = async (drive, folderPath, regex) => {
@@ -77,6 +78,7 @@ const listRequest = async (drive, folderPath, regex) => {
     return null
   }
 }
+
 const downloadRequest = async (drive, folderPath, fileName) => {
   // The file object (from Dabbu Server), the file data retrieved from its
   // contentURI and the path on the local disk where the file is downloaded
@@ -327,11 +329,11 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
           })
         }
 
-        // Return
-        return
+        // Return the number of files deleted
+        return files.length
       } else {
         // Else return if it is an empty folder
-        return
+        return 0
       }
     } else {
       // The URL to send the request to
@@ -341,8 +343,8 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
         data: body, // The appropriate request body for this provider
         headers: headers, // The appropriate headers for this provider
       })
-      // Return
-      return
+      // Return the number of files deleted
+      return files.length
     }
   } else {
     let encodedFileName = encodeURIComponent(fileName)
@@ -353,8 +355,8 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
       data: body, // The appropriate request body for this provider
       headers: headers, // The appropriate headers for this provider
     })
-    // Return
-    return
+    // Return the number of files deleted
+    return 1
   }
 }
 
@@ -703,17 +705,16 @@ const Client = class {
   async list(args) {
     // Show a loading indicator
     const spinner = ora(
-      `Loading your ${chalk.blue('files and folders')}`
+      `Loading your ${highlight('files and folders')}`
     ).start()
 
     // Get the path the user entered, default to current directory
     let { drive, folderPath, regex } = await parseUserInputForPath(
       args[1],
-      true,
       true
     )
 
-    spinner.text = `Loading all files ${chalk.blue(
+    spinner.text = `Loading all files ${highlight(
       regex ? `matching regex ${regex}` : `in folder ${folderPath}`
     )}`
 
@@ -736,16 +737,15 @@ const Client = class {
   async read(args) {
     // Show a loading indicator
     const spinner = ora(
-      `Loading your ${chalk.blue('files and folders')}`
+      `Loading your ${highlight('files and folders')}`
     ).start()
 
-    // Get the path the user entered, default to current directory
-    let { drive, folderPath, fileName } = await parseUserInputForPath(
-      args[1],
-      false
-    )
+    // Get the path the user entered
+    let { drive, folderPath } = await parseUserInputForPath(args[1], false)
+    let fileName = folderPath.split('/')
+    fileName = fileName[fileName.length - 1]
 
-    spinner.text = `Fetching file ${chalk.blue(fileName)}`
+    spinner.text = `Fetching file ${highlight(fileName)}`
 
     // Fetch the files from the server
     let localPath = await downloadRequest(drive, folderPath, fileName)
@@ -753,11 +753,7 @@ const Client = class {
     // Stop loading
     spinner.stop()
     // Tell the user where the file is stored
-    printInfo(
-      `File downloaded ${chalk.keyword('orange')(
-        'temporarily'
-      )} to ${localPath}`
-    )
+    printInfo(`File downloaded ${highlight('temporarily')} to ${localPath}`)
     // Open it in the default app
     open(localPath, { wait: false })
 
@@ -768,28 +764,53 @@ const Client = class {
   async copy(args) {
     // Show a loading indicator
     const spinner = ora(
-      `Copying your ${chalk.blue('files and folders')}`
+      `Copying your ${highlight('files and folders')}`
     ).start()
 
     // Get the path the user entered (the file(s) to copy)
     let {
       drive: fromDrive,
       folderPath: fromFolderPath,
-      fileName: fromFileName,
       regex: fromRegex,
     } = await parseUserInputForPath(args[1], true)
+    // Get the file name from the folder path
+    let fromFileName = fromFolderPath.split('/')
+    fromFileName =
+      // If the path ends with a /, it is a folder
+      fromFileName[fromFileName.length - 1] === ''
+        ? null
+        : fromFileName[fromFileName.length - 1]
+    // If there is a file name, remove it from the folder path
+    if (fromFileName) {
+      fromFolderPath = fromFolderPath.split('/')
+      fromFolderPath = fromFolderPath.slice(0, fromFolderPath - 1).join('/')
+    }
     // Get the path the user entered (the target to copy to)
     let {
       drive: toDrive,
       folderPath: toFolderPath,
-      fileName: toFileName,
     } = await parseUserInputForPath(args[2], false)
+    // Get the file name from the folder path
+    let toFileName = toFolderPath.split('/')
+    toFileName =
+      // If the path ends with a /, it is a folder
+      toFileName[toFileName.length - 1] === ''
+        ? null
+        : toFileName[toFileName.length - 1]
+    // If there is a file name, remove it from the folder path
+    if (toFileName) {
+      toFolderPath = toFolderPath.split('/')
+      toFolderPath = toFolderPath.slice(0, toFolderPath - 1).join('/')
+    }
 
     // Check if the user has given some regex and matching files are to
     // be copied
     if (fromRegex) {
       const files = await listRequest(fromDrive, fromFolderPath, fromRegex)
       if (files && files.length > 0) {
+        // Keep a count of copied files and errored files
+        let copiedFilesCount = 0
+        let erroredFilesCount = 0
         // Loop through the files, download then upload each one
         for (let i = 0, length = files.length; i < length; i++) {
           // The file obj
@@ -820,6 +841,10 @@ const Client = class {
               file.name,
               localPath
             )
+
+            // Increase the number of files copied
+            copiedFilesCount++
+
             // Tell the user
             spinner.stop()
             printInfo(
@@ -827,6 +852,8 @@ const Client = class {
             )
             spinner.start()
           } catch (err) {
+            // Increase the error count
+            erroredFilesCount++
             // Print the error, but continue
             spinner.stop()
             printError(err)
@@ -835,6 +862,14 @@ const Client = class {
         }
         // Stop loading, we are done
         spinner.stop()
+        // Tell the user the number of files we copied and skipped
+        printInfo(
+          `Copied ${highlight(
+            copiedFilesCount
+          )} files successfully, ${highlight(
+            erroredFilesCount
+          )} skipped due to errors`
+        )
         // Return succesfully
         return
       } else {
@@ -846,7 +881,9 @@ const Client = class {
       // Surround in a try catch to stop spinner when an error is thrown
       try {
         // Update the spinner
-        spinner.text = `Copying file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+        spinner.text = `Copying file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
+          toFileName || fromFileName
+        }`
 
         // Fetch the file
         let localPath = await downloadRequest(
@@ -858,17 +895,15 @@ const Client = class {
         let res = await uploadRequest(
           toDrive,
           toFolderPath,
-          toFileName
-            ? toFileName === '.' || toFileName === '..'
-              ? fromFileName
-              : toFileName
-            : fromFileName,
+          toFileName || fromFileName,
           localPath
         )
         // Tell the user
         spinner.stop()
         printInfo(
-          `Copied file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+          `Copied file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
+            toFileName || fromFileName
+          }`
         )
       } catch (err) {
         spinner.stop()
@@ -882,35 +917,54 @@ const Client = class {
 
   async move(args) {
     // Show a loading indicator
-    const spinner = ora(
-      `Moving your ${chalk.blue('files and folders')}`
-    ).start()
+    const spinner = ora(`Moving your ${highlight('files and folders')}`).start()
 
-    // Get the path the user entered (the file(s) to copy)
+    // Get the path the user entered (the file(s) to move)
     let {
       drive: fromDrive,
       folderPath: fromFolderPath,
-      fileName: fromFileName,
       regex: fromRegex,
     } = await parseUserInputForPath(args[1], true)
-    // Get the path the user entered (the target to copy to)
+    // Get the file name from the folder path
+    let fromFileName = fromFolderPath.split('/')
+    fromFileName =
+      // If the path ends with a /, it is a folder
+      fromFileName[fromFileName.length - 1] === ''
+        ? null
+        : fromFileName[fromFileName.length - 1]
+    // If there is a file name, remove it from the folder path
+    if (fromFileName) {
+      fromFolderPath = fromFolderPath.split('/')
+      fromFolderPath = fromFolderPath.slice(0, fromFolderPath - 1).join('/')
+    }
+    // Get the path the user entered (the target to move to)
     let {
       drive: toDrive,
       folderPath: toFolderPath,
-      fileName: toFileName,
-    } = await parseUserInputForPath(
-      args[2],
-      false,
-      null,
-      fromFileName || 'dabbu_fallback_file_id'
-    )
+    } = await parseUserInputForPath(args[2], false)
+    // Get the file name from the folder path
+    let toFileName = toFolderPath.split('/')
+    toFileName =
+      // If the path ends with a /, it is a folder
+      toFileName[toFileName.length - 1] === ''
+        ? null
+        : toFileName[toFileName.length - 1]
+    // If there is a file name, remove it from the folder path
+    if (toFileName) {
+      toFolderPath = toFolderPath.split('/')
+      toFolderPath = toFolderPath.slice(0, toFolderPath - 1).join('/')
+    }
 
     // Check if the user has given some regex and matching files are to
     // be copied
     if (fromRegex) {
       const files = await listRequest(fromDrive, fromFolderPath, fromRegex)
       if (files && files.length > 0) {
-        // Else loop through the files, download then upload and then delete each one
+        // Keep a count of number of files moved and skipped due to errors
+        let movedFilesCount = 0
+        let erroredFilesCount = 0
+        // Else loop through the files, download then upload and then delete
+        // each one
         for (let i = 0, length = files.length; i < length; i++) {
           // The file obj
           let file = files[i]
@@ -918,7 +972,7 @@ const Client = class {
           // Update the spinner
           spinner.text = `Moving file ${fromFolderPath}/${
             fromFileName || file.name
-          } to ${toFolderPath}/${toFileName || file.name}`
+          } to ${toFolderPath}/${fromFileName || file.name}`
 
           // If the drive is the same, then simply update the file
           if (fromDrive === toDrive) {
@@ -932,27 +986,24 @@ const Client = class {
                 )
               }
               // Update the file
-              // Check if the fallback name needs to be replaced
-              toFileName = toFileName.replace(
-                'dabbu_fallback_file_id',
-                fromFileName || file.name
-              )
               let res = await updateRequest(
                 fromDrive,
                 fromFolderPath,
-                fromFileName || file.name,
+                file.name,
                 toFolderPath,
-                toFileName || file.name
+                file.name
               )
+              // Increase the moved files count
+              movedFilesCount++
               // Tell the user
               spinner.stop()
               printInfo(
-                `Moved file ${fromFolderPath}/${
-                  fromFileName || file.name
-                } to ${toFolderPath}/${toFileName || file.name}`
+                `Moved file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
               )
               spinner.start()
             } catch (err) {
+              // Increase the error count
+              erroredFilesCount++
               // Print the error, but continue
               spinner.stop()
               printError(err)
@@ -978,22 +1029,22 @@ const Client = class {
               let res = await uploadRequest(
                 toDrive,
                 toFolderPath,
-                toFileName
-                  ? toFileName === '.' || toFileName === '..'
-                    ? file.name
-                    : toFileName
-                  : file.name,
+                file.name,
                 localPath
               )
+              // Delete the original file
+              res = await deleteRequest(fromDrive, fromFolderPath, file.name)
+              // Increase the moved files count
+              movedFilesCount++
               // Tell the user
               spinner.stop()
               printInfo(
-                `Moved file ${fromFolderPath}/${file.name} to ${toFolderPath}/${
-                  toFileName || file.name
-                }`
+                `Moved file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
               )
               spinner.start()
             } catch (err) {
+              // Increase the error count
+              erroredFilesCount++
               // Print the error, but continue
               spinner.stop()
               printError(err)
@@ -1003,6 +1054,12 @@ const Client = class {
         }
         // Stop loading, we are done
         spinner.stop()
+        // Tell the user the number of files we copied and skipped
+        printInfo(
+          `Moved ${highlight(movedFilesCount)} files successfully, ${highlight(
+            erroredFilesCount
+          )} skipped due to errors`
+        )
         // Return succesfully
         return
       } else {
@@ -1016,22 +1073,19 @@ const Client = class {
         // If the drive is the same, then simply update the file
         if (fromDrive === toDrive) {
           // Update the file
-          // Check if the fallback name needs to be replaced
-          toFileName = toFileName.replace(
-            'dabbu_fallback_file_id',
-            fromFileName
-          )
           let res = await updateRequest(
             fromDrive,
             fromFolderPath,
             fromFileName,
             toFolderPath,
-            toFileName
+            toFileName || fromFileName
           )
           // Tell the user
           spinner.stop()
           printInfo(
-            `Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+            `Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
+              toFileName || fromFileName
+            }`
           )
         } else {
           // Fetch the file
@@ -1050,7 +1104,9 @@ const Client = class {
           // Tell the user
           spinner.stop()
           printInfo(
-            `Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${toFileName}`
+            `Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
+              toFileName || fromFileName
+            }`
           )
         }
       } catch (err) {
@@ -1066,26 +1122,39 @@ const Client = class {
   async delete(args) {
     // Show a loading indicator
     const spinner = ora(
-      `Loading your ${chalk.blue('files and folders')}`
+      `Loading your ${highlight('files and folders')}`
     ).start()
 
     // Get the path the user entered, default to current directory
-    let { drive, folderPath, fileName, regex } = await parseUserInputForPath(
+    let { drive, folderPath, regex } = await parseUserInputForPath(
       args[1],
       true
     )
+    let fileName = null
+    if (!regex) {
+      fileName = folderPath.split('/')
+      fileName = fileName[fileName.length - 1]
+    }
 
-    spinner.text = `Deleting ${chalk.blue(
+    spinner.text = `Deleting ${
       regex
-        ? `all files matching regex ${regex}`
-        : `${folderPath}/${fileName || ''}`
-    )}`
+        ? `all files matching regex ${highlight(regex)}`
+        : highlight(`${folderPath}/${fileName || ''}`)
+    }`
+
+    // List the files matching that regex so we can count how many we deleted
+    let deletedFilesCount = 0
 
     // Delete the files
     try {
-      await deleteRequest(drive, folderPath, fileName, regex)
+      deletedFilesCount = await deleteRequest(
+        drive,
+        folderPath,
+        fileName,
+        regex
+      )
     } catch (err) {
-      // Stop loading
+      // Throw the error
       spinner.stop()
       throw err
     }
@@ -1094,11 +1163,13 @@ const Client = class {
     spinner.stop()
     // Tell the user
     printInfo(
-      `Deleted ${chalk.blue(
+      `Deleted ${
         regex
-          ? `all files matching regex ${regex}`
-          : `${folderPath}/${fileName ? fileName : ''}`
-      )}`
+          ? `${highlight(deletedFilesCount)} files matching regex ${highlight(
+              regex
+            )}`
+          : highlight(`${folderPath}/${fileName ? fileName : ''}`)
+      }`
     )
     // Return successfully
     return
@@ -1107,7 +1178,7 @@ const Client = class {
   async sync(args) {
     // Show a loading indicator
     const spinner = ora(
-      `Listing files in the ${chalk.blue('source and target folders')}`
+      `Listing files in the ${highlight('source and target folders')}`
     ).start()
 
     // Get the path the user entered, default to current directory (to sync from)
@@ -1122,16 +1193,16 @@ const Client = class {
       folderPath: toFolderPath,
     } = await parseUserInputForPath(args[2], false, true)
 
-    spinner.text = `Listing all files in source folder ${chalk.blue(
-      fromFolderPath
-    )}`
+    spinner.text = `Listing all files in source folder ${chalk.keyword(
+      'orange'
+    )(`${fromDrive}:${fromFolderPath}`)}`
 
     // Fetch the files from the server
     let fromFiles = (await listRequest(fromDrive, fromFolderPath)) || []
 
-    spinner.text = `Listing existing files in target folder ${chalk.blue(
-      toFolderPath
-    )}`
+    spinner.text = `Listing existing files in target folder ${chalk.keyword(
+      'orange'
+    )(`${toDrive}:${toFolderPath}`)}`
 
     // Now list all those that exist in the target folder already
     let toFiles
@@ -1171,22 +1242,25 @@ const Client = class {
     }
 
     // Update the files only if needed
-    let checkLastModifiedTime = (key) => {
-      let existingFile = toFiles.filter((file) => file.name === key.name)[0]
-      if (existingFile) {
-        let existingDate = new Date(existingFile.lastModifiedTime)
-        let newDate = new Date(key.lastModifiedTime)
-        if (newDate > existingDate) {
-          return key
-        }
-      }
-      return null
-    }
-
+    let filesAlreadyUpToDate = []
     filesToUpdate =
       filesToUpdate.length > 0
         ? filesToUpdate
-            .map(checkLastModifiedTime)
+            .map((key) => {
+              let existingFile = toFiles.filter(
+                (file) => file.name === key.name
+              )[0]
+              if (existingFile) {
+                let existingDate = new Date(existingFile.lastModifiedTime)
+                let newDate = new Date(key.lastModifiedTime)
+                if (newDate > existingDate) {
+                  return key
+                } else {
+                  filesAlreadyUpToDate += key
+                }
+              }
+              return null
+            })
             .filter((file) => file !== null)
         : []
 
@@ -1195,37 +1269,78 @@ const Client = class {
       return occurrences[file.name] < 2
     })
 
-    // Copy paste all the files now
-    let filesToSync = filesToAdd.concat(filesToUpdate)
-    for (const fileToSync of filesToSync) {
-      spinner.text = `Syncing file ${fromDrive}:${fromFolderPath}/${fileToSync.name} to ${toDrive}:${toFolderPath}/${fileToSync.name}`
+    // Keep a count of files updated, created and skipped due to errors
+    let updatedFilesCount = 0
+    let createdFilesCount = 0
+    let erroredFilesCount = 0
 
-      // Fetch the file
-      let localPath = await downloadRequest(
-        fromDrive,
-        fromFolderPath,
-        fileToSync.name
-      )
-      // Upload the file
-      let res = await uploadRequest(
-        toDrive,
-        toFolderPath,
-        fileToSync.name,
-        localPath
-      )
+    // Function to update files, called individually for the filesToAdd and
+    // filesToUpdate arrays so we can keep count of files updated and created
+    let processFile = async (fileToSync, updateWhichCount) => {
+      spinner.text = `Syncing file ${highlight(
+        `${fromDrive}:${fromFolderPath}/${fileToSync.name}`
+      )} to ${highlight(`${toDrive}:${toFolderPath}/${fileToSync.name}`)}`
 
-      // Tell the user
-      spinner.stop()
-      printInfo(
-        `Synced file ${fromDrive}:${fromFolderPath}/${fileToSync.name} to ${toDrive}:${toFolderPath}/${fileToSync.name}`
-      )
-      spinner.start()
+      try {
+        // Fetch the file
+        let localPath = await downloadRequest(
+          fromDrive,
+          fromFolderPath,
+          fileToSync.name
+        )
+        // Upload the file
+        let res = await uploadRequest(
+          toDrive,
+          toFolderPath,
+          fileToSync.name,
+          localPath
+        )
+
+        // Increase the number of files updated/created
+        if (updateWhichCount === 'update') {
+          updatedFilesCount++
+        } else if (updateWhichCount === 'create') {
+          createdFilesCount++
+        }
+
+        // Tell the user
+        spinner.stop()
+        printInfo(
+          `Synced file ${highlight(
+            `${fromDrive}:${fromFolderPath}/${fileToSync.name}`
+          )} to ${highlight(`${toDrive}:${toFolderPath}/${fileToSync.name}`)}`
+        )
+        spinner.start()
+      } catch (err) {
+        // Increase the number of files updated/created
+        erroredFilesCount++
+        // Print the error and skip the file
+        spinner.stop()
+        printError(err)
+        spinner.start()
+      }
     }
+
+    // Update/create all the files needed
+    for (const fileToSync of filesToAdd) await processFile(fileToSync, 'create')
+    for (const fileToSync of filesToUpdate)
+      await processFile(fileToSync, 'update')
 
     // Stop loading
     spinner.stop()
 
-    printInfo(`All files up to date!`)
+    printInfo(
+      `${highlight(updatedFilesCount)} files updated, ${highlight(
+        createdFilesCount
+      )} files created and ${highlight(
+        fromFiles.length -
+          updatedFilesCount -
+          createdFilesCount -
+          erroredFilesCount
+      )} were already up-to-date. ${highlight(
+        erroredFilesCount
+      )} files were skipped due to errors encountered.`
+    )
 
     // Return successfully
     return

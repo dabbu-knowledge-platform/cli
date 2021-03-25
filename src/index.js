@@ -27,15 +27,16 @@ const Klient = require('./knowledge.js').Klient
 const klient = new Klient()
 
 const {
+  get,
+  set,
   getDrawableText,
   handleInputError,
   deleteConfig,
   exitDabbu,
-  get,
-  set,
   printInfo,
   printBright,
   printError,
+  highlight,
 } = require('./utils.js')
 
 // Main function
@@ -296,9 +297,7 @@ function switchDrive(args) {
 function help() {
   return printInfo(
     [
-      `${chalk.keyword('orange')(
-        `Dabbu CLI v${require('../package.json').version}`
-      )}`,
+      `${highlight(`Dabbu CLI v${require('../package.json').version}`)}`,
       '',
       'Usage: command [options]',
       '  - Anything in <> must be mentioned, while if it is in [], it is optional.',
@@ -306,33 +305,29 @@ function help() {
       '  - While specifying a folder, please add a / at the end of the folder name.',
       '  - Escape spaces in the file name by surrounding it in quotes.',
       '',
-      `  ${chalk.keyword('orange')(
-        'pwd'
-      )} - Know your current drive and directory`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight('pwd')} - Know your current drive and directory`,
+      `  ${highlight(
         'cd <relative path to directory>'
       )} - Move into a directory`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight(
         'ls [relative path to directory]'
       )} - List files in a directory`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight(
         'cat <relative path to file>'
       )} - Download and open a file`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight(
         'cp <relative path to file> <relative path to place to copy to>'
       )} - Copy a file from one place to another`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight(
         'mv <relative path to file> <relative path to place to copy to>'
       )} - Move a file from one place to another`,
-      `  ${chalk.keyword('orange')(
-        'rm <relative path to file>'
-      )} - Delete a file`,
-      `  ${chalk.keyword('orange')(
+      `  ${highlight('rm <relative path to file>')} - Delete a file`,
+      `  ${highlight(
         '<drive name>:'
       )} - Switch drives (Notice the colon at the end of the drive name)`,
-      `  ${chalk.keyword('orange')('::')} - Create a new drive`,
-      `  ${chalk.keyword('orange')('clear')} - Clear the screen`,
-      `  ${chalk.keyword('orange')('CTRL+C')} - Exit`,
+      `  ${highlight('::')} - Create a new drive`,
+      `  ${highlight('clear')} - Clear the screen`,
+      `  ${highlight('CTRL+C')} - Exit`,
       '',
     ].join('\n')
   )

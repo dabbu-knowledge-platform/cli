@@ -30,11 +30,12 @@ const {
   getAbsolutePath,
   refreshAccessToken,
   generateBodyAndHeaders,
+  getExtForMime,
   printInfo,
   printBright,
-  getExtForMime,
   printError,
   printFiles,
+  highlight,
 } = require('./utils')
 
 // A helper function to list files in a folder
@@ -184,7 +185,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
 // A helper function to list files recursively
 const listFilesRecursively = (drive, folder, spinner) => {
   // Tell the user which folder we are querying
-  spinner.text = `Fetching files in ${chalk.blue(folder)}`
+  spinner.text = `Fetching files in ${highlight(folder)}`
   // An array to hold all the files whose names contain any
   // one of the search terms
   let matchingFiles = []
@@ -334,7 +335,7 @@ const Klient = class {
     // For each drive, index all its files
     for (const driveToIndex of drivesToIndex) {
       // Tell the user what we are doing
-      spinner.text = `Fetching files from ${chalk.blue(driveToIndex)}`
+      spinner.text = `Fetching files from ${highlight(driveToIndex)}`
 
       // Fetch the file's metadata recursively
       const files = await listFilesRecursively(driveToIndex, '/', spinner)
@@ -350,7 +351,7 @@ const Klient = class {
         for (const file of files) {
           if (file.kind === 'file') {
             // Tell the user what we are doing
-            spinner.text = `Indexing file ${chalk.blue(
+            spinner.text = `Indexing file ${highlight(
               driveToIndex + ':' + file.path
             )}`
             // Get the file name and the folder path
