@@ -1,6 +1,6 @@
 {
   "name": "dabbu-cli",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
   "main": "src/index.js",
   "directories": {
@@ -12,7 +12,7 @@
     "check-format": "npx prettier --check .",
     "format": "npx prettier --write .",
     "prebuild": "npm run check-format",
-    "build": "pkg --output dist/dabbu-cli .",
+    "build": "pkg --debug --output dist/dabbu-cli .",
     "test": "echo \"Error: no test specified\"; exit 1"
   },
   "repository": {
@@ -51,9 +51,9 @@
       "src/**/*"
     ],
     "targets": [
-      "node15-linux-x64",
-      "node15-macos-x64",
-      "node15-win-x64"
+      "node14-linux-x64",
+      "node14-macos-x64",
+      "node14-win-x64"
     ]
   }
 }
