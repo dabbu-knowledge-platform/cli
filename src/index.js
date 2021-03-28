@@ -323,6 +323,9 @@ function help() {
       )} - Move a file from one place to another`,
       `  ${highlight('rm <relative path to file>')} - Delete a file`,
       `  ${highlight(
+        'sync <relative path to folder> <relative path to folder to sync files to>'
+      )} - Sync files from one folder to another efficiently`,
+      `  ${highlight(
         '<drive name>:'
       )} - Switch drives (Notice the colon at the end of the drive name)`,
       `  ${highlight('::')} - Create a new drive`,
