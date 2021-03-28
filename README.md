@@ -1,6 +1,6 @@
 # Dabbu CLI
 
-[![Code Style and Build Check](https://github.com/gamemaker1/dabbu-server/actions/workflows/style_and_build_check.yml/badge.svg)](https://github.com/gamemaker1/dabbu-server/actions/workflows/style_and_build_check.yml)
+[![Code Style and Build Check](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml)
 
 A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 
@@ -10,7 +10,7 @@ Tired of having your files and folders randomly scattered about online with mult
 
 ![](./media/DabbuCLI.gif)
 
-<sub>Dabbu CLI retrieving files from Google Drive</sub>
+<sub>Dabbu CLI retrieving files from Google Drive [Note: this GIF is outdated]</sub>
 
 What you just saw there was Dabbu CLI in action - a simple program in javascript that leverages the Dabbu API to bring your files and folders to your fingertips from all over the web.
 
@@ -18,13 +18,13 @@ What you just saw there was Dabbu CLI in action - a simple program in javascript
 
 ## Getting started
 
-The installation can be done manually on Linux, MacOS, Android (Requires Termux) and Windows.
+The installation can be done manually on Linux, Alpine Linux, MacOS, Android (Requires Termux) and Windows (Currently only 64-bit architectures are supported).
 
 Follow the instructions [here](https://dabbu-knowledge-platform.github.io/impls/cli) to install it on your computer.
 
 ## Updating the CLI
 
-To update the CLI, simply download the new version from the [Releases page](https://github.com/gamemaker1/dabbu-cli/releases).
+To update the CLI, simply download the new version from the [Releases page](https://github.com/dabbu-knowledge-platform/cli/releases).
 
 ## Providers supported
 
@@ -37,23 +37,27 @@ _And more to come...!_
 
 ### Creating a new provider
 
-**Note: If you want to create a client for a provider supported by the server but not the CLI, please file an issue using the `New client` template [here](https://github.com/gamemaker1/dabbu-cli/issues/new/choose). This is only to let us know that you want to work on the provider and how you plan to go about it. Also, if you need any help on the code, please do ask on [this](https://github.com/gamemaker1/dabbu-cli/discussions/categories/want-to-contribute) Github discussion. We will only be glad to help :)**
+If you want to create a client for a provider supported by the server but not the CLI, please file an issue using the `New client` template [here](https://github.com/dabbu-knowledge-platform/cli/issues/new/choose). This is only to let us know that you want to work on the provider and how you plan to go about it.
+
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for a detailed guide to setting up your environment and making changes to the code.
+
+Also, if you need any help on the code, please do ask on [this](https://github.com/dabbu-knowledge-platform/cli/discussions/categories/want-to-contribute) Github discussion. We will only be glad to help :)
 
 ## Docs
 
-The documentation for the CLI can be found [here](https://dabbu-knowledge-platform.github.io/impls/cli).
+The documentation for the CLI can be found on the [website](https://dabbu-knowledge-platform.github.io/impls/cli). The source can be found [here](https://github.com/dabbu-knowledge-platform/dabbu-knowledge-platform.github.io/blob/main/impls/cli.md).
 
 ## Issues and pull requests
 
-You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and spreading the word! If you want to report a bug, create an issue by clicking [here](https://github.com/gamemaker1/dabbu-cli/issues/new/choose). While creating an issue, try to follow the Bug report or Feature request template.
+You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and spreading the word! If you want to report a bug, create an issue by clicking [here](https://github.com/dabbu-knowledge-platform/cli/issues/new/choose). While creating an issue, try to follow the Bug report or Feature request template.
 
-To contribute code, have a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for a detailed guide to setting up your environment and making changes to the code.
 
 ## Legal stuff
 
 ### License - GNU GPL v3
 
-Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
+Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 
 Copyright (C) 2021 gamemaker1
 

@@ -1,40 +1,51 @@
-# Contributing to Dabbu
+# Contributing to Dabbu CLI
 
 First off, thanks for taking the time to contribute!
 
-The following is a set of guidelines for contributing to Dabbu. These are just guidelines, not rules, use your best judgment and feel free to propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to Dabbu CLI. These are just guidelines, not rules, use your best judgment and feel free to propose changes to this document in a pull request.
 
 ## Issues
 
-You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and spreading the word! If you want to report a bug, create an issue by clicking [here](https://github.com/gamemaker1/dabbu-cli/issues/new/choose). While creating an issue, try to follow the Bug report or Feature request template.
+You can contribute to Dabbu CLI by reporting bugs, fixing bugs, adding features, and spreading the word! If you want to report a bug, create an issue by the clicking [here](https://github.com/dabbu-knowledge-platform/cli/issues/new/choose). While creating an issue, try to follow the Bug report or Feature request template.
 
 ## Pull requests
 
-### Step 0: Install `git`, `nodejs` and `npm`
+This guide assumes you are familiar with Github and the command line. If not, [here](https://guides.github.com/activities/hello-world/) is a guide to get started with Github. If you are stuck on something, feel free to ask on [Github Discussions](https://github.com/dabbu-knowledge-platform/cli/discussions/categories/want-to-want-to-contribute).
 
-- `git` **must** be installed to make pull requests and push changed code.
-  - To check if git is already installed, type `git --version` in terminal/command prompt. You should see a version number displayed after running this command.
-  - [Here](https://github.com/git-guides/install-git) are the official instructions to install git for all platforms in case you haven't installed it already.
-- `nodejs and npm` **must** be installed to run the server locally
-  - To check if nodejs is already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command.
-  - [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install nodejs and npm for all platforms in case you haven't installed it already.
+### Step 0: Environment
+
+Install `git`, `nodejs` and `npm`.
+
+#### Git
+
+`git` **must** be installed to make pull requests and push changed code.
+
+- To check if git is already installed, type `git --version` in terminal/command prompt. You should see a version number displayed after running this command.
+- [Here](https://github.com/git-guides/install-git) are the official instructions to install git for all platforms in case you haven't installed it already.
+
+#### NodeJS and NPM
+
+`nodejs` and `npm` **must** be installed to run the CLI locally.
+
+- To check if NodeJS and NPM already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command. For developing Dabbu CLI, we use the LTS version of NodeJS (v14.x)
+- [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install NodeJS and NPM for all platforms in case you haven't installed it already.
 
 ### Step 1: Fork
 
-Fork the project [on the GitHub site](https://github.com/gamemaker1/dabbu-cli) and clone your fork locally.
+Fork the project [on the GitHub site](https://github.com/dabbu-knowledge-platform/cli) and clone your fork locally.
 
-Run the following to clone your fork locally:
+Run the following in a terminal to clone your fork locally:
 
 ```sh
-$ git clone https://github.com/<your-username>/dabbu-cli
-$ cd dabbu-cli
-$ git remote add upstream https://github.com/gamemaker1/dabbu-cli.git
+$ git clone https://github.com/<your-username>/cli
+$ cd cli
+$ git remote add upstream https://github.com/dabbu-knowledge-platform/cli.git
 $ git fetch upstream
 ```
 
 ### Step 2: Build
 
-All you need to do to build is run `npm run build`. If the command runs successfully, there should be 3 files (`dabbu-server-linux`, `dabbu-server-macos` and `dabbu-server-win.exe`) in the `dist/` folder. These are the executables that can be run on linux, macos and windows respectively without installation of external dependencies.
+All you need to do to build is run `npm run build`. If the command runs successfully, there should be 4 files (`dabbu-cli-alpine`, `dabbu-cli-linux`, `dabbu-cli-macos` and `dabbu-cli-win.exe`) in the `dist/` folder. These are the executables that can be run on alpine, linux, macos and windows respectively without installation of external dependencies.
 
 Once you've built the project locally, you're ready to start making changes!
 
@@ -48,11 +59,21 @@ $ git checkout -b fix-buggy-bug -t upstream/main
 
 ### Step 4: Code
 
-To get a decent idea of how the code is organised and what happens where, the code is heavily commented to allow you to understand exactly what happens. Remember to always format the code using `prettier` once you're done.
+The code is heavily commented to allow you to understand exactly what happens where.
 
-To test a change without building the executables, you can type `npm start` and it will run the server directly.
+- `src/index.js` contains UI code.
+- `src/client.js` contains code that runs when you type a command into the CLI.
+- `src/knowledge.js` contains code related to the special knowledge drive.
+- `src/utils.js` contains common functions used by the above files.
+- `src/mimes.json` contains data related to the file type you see when you list files in the CLI.
 
-To check if the code is formatted correctly, run `npm run check-format`. To format the code using prettier, run `npm run format`.
+To test a change without building the executables, you can type `npm start` and it will run the CLI directly.
+
+> While running the CLI for the first time, you will be asked to enter the URL to a Dabbu Server. For testing and development purposes, you may use the server hosted on Heroku - https://dabbu-server.herokuapp.com - but for continued use, it is recommended to setup your own server following the instructions [here](https://dabbu-knowledge-platform.github.io/impls/server).
+
+Remember to always format the code using `prettier` once you're done. To check if the code is formatted correctly, run `npm run check-format`. To format the code using prettier, run `npm run format`.
+
+If you find yourself stuck somewhere, or need help with some code, feel free to ask for help on [Github Discussions](https://github.com/dabbu-knowledge-platform/cli/discussions/categories/want-to-contribute).
 
 ### Step 5: Commit
 
@@ -60,12 +81,12 @@ It is recommended to keep your changes grouped logically within individual commi
 
 ```sh
 $ git add my/changed/files
-$ git commit
+$ git commit -m "<commit message>"
 ```
 
 Note that multiple commits often get squashed when they are landed.
 
-**Commit message guidelines**
+#### Commit message guidelines
 
 A good commit message should describe what changed and why. This project uses [semantic commit messages](https://conventionalcommits.org/) to streamline the release process.
 
@@ -110,17 +131,17 @@ $ git fetch upstream
 $ git rebase upstream/main
 ```
 
-This ensures that your working branch has the latest changes from `gamemaker1/dabbu-cli` main.
+This ensures that your working branch has the latest changes from `dabbu-knowledge-platform/cli` main.
 
 ### Step 7: Test
 
-Bug fixes and features should always come with tests. Please test your own code adequately. Also, before finally pushing your code, clone it into a fresh environment (different user or maybe a different computer) and make sure it works just as fine. Make sure you test the executables in the `dist/` directory, not just the \*.js files.
+Bug fixes and features should always come with tests. Please test your own code adequately. Also, before finally pushing your code, clone it into a fresh environment (different user or maybe a different computer) and make sure it works just as fine. Make sure you test the executables in the `dist/` directory.
 
 ### Step 8: Document
 
-Once your commits are ready to go - with adequate testing - begin the process of documenting your code. All the docs are located in the `docs/` folder.
+Once your commits are ready to go - with adequate testing - begin the process of documenting your code. The code **must** be heavily commented, so future contributors can move around and make changes easily.
 
-If you feel the documentation is a bit unfriendly to beginners, feel free to change it as you wish.
+If you are adding new features, or making changes to the behaviour of existing features, make sure you create a separate pull request in the [user docs repository](https://github.com/dabbu-knowledge-platform/dabbu-knowledge-platform.github.io/), and add relevant info to the `impls/cli.md` page.
 
 The documentation uses jekyll. To set up jekyll on your computer and make changes to the documentation, follow [this](https://docs.github.com/en/github/working-with-github-pages/testing-your-github-pages-site-locally-with-jekyll) guide.
 
@@ -134,11 +155,11 @@ $ git push origin fix-buggy-bug
 
 ### Step 10: Opening the Pull Request
 
-From within GitHub, opening a new pull request will present you with a template that should be filled out.
+From within GitHub, opening a [new pull request](https://github.com/dabbu-knowledge-platform/cli/compare) will present you with a template that should be filled out.
 
 ### Step 11: Discuss and update
 
-You will probably get feedback or requests for changes to your pull request. This is a big part of the submission process so don't be discouraged! Some contributors may sign off on the pull request right away. Others may have detailed comments or feedback. This is a necessary part of the process in order to evaluate whether the changes are correct and necessary.
+You will probably get feedback or requests for changes to your pull request. This is a big part of the submission process, so don't be discouraged! Some contributors may sign off on the pull request right away. Others may have detailed comments or feedback. This is a necessary part of the process in order to evaluate whether the changes are correct and necessary.
 
 To make changes to an existing pull request, make the changes to your local branch, add a new commit with those changes, and push those to your fork. GitHub will automatically update the pull request.
 
@@ -148,18 +169,18 @@ $ git commit
 $ git push origin fix-buggy-bug
 ```
 
-There are a number of more advanced mechanisms for managing commits using `git rebase` that can be used, but are beyond the scope of this README.
+There are a number of more advanced mechanisms for managing commits using `git rebase` that can be used, but are beyond the scope of this guide.
 
 Feel free to post a comment in the pull request to ping reviewers if you are awaiting an answer on something.
 
 **Approval and Request Changes Workflow**
 
-All pull requests require approval from a [Code Owner](https://github.com/dabbu-cli/blob/main/.github/CODE_OWNERS) of the area you modified in order to land. Whenever a maintainer reviews a pull request they may request changes. These may be small, such as fixing a typo, or may involve substantive changes. Such requests are intended to be helpful, but at times may come across as abrupt or unhelpful, especially if they do not include concrete suggestions on _how_ to change them.
+All pull requests require approval from contributors in order to land. Whenever a maintainer reviews a pull request they may request changes. These may be small, such as fixing a typo, or may involve substantive changes. Such requests are intended to be helpful, but at times may come across as abrupt or unhelpful, especially if they do not include concrete suggestions on _how_ to change them.
 
 Try not to be discouraged. Try asking the maintainer for advice on how to implement it. If you feel that a review is unfair, say so or seek the input of another project contributor. Often such comments are the result of a reviewer having taken insufficient time to review and are not ill-intended. Such difficulties can often be resolved with a bit of patience. That said, reviewers should be expected to provide helpful feedback.
 
 ### Step 12: Landing
 
-In order to land, a pull request needs to be reviewed and approved by at least one Code Owner. After that, if there are no objections from other contributors, the pull request can be merged.
+In order to land, a pull request needs to be reviewed and approved by at least one contributor. After that, if there are no objections from other contributors, the pull request can be merged.
 
 **Congratulations and thanks a lot for your contribution!**
