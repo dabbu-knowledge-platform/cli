@@ -742,8 +742,18 @@ const Client = class {
 
     // Get the path the user entered
     let { drive, folderPath } = await parseUserInputForPath(args[1], false)
+    // Get the file name from the folder path
     let fileName = folderPath.split('/')
-    fileName = fileName[fileName.length - 1]
+    fileName =
+      // If the path ends with a /, it is a folder
+      fileName[fileName.length - 1] === ''
+        ? null
+        : fileName[fileName.length - 1]
+    // If there is a file name, remove it from the folder path
+    if (fileName) {
+      folderPath = folderPath.split('/')
+      folderPath = folderPath.slice(0, folderPath - 1).join('/')
+    }
 
     spinner.text = `Fetching file ${highlight(fileName)}`
 
