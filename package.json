@@ -9,10 +9,11 @@
   "scripts": {
     "start": "node src/index.js",
     "clean": "rm -r dist/ && mkdir dist/",
-    "check-format": "npx prettier --check .",
     "format": "npx prettier --write .",
+    "check-format": "npx prettier --check .",
     "prebuild": "npm run check-format",
-    "build": "pkg --debug --output dist/dabbu-cli .",
+    "build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
+    "ci-build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
     "test": "echo \"Error: no test specified\"; exit 1"
   },
   "repository": {
@@ -46,14 +47,11 @@
   },
   "bin": "src/index.js",
   "pkg": {
-    "assets": [
-      "node_modules/**/*",
+    "scripts": [
       "src/**/*"
     ],
-    "targets": [
-      "node14-linux-x64",
-      "node14-macos-x64",
-      "node14-win-x64"
+    "assets": [
+      "node_modules/**/*"
     ]
   }
 }
