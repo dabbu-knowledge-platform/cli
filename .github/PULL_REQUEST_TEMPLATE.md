@@ -1,5 +1,8 @@
 **Describe the change:**
-Describe the change in a language users will understand
+Describe the changes made, features added, etc.
+
+**Issues closed:**
+Issues closed/related to this PR
 
 **Release notes:**
-All the commit messages
+All significant commit messages
