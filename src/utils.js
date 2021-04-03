@@ -79,9 +79,9 @@ exports.generateBodyAndHeaders = async (drive) => {
   let headers = {}
   // The provider config
   let providerConfigJson = await axios.get(
-    'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+    'https://dabbu-knowledge-platform.github.io/schema/provider-fields.json'
   )
-  providerConfigJson = providerConfigJson.data.providers
+  providerConfigJson = providerConfigJson.data.providers.v2
   // Get the config for the respective provider ID of the drive
   const providerConfig = providerConfigJson[
     this.get(`drives.${drive}.provider`)
@@ -117,9 +117,9 @@ exports.generateBodyAndHeaders = async (drive) => {
 exports.refreshAccessToken = async (drive) => {
   // The provider config
   let providerConfigJson = await axios.get(
-    'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+    'https://dabbu-knowledge-platform.github.io/schema/provider-fields.json'
   )
-  providerConfigJson = providerConfigJson.data.providers
+  providerConfigJson = providerConfigJson.data.providers.v2
   // Get the config for the respective provider ID of the drive
   const providerConfig = providerConfigJson[
     this.get(`drives.${drive}.provider`)

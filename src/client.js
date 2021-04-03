@@ -392,9 +392,9 @@ const Client = class {
     // from the provider_config.json file
     // The provider config
     let providerConfigJson = await axios.get(
-      'https://dabbu-knowledge-platform.github.io/schema/provider_fields.json'
+      'https://dabbu-knowledge-platform.github.io/schema/provider-fields.json'
     )
-    providerConfigJson = providerConfigJson.data.providers
+    providerConfigJson = providerConfigJson.data.providers.v2
 
     const provider = get(`drives.${drive}.provider`)
     const providerConfig = providerConfigJson[provider]
