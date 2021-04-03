@@ -54,7 +54,7 @@ const listRequest = async (drive, folderPath, regex) => {
   )
 
   // The URL to send the request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}?exportType=view`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
   // Send a GET request
   let res = await axios.get(url, {
     data: body, // The appropriate request body for this provider
@@ -94,7 +94,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
   )
   let encodedFileName = encodeURIComponent(fileName)
   // The URL to send the GET request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
   // Send a GET request
   let res = await axios.get(url, {
     data: body,
@@ -220,7 +220,7 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
   const formHeaders = formData.getHeaders()
 
   // The URL to send the request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}`
   // Send a POST request
   try {
     let res = await axios.post(url, formData, {
@@ -271,7 +271,7 @@ const updateRequest = async (
   }
 
   // The URL to send the request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}`
   // Send a POST request
   let res = await axios.put(url, body, {
     headers: headers,
@@ -299,7 +299,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
   if (!fileName) {
     if (regex) {
       // The URL to send the request to
-      let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}?exportType=view`
+      let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
       // Send a GET request
       let res = await axios.get(url, {
         data: body, // The appropriate request body for this provider
@@ -321,7 +321,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
         for (let file of files) {
           let encodedFileName = encodeURIComponent(file.name)
           // The URL to send the request to
-          let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+          let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}`
           // Send a GET request
           let res = await axios.delete(url, {
             data: body, // The appropriate request body for this provider
@@ -337,7 +337,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
       }
     } else {
       // The URL to send the request to
-      let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}`
+      let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}`
       // Send a GET request
       let res = await axios.delete(url, {
         data: body, // The appropriate request body for this provider
@@ -349,7 +349,7 @@ const deleteRequest = async (drive, folderPath, fileName, regex) => {
   } else {
     let encodedFileName = encodeURIComponent(fileName)
     // The URL to send the request to
-    let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}`
+    let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}`
     // Send a GET request
     let res = await axios.delete(url, {
       data: body, // The appropriate request body for this provider
@@ -489,10 +489,10 @@ const Client = class {
               } else {
                 // Store its value in the config file
                 set(
-                  `drives.${drive}.auth_meta.redirect_uri`,
+                  `drives.${drive}.auth-meta.redirect-uri`,
                   'http://localhost:8081'
                 )
-                set(`drives.${drive}.auth_meta.client_id`, clientID)
+                set(`drives.${drive}.auth-meta.client-id`, clientID)
                 // Return successfully
                 resolve()
               }
@@ -522,7 +522,7 @@ const Client = class {
                 resolve(reqClientSecret())
               } else {
                 // Store its value in the config file
-                set(`drives.${drive}.auth_meta.client_secret`, clientSecret)
+                set(`drives.${drive}.auth-meta.client-secret`, clientSecret)
                 // Return successfully
                 resolve()
               }
@@ -541,8 +541,8 @@ const Client = class {
         // A random state to prevent CORS attacks
         const randomNumber = nanoid(24)
         // The client ID and redirect URI (required in the URL)
-        const clientId = get(`drives.${drive}.auth_meta.client_id`)
-        const redirectUri = get(`drives.${drive}.auth_meta.redirect_uri`)
+        const clientId = get(`drives.${drive}.auth-meta.client-id`)
+        const redirectUri = get(`drives.${drive}.auth-meta.redirect-uri`)
         // The URL
         const authUrl = `${
           providerConfig.auth.auth_uri
@@ -596,7 +596,7 @@ const Client = class {
       // Wrap everything in a promise
       return new Promise((resolve, reject) => {
         // The URL to make a POST request to
-        const tokenURL = providerConfig.auth.token_uri
+        const tokenURL = providerConfig.auth['token-uri']
         // Make a POST request with the required params
         // Put the params as query params in the URL and in the request
         // body too, Microsoft requires the params as a string in the body
@@ -605,19 +605,19 @@ const Client = class {
             tokenURL,
             // In the body
             `code=${code}&client_id=${get(
-              `drives.${drive}.auth_meta.client_id`
+              `drives.${drive}.auth-meta.client-id`
             )}&client_secret=${get(
-              `drives.${drive}.auth_meta.client_secret`
+              `drives.${drive}.auth-meta.client-secret`
             )}&redirect_uri=${get(
-              `drives.${drive}.auth_meta.redirect_uri`
+              `drives.${drive}.auth-meta.redirect-uri`
             )}&grant_type=${'authorization_code'}`,
             // In the URL query parameters
             {
               params: {
                 code: code,
-                client_id: get(`drives.${drive}.auth_meta.client_id`),
-                client_secret: get(`drives.${drive}.auth_meta.client_secret`),
-                redirect_uri: get(`drives.${drive}.auth_meta.redirect_uri`),
+                client_id: get(`drives.${drive}.auth-meta.client-id`),
+                client_secret: get(`drives.${drive}.auth-meta.client-secret`),
+                redirect_uri: get(`drives.${drive}.auth-meta.redirect-uri`),
                 grant_type: 'authorization_code',
               },
             }
@@ -625,23 +625,23 @@ const Client = class {
           .then((res) => {
             // Get the access token, refresh token and expiry time
             const {
-              access_token,
-              refresh_token,
-              expires_in,
-              token_type,
+              access_token: accessToken,
+              refresh_token: refreshToken,
+              expires_in: expiresIn,
+              token_type: tokenType,
             } = res.data
             // Store it in config
             set(
-              `drives.${drive}.${providerConfig.auth.path}.access_token`,
-              `${token_type || 'Bearer'} ${access_token}`
+              `drives.${drive}.${providerConfig.auth.path}.access-token`,
+              `${tokenType || 'Bearer'} ${accessToken}`
             )
             set(
-              `drives.${drive}.${providerConfig.auth.path}.refresh_token`,
-              refresh_token
+              `drives.${drive}.${providerConfig.auth.path}.refresh-token`,
+              refreshToken
             )
             set(
-              `drives.${drive}.${providerConfig.auth.path}.expires_at`,
-              parseInt(Date.now()) + expires_in * 1000
+              `drives.${drive}.${providerConfig.auth.path}.expires-at`,
+              parseInt(Date.now()) + expiresIn * 1000
             ) // Multiply by thousands to keep milliseconds)
             // Return successfully
             resolve()
@@ -674,7 +674,7 @@ const Client = class {
   // Show the user their current drive and path
   async pwd(args) {
     // Current drive
-    const drive = (args[1] || get('current_drive')).replace(/:/g, '')
+    const drive = (args[1] || get('current-drive')).replace(/:/g, '')
     // Print the drive name and path
     printInfo(
       `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
@@ -691,12 +691,12 @@ const Client = class {
     // The user given relative path
     const inputPath = args[1]
     // The current path in that drive
-    const currentPath = get(`drives.${get('current_drive')}.path`) || ''
+    const currentPath = get(`drives.${get('current-drive')}.path`) || ''
 
     // Parse the relative path and get an absolute one
     const finalPath = getAbsolutePath(inputPath, currentPath)
     // Set the path
-    set(`drives.${get('current_drive')}.path`, finalPath)
+    set(`drives.${get('current-drive')}.path`, finalPath)
 
     // Return
     return
@@ -793,7 +793,9 @@ const Client = class {
     // If there is a file name, remove it from the folder path
     if (fromFileName) {
       fromFolderPath = fromFolderPath.split('/')
-      fromFolderPath = fromFolderPath.slice(0, fromFolderPath - 1).join('/')
+      fromFolderPath = fromFolderPath
+        .slice(0, fromFolderPath.length - 1)
+        .join('/')
     }
     // Get the path the user entered (the target to copy to)
     let {
@@ -810,7 +812,7 @@ const Client = class {
     // If there is a file name, remove it from the folder path
     if (toFileName) {
       toFolderPath = toFolderPath.split('/')
-      toFolderPath = toFolderPath.slice(0, toFolderPath - 1).join('/')
+      toFolderPath = toFolderPath.slice(0, toFolderPath.length - 1).join('/')
     }
 
     // Check if the user has given some regex and matching files are to
@@ -945,7 +947,9 @@ const Client = class {
     // If there is a file name, remove it from the folder path
     if (fromFileName) {
       fromFolderPath = fromFolderPath.split('/')
-      fromFolderPath = fromFolderPath.slice(0, fromFolderPath - 1).join('/')
+      fromFolderPath = fromFolderPath
+        .slice(0, fromFolderPath.length - 1)
+        .join('/')
     }
     // Get the path the user entered (the target to move to)
     let {
@@ -962,7 +966,7 @@ const Client = class {
     // If there is a file name, remove it from the folder path
     if (toFileName) {
       toFolderPath = toFolderPath.split('/')
-      toFolderPath = toFolderPath.slice(0, toFolderPath - 1).join('/')
+      toFolderPath = toFolderPath.slice(0, toFolderPath.length - 1).join('/')
     }
 
     // Check if the user has given some regex and matching files are to

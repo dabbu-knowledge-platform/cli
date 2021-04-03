@@ -140,54 +140,58 @@ exports.refreshAccessToken = async (drive) => {
     // Refresh only if expired
     let date = parseInt(Date.now())
     let expiresAtDate = parseInt(
-      this.get(`drives.${drive}.${providerConfig.auth.path}.expires_at`)
+      this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
     )
     if (expiresAtDate < date) {
       // If it has expired, get the auth metadata and the refresh token first
       let refreshToken = this.get(
-        `drives.${drive}.${providerConfig.auth.path}.refresh_token`
+        `drives.${drive}.${providerConfig.auth.path}.refresh-token`
       )
 
       // Get the URL to make a POST request to refresh the access token
-      const tokenURL = providerConfig.auth.token_uri
+      const tokenURL = providerConfig.auth['token-uri']
       // Make a POST request with the required params
       // Put the params as query params in the URL and in the request
       // body too, Microsoft requires the params as a string in the body
       const res = await axios.post(
         tokenURL,
         // In the body
-        `refresh_token=${refreshToken}&client_id=${this.get(
-          `drives.${drive}.auth_meta.client_id`
+        `refresh-token=${refreshToken}&client_id=${this.get(
+          `drives.${drive}.auth-meta.client-id`
         )}&client_secret=${this.get(
-          `drives.${drive}.auth_meta.client_secret`
+          `drives.${drive}.auth-meta.client-secret`
         )}&redirect_uri=${this.get(
-          `drives.${drive}.auth_meta.redirect_uri`
+          `drives.${drive}.auth-meta.redirect-uri`
         )}&grant_type=${'refresh_token'}`,
         // In the URL query parameters
         {
           params: {
             refresh_token: refreshToken,
-            client_id: this.get(`drives.${drive}.auth_meta.client_id`),
-            client_secret: this.get(`drives.${drive}.auth_meta.client_secret`),
-            redirect_uri: this.get(`drives.${drive}.auth_meta.redirect_uri`),
+            client_id: this.get(`drives.${drive}.auth-meta.client-id`),
+            client_secret: this.get(`drives.${drive}.auth-meta.client-secret`),
+            redirect_uri: this.get(`drives.${drive}.auth-meta.redirect-uri`),
             grant_type: 'refresh_token',
           },
         }
       )
       // Store the access token and update the expiry time
-      const { token_type, access_token, expires_in } = res.data
+      const {
+        token_type: tokenType,
+        access_token: accessToken,
+        expires_in: expiresIn,
+      } = res.data
       this.set(
-        `drives.${drive}.${providerConfig.auth.path}.access_token`,
-        `${token_type || 'Bearer'} ${access_token}`
+        `drives.${drive}.${providerConfig.auth.path}.access-token`,
+        `${tokenType || 'Bearer'} ${accessToken}`
       )
       this.set(
-        `drives.${drive}.${providerConfig.auth.path}.expires_at`,
-        parseInt(Date.now()) + expires_in * 1000
+        `drives.${drive}.${providerConfig.auth.path}.expires-at`,
+        parseInt(Date.now()) + expiresIn * 1000
       ) // Multiply by thousands to keep milliseconds)
       // Tell the user
       this.printInfo(
         `\nRefreshed access token, expires at ${new Date(
-          this.get(`drives.${drive}.${providerConfig.auth.path}.expires_at`)
+          this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
         ).toLocaleString()}`
       )
       // Return successfully
@@ -248,8 +252,7 @@ exports.getAbsolutePath = (inputPath, currentPath) => {
 exports.parseUserInputForPath = async (
   input,
   allowRegex,
-  fallbackDriveName,
-  fallbackFileName
+  fallbackDriveName
 ) => {
   // Assume the input to be "." if there is none
   // Don't throw an error as there might be a fallback
@@ -262,7 +265,7 @@ exports.parseUserInputForPath = async (
     splitPath.length === 1
       ? fallbackDriveName
         ? fallbackDriveName
-        : this.get('current_drive')
+        : this.get('current-drive')
       : splitPath[0]
 
   // Get the file/folder path
@@ -302,14 +305,7 @@ exports.parseUserInputForPath = async (
 
     // Parse the relative path and get an absolute one
     let folderPath = this.getAbsolutePath(
-      `${
-        originalPath.startsWith('./') ||
-        originalPath.startsWith('../') ||
-        originalPath === '.' ||
-        originalPath === '..'
-          ? ''
-          : '/'
-      }${foldersArray.join('/')}`,
+      `${originalPath.startsWith('/') ? '/' : ''}${foldersArray.join('/')}`,
       this.get(`drives.${drive}.path`)
     )
     folderPath = folderPath === '' ? '/' : folderPath
@@ -469,6 +465,7 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
+  console.error(err)
   if (err.isAxiosError) {
     if (err.code === 'ECONNRESET') {
       this.print(

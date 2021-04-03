@@ -54,7 +54,7 @@ const listRequest = async (drive, folderPath) => {
   )
 
   // The URL to send the request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}?exportType=view`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
   // Send a GET request
   let res = await axios.get(url, {
     data: body, // The appropriate request body for this provider
@@ -89,7 +89,7 @@ const downloadRequest = async (drive, folderPath, fileName) => {
   )
   let encodedFileName = encodeURIComponent(fileName)
   // The URL to send the GET request to
-  let url = `${server}/files-api/v1/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
+  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
   // Send a GET request
   let res = await axios.get(url, {
     data: body,
@@ -378,7 +378,7 @@ const Klient = class {
               })
 
               let extractedData = await axios.post(
-                'http://dabbu-intel.herokuapp.com/intel-api/v1/extract-info',
+                'http://dabbu-intel.herokuapp.com/intel-api/v2/extract-info',
                 formData,
                 {
                   headers: formData.getHeaders(),
@@ -465,7 +465,7 @@ const Klient = class {
   // Show the user their current drive and path
   async pwd(args) {
     // Current drive
-    const drive = (args[1] || get('current_drive')).replace(/:/g, '')
+    const drive = (args[1] || get('current-drive')).replace(/:/g, '')
     // Print the drive name and path
     printInfo(
       `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
@@ -482,12 +482,12 @@ const Klient = class {
     // The user given relative path
     const inputPath = args[1]
     // The current path in that drive
-    const currentPath = get(`drives.${get('current_drive')}.path`) || ''
+    const currentPath = get(`drives.${get('current-drive')}.path`) || ''
 
     // Parse the relative path and get an absolute one
     const finalPath = getAbsolutePath(inputPath, currentPath)
     // Set the path
-    set(`drives.${get('current_drive')}.path`, finalPath)
+    set(`drives.${get('current-drive')}.path`, finalPath)
 
     // Return
     return
@@ -497,7 +497,7 @@ const Klient = class {
     // The user given relative path
     const inputPath = args[1] || '.'
     // The current path in that drive
-    const currentPath = get(`drives.${get('current_drive')}.path`) || ''
+    const currentPath = get(`drives.${get('current-drive')}.path`) || ''
 
     // Parse the relative path and get an absolute one
     const keywords = getAbsolutePath(inputPath, currentPath)
