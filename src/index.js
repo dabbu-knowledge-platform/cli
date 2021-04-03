@@ -51,12 +51,12 @@ function main() {
 // Check if the user is new and act accordingly
 function checkSetupAndRun() {
   // If the user hasn't been setup, welcome them
-  if (!get('setup_done')) {
+  if (!get('setup-done')) {
     createNewDrive()
   } else {
     // First check if the current drive is valid, as someone may have
     // deleted a provider and not changed the current drive
-    let currentDriveName = get('current_drive')
+    let currentDriveName = get('current-drive')
     let currentDriveVars = get(`drives.${currentDriveName}`) || {}
     // Check if there is no current drive
     if (
@@ -82,7 +82,7 @@ function checkSetupAndRun() {
           const driveVars = get(`drives.${driveName}`)
           // Make sure it is not the current drive and has at least the provider field
           if (driveName != currentDriveName && driveVars.provider) {
-            set('current_drive', driveName)
+            set('current-drive', driveName)
             printError(
               `Current drive was not set to a valid drive or current drive configuration was corrupt. Changing to ${driveName}:`
             )
@@ -142,7 +142,7 @@ function createNewDrive() {
     // Wrap everything in a promise
     return new Promise((resolve, reject) => {
       // The URL to send the request to
-      const url = `${server}/files-api/v1/providers`
+      const url = `${server}/files-api/v2/providers`
       // Send a GET request
       axios
         .get(url)
@@ -263,8 +263,8 @@ function createNewDrive() {
     .then(reqProvider) // Then ask the user to choose a provider to setup
     .then(reqDriveName) // Get the name of the drive to create from the user
     .then(providerInit) // Let the provider run the rest
-    .then((name) => set('current_drive', name)) // Set the current drive
-    .then(() => set('setup_done', true)) // Mark the setup as done
+    .then((name) => set('current-drive', name)) // Set the current drive
+    .then(() => set('setup-done', true)) // Mark the setup as done
     .then(() => showPrompt()) // Show the user the command line
     .catch(printError) // Print the error, if any
 }
@@ -280,7 +280,7 @@ function switchDrive(args) {
 
     // If there is a drive with that name, switch to it
     if (drives[drive]) {
-      set('current_drive', drive)
+      set('current-drive', drive)
       resolve()
     } else {
       // Else error out
@@ -409,7 +409,7 @@ function showPrompt(err = null) {
         }
 
         // Check if we are in the knowledge drive
-        if (get(`drives.${get('current_drive')}.provider`) === 'knowledge') {
+        if (get(`drives.${get('current-drive')}.provider`) === 'knowledge') {
           // If so, execute the function according to the knowledge drive
           // Check if there is a function for that command
           if (typeof klient.ops[args[0]] !== 'function') {
@@ -437,7 +437,7 @@ function showPrompt(err = null) {
 
 function getPromptPs() {
   // Current drive
-  const drive = get('current_drive')
+  const drive = get('current-drive')
   const driveVars = get(`drives.${drive}`) || {}
   // Return the drive and the current path as the PS
   return chalk.cyan(`${drive}:${driveVars.path || ''}$ `)
