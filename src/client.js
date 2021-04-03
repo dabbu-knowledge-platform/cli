@@ -787,7 +787,9 @@ const Client = class {
     let fromFileName = fromFolderPath.split('/')
     fromFileName =
       // If the path ends with a /, it is a folder
-      fromFileName[fromFileName.length - 1] === ''
+      fromFileName[fromFileName.length - 1] === '' ||
+      fromFileName[fromFileName.length - 1] === '.' ||
+      fromFileName[fromFileName.length - 1] === '..'
         ? null
         : fromFileName[fromFileName.length - 1]
     // If there is a file name, remove it from the folder path
@@ -806,7 +808,9 @@ const Client = class {
     let toFileName = toFolderPath.split('/')
     toFileName =
       // If the path ends with a /, it is a folder
-      toFileName[toFileName.length - 1] === ''
+      toFileName[toFileName.length - 1] === '' ||
+      toFileName[toFileName.length - 1] === '.' ||
+      toFileName[toFileName.length - 1] === '..'
         ? null
         : toFileName[toFileName.length - 1]
     // If there is a file name, remove it from the folder path
@@ -941,7 +945,9 @@ const Client = class {
     let fromFileName = fromFolderPath.split('/')
     fromFileName =
       // If the path ends with a /, it is a folder
-      fromFileName[fromFileName.length - 1] === ''
+      fromFileName[fromFileName.length - 1] === '' ||
+      fromFileName[fromFileName.length - 1] === '.' ||
+      fromFileName[fromFileName.length - 1] === '..'
         ? null
         : fromFileName[fromFileName.length - 1]
     // If there is a file name, remove it from the folder path
@@ -960,7 +966,9 @@ const Client = class {
     let toFileName = toFolderPath.split('/')
     toFileName =
       // If the path ends with a /, it is a folder
-      toFileName[toFileName.length - 1] === ''
+      toFileName[toFileName.length - 1] === '' ||
+      toFileName[toFileName.length - 1] === '.' ||
+      toFileName[toFileName.length - 1] === '..'
         ? null
         : toFileName[toFileName.length - 1]
     // If there is a file name, remove it from the folder path

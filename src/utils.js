@@ -281,7 +281,7 @@ exports.parseUserInputForPath = async (
     // If so, parse it to get a base folder to search in
     const paths = originalPath.split('*')
     // Get the last folder without the regex part
-    const baseFolderPath = paths[0].substring(0, paths[0].lastIndexOf('/'))
+    const baseFolderPath = paths[0].substring(0, paths[0].lastIndexOf('/') + 1)
     // Get an absolute path
     let folderPath = this.getAbsolutePath(
       baseFolderPath,
@@ -465,7 +465,6 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (err) => {
-  console.error(err)
   if (err.isAxiosError) {
     if (err.code === 'ECONNRESET') {
       this.print(
