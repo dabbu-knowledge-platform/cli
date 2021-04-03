@@ -1,7 +1,3 @@
-### Maintenance
+### Fixes
 
-- Enable `dependabot`.
-- Update the following dependencies:
-  - `pkg`
-  - `form-data`
-  - `open`
+- Update URLs due to breaking change with Files API Server (upgrade to v2)
