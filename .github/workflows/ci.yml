@@ -3,11 +3,11 @@ name: NodeJS CI
 # Triggers the workflow on push or pull request events but only for the main branch
 on: [push, pull_request]
 
-# This workflow contains three jobs: check code style, build and release
+# This workflow contains three jobs: run tests, build and release
 jobs:
-  # Check code style
-  check-format:
-    name: Check code style
+  # Run tests
+  test:
+    name: Run tests (node ${{ matrix.node_version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,11 +22,11 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node_version }}
-      # Check the format
-      - name: Check format
+      # Run all tests
+      - name: Run tests
         run: |
           npm ci
-          npm run check-format
+          npm test
 
   # Build the executable
   build:
