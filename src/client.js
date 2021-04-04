@@ -1150,14 +1150,25 @@ const Client = class {
 		).start()
 
 		// Get the path the user entered, default to current directory
-		const { drive, folderPath, regex } = await parseUserInputForPath(
+		let { drive, folderPath, regex } = await parseUserInputForPath(
 			args[1],
 			true
 		)
 		let fileName = null
 		if (!regex) {
 			fileName = folderPath.split('/')
-			fileName = fileName[fileName.length - 1]
+			fileName =
+			// If the path ends with a /, it is a folder
+			fileName[fileName.length - 1] === '' ||
+			fileName[fileName.length - 1] === '.' ||
+			fileName[fileName.length - 1] === '..'
+				? null
+				: fileName[fileName.length - 1]
+			// If there is a file name, remove it from the folder path
+			if (fileName) {
+				folderPath = folderPath.split('/')
+				folderPath = folderPath.slice(0, -1).join('/')
+			}
 		}
 
 		spinner.text = `Deleting ${
