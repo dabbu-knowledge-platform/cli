@@ -167,9 +167,10 @@ function main {
 			h) help;;
 			f) fake_run;;
 			o) install --overwrite;;
-			*) install;;
 			esac
 	done
+
+	install
 }
 
 main "$*"
