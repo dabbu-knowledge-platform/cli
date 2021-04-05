@@ -115,7 +115,7 @@ jobs:
         if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version }}
         uses: softprops/action-gh-release@v1
         with:
-          body_path: release-notes
+          body_path: release-notes.md
           tag_name: ${{ steps.check-version.outputs.version }}
           prerelease: ${{ contains(steps.check-version.outputs.version, '-') }}
           name: Dabbu CLI ${{ steps.check-version.outputs.version }}

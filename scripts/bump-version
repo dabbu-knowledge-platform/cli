@@ -111,13 +111,18 @@ function push_to_git {
 	# Add the changed files
 	git add version package.json package-lock.json release-notes
 
-	# Commit it as a prerelease or a release
+	# Commit and tag it as a prerelease or a release
 	# Pre-releases will contain a dash in their version
 	if [[ $new_release_tag =~ "-" ]]; then
-		git commit -m "chore(release): prerelease $new_release_tag"
+		git commit --signoff -m "chore(release): prerelease $new_release_tag"
+		git tag -a "$new_release_tag" -m "chore(release): prerelease $new_release_tag"
 	else
-		git commit -m "chore(release): release $new_release_tag"
+		git commit --signoff -m "chore(release): release $new_release_tag"
+		git tag -a "$new_release_tag" -m "chore(release): release $new_release_tag"
 	fi
+	
+	# Push the changes
+	git push --tags
 }
 
 # Main function
