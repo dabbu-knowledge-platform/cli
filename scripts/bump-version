@@ -72,8 +72,8 @@ function add_release_notes {
 	git log --format="%s [%h]%n%b" $previous_tag_revision..HEAD > release-notes.tmp
 	
 	# Remove Signed-off-by and Co-authored-by lines from the details
-	sed -i '/^Signed-off-by/d' release-notes.tmp
-	sed -i '/^Co-authored-by/d' release-notes.tmp
+	sed -i "/^Signed-off-by/d" release-notes.tmp
+	sed -i "/^Co-authored-by/d" release-notes.tmp
 	# Remove double newlines and save that as release-notes
 	cat -s release-notes.tmp > release-notes
 	# Delete the temporary file

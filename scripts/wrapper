@@ -1,0 +1,15 @@
+#!/bin/bash
+
+old_pwd="$PWD"
+
+cd "/opt/dabbu/files-api-server/"
+
+DO_NOT_LOG_TO_CONSOLE=true ./files-api-server-executable &
+pid=$!
+
+cd "/opt/dabbu/cli/"
+
+./dabbu-cli-executable
+
+kill -INT $pid
+cd $old_pwd

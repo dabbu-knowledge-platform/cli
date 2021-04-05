@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# install
+# Installs the CLI to /opt/dabbu/cli
+# 
+# Usage: scripts/install [ prerelease | release ]
+# 
+# Remember to run this script from the root of the project!
+
+# Steps:
+# - Create the /opt/dabbu/cli directory
+# - Create the /opt/dabbu/files-api-server directory
+# - Download the CLI and Files API Server executables 
+# - Create the wrapper shell script and save it as /opt/dabbu/cli/dabbu-cli
+
+echo "Creating install directory at /opt/dabbu/..."
+mkdir -p "/opt/dabbu/cli"
+mkdir -p "/opt/dabbu/files-api-server"
+
+echo "Downloading executable..."
+machine="$(uname -s)"
+case "$machine" in
+    Linux*)  machine="linux";;
+    Darwin*) machine="macos";;
+    *)       machine="unknown";;
+esac
+
+if [ $machine == "unknown" ]; then
+    echo "This install script is meant only for Linux/MacOS"
+    exit 1
+fi
+
+curl -L "https://github.com/dabbu-knowledge-platform/cli/releases/latest/download/dabbu-cli-$machine" --output "/opt/dabbu/cli/dabbu-cli-executable"
+
+curl -L "https://github.com/dabbu-knowledge-platform/files-api-server/releases/latest/download/files-api-server-$machine" --output "/opt/dabbu/files-api-server/files-api-server-executable"
+
+curl -L "https://raw.githubusercontent.com/dabbu-knowledge-platform/cli/main/scripts/wrapper" --output "/opt/dabbu/cli/wrapper"
+
+echo "Installing CLI (you may need to enter your root password)..."
+
+sudo cp "/opt/dabbu/cli/wrapper" "/usr/bin/dabbu-cli-wrapper"
+
+echo "Setting up CLI..."
+
+if [ $machine == "macos" ]; then
+    mkdir -p "~/Library/Preferences/dabbu-cli-nodejs/"
+    
+    if [ -f "~/Library/Preferences/dabbu-cli-nodejs/config.json" ]; then
+        mv "~/Library/Preferences/dabbu-cli-nodejs/config.json" "~/Library/Preferences/dabbu-cli-nodejs/config.json.bak"
+    fi
+
+    "{
+        server: \"http://localhost:8080\"
+    }" > "~/Library/Preferences/dabbu-cli-nodejs/config.json"
+fi
+
+if [ $machine == "linux" ]; then
+    linux_config_path="$XDG_CONFIG_HOME/dabbu-cli-nodejs/"
+    if [ -z "$XDG_CONFIG_HOME" ]; then
+        linux_config_path="~/.config/dabbu-cli-nodejs"
+    fi
+
+    mkdir -p "$linux_config_path"
+
+    if [ -f "$linux_config_path/config.json" ]; then
+        mv "$linux_config_path/config.json" "$linux_config_path/config.json.bak"
+    fi
+
+    "{
+        server: \"http://localhost:8080\"
+    }" > "$linux_config_path"
+fi
+
+echo "Successfully installed Dabbu CLI! Type dabbu-cli to run it."
