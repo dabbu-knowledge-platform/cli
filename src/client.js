@@ -54,7 +54,7 @@ const listRequest = async (drive, folderPath, regex) => {
 	)
 
 	// The URL to send the request to
-	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
+	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc`
 	// Send a GET request
 	const result = await axios.get(url, {
 		data: body, // The appropriate request body for this provider
@@ -408,14 +408,12 @@ const Client = class {
 		// Request a variable from the user
 		const _requestVariable = (variable) => {
 			return new Promise((resolve, reject) => {
-				// Get the description, type and path to store the variable
-				const varInfo = providerConfig.request.body[variable]
 				// Tell the user about the variable
-				printInfo(varInfo.description)
+				printInfo(variable.description)
 
 				prompt.read(
 					{
-						ps1: `${varInfo.prompt} > `
+						ps1: `${variable.prompt} > `
 					},
 					(error, args) => {
 						// If there is an error, handle it
@@ -427,12 +425,12 @@ const Client = class {
 							// Check if the value is non null
 							if (varValue) {
 								// Store its value in the config file
-								set(`drives.${drive}.${varInfo.path}`, varValue)
+								set(`drives.${drive}.${variable.path}`, varValue)
 								// Return successfully
 								resolve()
 							} else {
 								// If they haven't entered anything, flag it and ask again
-								printBright(`Please ${varInfo.prompt.toLowerCase()}`)
+								printBright(`Please ${variable.prompt.toLowerCase()}`)
 								resolve(_requestVariable(variable))
 							}
 						}
@@ -450,22 +448,22 @@ const Client = class {
 			)
 
 			// Loop through them and get their value
-			for (let i = 0, length = variablesFromBody.length; i < length; i++) {
-				const variable = providerConfig.request.body[variablesFromBody[i]]
-				// Ask the user for the value only if the user_input_needed flag is explicitly true
-				if (variable.user_input_needed === true) {
+			for (const variableName of variablesFromBody) {
+				const variable = providerConfig.request.body[variableName]
+				// Ask the user for the value only if the user-input-needed flag is explicitly true
+				if (variable['user-input-needed'] === true) {
 					// eslint-disable-next-line no-await-in-loop
-					await _requestVariable(variablesFromBody[i])
+					await _requestVariable(variable)
 				}
 			}
 
 			// Loop through them and get their value
-			for (let i = 0, length = variablesFromHeaders.length; i < length; i++) {
-				const variable = providerConfig.request.headers[variablesFromHeaders[i]]
-				// Ask the user for the value only if the user_input_needed flag is explicitly true
-				if (variable.user_input_needed === true) {
+			for (const variableName of variablesFromHeaders) {
+				const variable = providerConfig.request.headers[variableName]
+				// Ask the user for the value only if the user-input-needed flag is explicitly true
+				if (variable['user-input-needed'] === true) {
 					// eslint-disable-next-line no-await-in-loop
-					await _requestVariable(variablesFromHeaders[i])
+					await _requestVariable(variable)
 				}
 			}
 
@@ -555,7 +553,7 @@ const Client = class {
 				const redirectUri = get(`drives.${drive}.auth-meta.redirect-uri`)
 				// The URL
 				const authUrl = `${
-					providerConfig.auth.auth_uri
+					providerConfig.auth['auth-uri']
 				}?client_id=${encodeURIComponent(
 					clientId
 				)}&redirect_uri=${encodeURIComponent(
@@ -677,8 +675,6 @@ const Client = class {
 			// Get an access token and refresh token
 			await getToken()
 			// Return successfully
-		} else {
-			// Else resolve successfully
 		}
 	}
 
