@@ -1,81 +1,57 @@
 {
-	"name": "dabbu-cli",
-	"version": "2.6.1-0",
-	"description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
-	"main": "src/index.js",
-	"scripts": {
-		"start": "node src/index.js",
-		"clean": "rm -r dist/ && mkdir dist/",
-		"format": "xo --fix",
-		"prebuild": "npm run test",
-		"build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
-		"ci-build": "npm prune --production && npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
-		"test": "xo"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/gamemaker1/dabbu-cli.git"
-	},
-	"author": "gamemaker1",
-	"license": "GPL-3.0-or-later",
-	"bugs": {
-		"url": "https://github.com/gamemaker1/dabbu-cli/issues"
-	},
-	"homepage": "https://github.com/gamemaker1/dabbu-cli#readme",
-	"dependencies": {
-		"axios": "^0.21.1",
-		"chalk": "^4.1.0",
-		"cli-table3": "^0.6.0",
-		"conf": "^9.0.2",
-		"express": "^4.17.1",
-		"figlet": "^1.5.0",
-		"form-data": "^4.0.0",
-		"fs-extra": "^9.1.0",
-		"nanoid": "^3.1.22",
-		"open": "^8.0.4",
-		"ora": "^5.4.0",
-		"readcommand": "^0.3.0",
-		"terminal-link": "^2.1.1"
-	},
-	"devDependencies": {
-		"pkg": "^4.5.1",
-		"xo": "^0.38.2"
-	},
-	"bin": "src/index.js",
-	"pkg": {
-		"scripts": [
-			"src/**/*"
-		],
-		"assets": [
-			"node_modules/**/*"
-		]
-	},
-	"prettier": {
-		"semi": false,
-		"useTabs": true,
-		"trailingComma": "none",
-		"singleQuote": true,
-		"bracketSpacing": true,
-		"jsxBracketSameLine": false
-	},
-	"xo": {
-		"semicolon": false,
-		"prettier": true,
-		"rules": {
-			"complexity": 0,
-			"no-unused-vars": 0,
-			"max-params": 0,
-			"max-depth": 0,
-			"object-curly-spacing": 0,
-			"unicorn/no-nested-ternary": 0
-		},
-		"ignores": [
-			"node_modules/",
-			"creds/",
-			"dist/",
-			"_dabbu/",
-			".git/",
-			".heroku/"
-		]
-	}
+  "name": "dabbu-cli",
+  "version": "2.6.1",
+  "description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
+  "main": "src/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "clean": "rm -r dist/ && mkdir dist/",
+    "format": "npx prettier --write .",
+    "check-format": "npx prettier --check .",
+    "prebuild": "npm run check-format",
+    "build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
+    "ci-build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
+    "test": "echo \"Error: no test specified\"; exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gamemaker1/dabbu-cli.git"
+  },
+  "author": "gamemaker1",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/gamemaker1/dabbu-cli/issues"
+  },
+  "homepage": "https://github.com/gamemaker1/dabbu-cli#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "chalk": "^4.1.0",
+    "cli-table3": "^0.6.0",
+    "conf": "^9.0.2",
+    "express": "^4.17.1",
+    "figlet": "^1.5.0",
+    "form-data": "^4.0.0",
+    "fs-extra": "^9.1.0",
+    "nanoid": "^3.1.22",
+    "open": "^8.0.5",
+    "ora": "^5.4.0",
+    "readcommand": "^0.3.0",
+    "terminal-link": "^2.1.1"
+  },
+  "devDependencies": {
+    "pkg": "^4.5.1",
+    "prettier": "2.2.1"
+  },
+  "bin": "src/index.js",
+  "pkg": {
+    "scripts": [
+      "src/**/*"
+    ],
+    "assets": [
+      "node_modules/**/*"
+    ]
+  }
 }
