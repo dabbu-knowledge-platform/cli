@@ -1,7 +1,11 @@
 name: NodeJS CI
 
 # Triggers the workflow on push or pull request events but only for the main branch
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
 
 # This workflow contains three jobs: run tests, build and release
 jobs:
@@ -112,7 +116,7 @@ jobs:
         id: check-version
       - name: Create release
         # Run it only if the version has been changed
-        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version }}
+        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version && github.ref == 'refs/heads/main' }}
         uses: softprops/action-gh-release@v1
         with:
           body_path: release-notes.md
