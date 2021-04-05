@@ -109,7 +109,7 @@ function push_to_git {
 	# Get the new version
 	local new_release_tag=`cat version`
 	# Add the changed files
-	git add version package.json package-lock.json release-notes
+	git add version package.json package-lock.json release-notes.md
 
 	# Commit and tag it as a prerelease or a release
 	# Pre-releases will contain a dash in their version
