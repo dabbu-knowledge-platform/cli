@@ -96,12 +96,12 @@ function add_release_notes {
 	sed -i "/^Signed-off-by/d" release-notes.tmp
 	sed -i "/^Co-authored-by/d" release-notes.tmp
 	# Remove double newlines and save that as release-notes
-	cat -s release-notes.tmp > release-notes
+	cat -s release-notes.tmp > release-notes.md
 	# Delete the temporary file
 	rm release-notes.tmp
 
 	# Open the release notes in an editor for the user to edit
-	$EDITOR release-notes
+	$EDITOR release-notes.md
 }
 
 # Push a new version to github
