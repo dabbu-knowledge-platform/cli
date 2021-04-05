@@ -1,7 +1,0 @@
-node_modules/
-dist/
-creds/
-docs/
-_dabbu/
-.git/
-.heroku*

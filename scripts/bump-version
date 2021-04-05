@@ -68,19 +68,19 @@ function add_release_notes {
 	# Get the commit that was tagged as the last version
 	local previous_tag_revision=`git rev-list --tags --max-count=1`
 
-	# Add all commit details since the last tagged commit into RELEASE-NOTES.tmp
-	git log --format="%s [%h]%n%b" $previous_tag_revision..HEAD > RELEASE-NOTES.tmp
+	# Add all commit details since the last tagged commit into release-notes.tmp
+	git log --format="%s [%h]%n%b" $previous_tag_revision..HEAD > release-notes.tmp
 	
 	# Remove Signed-off-by and Co-authored-by lines from the details
-	sed -i '/^Signed-off-by/d' RELEASE-NOTES.tmp
-	sed -i '/^Co-authored-by/d' RELEASE-NOTES.tmp
-	# Remove double newlines and save that as RELEASE-NOTES.md
-	cat -s RELEASE-NOTES.tmp > RELEASE-NOTES.md
+	sed -i '/^Signed-off-by/d' release-notes.tmp
+	sed -i '/^Co-authored-by/d' release-notes.tmp
+	# Remove double newlines and save that as release-notes
+	cat -s release-notes.tmp > release-notes
 	# Delete the temporary file
-	rm RELEASE-NOTES.tmp
+	rm release-notes.tmp
 
 	# Open the release notes in an editor for the user to edit
-	$EDITOR RELEASE-NOTES.md
+	$EDITOR release-notes
 }
 
 # Push a new version to github
@@ -88,7 +88,7 @@ function push_to_git {
 	# Get the new version
 	local new_release_tag=`cat version`
 	# Add the changed files
-	git add version package.json package-lock.json RELEASE-NOTES.md
+	git add version package.json package-lock.json release-notes
 
 	# Commit it as a prerelease or a release
 	# Pre-releases will contain a dash in their version

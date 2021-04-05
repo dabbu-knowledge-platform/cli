@@ -1158,12 +1158,12 @@ const Client = class {
 		if (!regex) {
 			fileName = folderPath.split('/')
 			fileName =
-			// If the path ends with a /, it is a folder
-			fileName[fileName.length - 1] === '' ||
-			fileName[fileName.length - 1] === '.' ||
-			fileName[fileName.length - 1] === '..'
-				? null
-				: fileName[fileName.length - 1]
+				// If the path ends with a /, it is a folder
+				fileName[fileName.length - 1] === '' ||
+				fileName[fileName.length - 1] === '.' ||
+				fileName[fileName.length - 1] === '..'
+					? null
+					: fileName[fileName.length - 1]
 			// If there is a file name, remove it from the folder path
 			if (fileName) {
 				folderPath = folderPath.split('/')
