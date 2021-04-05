@@ -3,11 +3,11 @@ name: NodeJS CI
 # Triggers the workflow on push or pull request events but only for the main branch
 on: [push, pull_request]
 
-# This workflow contains three jobs: check code style, build and release
+# This workflow contains three jobs: run tests, build and release
 jobs:
-  # Check code style
-  check-format:
-    name: Check code style
+  # Run tests
+  test:
+    name: Run tests (node ${{ matrix.node_version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,11 +22,11 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node_version }}
-      # Check the format
-      - name: Check format
+      # Run all tests
+      - name: Run tests
         run: |
           npm ci
-          npm run check-format
+          npm test
 
   # Build the executable
   build:
@@ -76,7 +76,7 @@ jobs:
   release:
     name: Upload release
     # Make sure the format and build tasks have succeeded before uploading a release
-    needs: [check-format, build]
+    needs: [test, build]
     runs-on: ubuntu-latest
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so we job can access it
@@ -110,31 +110,15 @@ jobs:
           echo "::set-output name=version::$version_name"
           echo "::set-output name=previous_version::$previous_version_name"
         id: check-version
-      # Get a list of all commits from the previous release till this one, and add it to the changelog
-      - name: Generate changelog
-        # Run it only if the version has been changed
-        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version }}
-        run: |
-          revision=`git rev-list --tags --max-count=1`
-          version_name=`cat version`
-          previous_version_name=`git describe --tags --abbrev=0`
-          echo "" >> CHANGELOG.md
-          echo "### Commits since last release:" >> CHANGELOG.md
-          git log --format="- %s %h" $revision..HEAD >> CHANGELOG.md
-          echo "" >> CHANGELOG.md
-          echo "Generated following CHANGELOG:"
-          cat CHANGELOG.md
-          echo "::set-output name=version::$version_name"
-          echo "::set-output name=previous_version::$previous_version_name"
-        id: generate-changelog
       - name: Create release
         # Run it only if the version has been changed
-        if: ${{ steps.generate-changelog.outputs.version != steps.generate-changelog.outputs.previous_version }}
+        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version }}
         uses: softprops/action-gh-release@v1
         with:
-          body_path: CHANGELOG.md
-          tag_name: ${{ steps.generate-changelog.outputs.version }}
-          name: Dabbu CLI ${{ steps.generate-changelog.outputs.version }}
+          body_path: release-notes.md
+          tag_name: ${{ steps.check-version.outputs.version }}
+          prerelease: ${{ contains(steps.check-version.outputs.version, '-') }}
+          name: Dabbu CLI ${{ steps.check-version.outputs.version }}
           files: |
             dabbu-cli-alpine
             dabbu-cli-linux
@@ -142,4 +126,4 @@ jobs:
             dabbu-cli-win.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPO: dabbu-knowledge-platform/cli
+          GITHUB_REPO: dabbu-knowledge-platform/dabbu-cli

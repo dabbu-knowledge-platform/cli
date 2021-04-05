@@ -22,10 +22,6 @@ The installation can be done manually on Linux, Alpine Linux, MacOS, Android (Re
 
 Follow the instructions [here](https://dabbu-knowledge-platform.github.io/impls/cli) to install it on your computer.
 
-## Updating the CLI
-
-To update the CLI, simply download the new version from the [Releases page](https://github.com/dabbu-knowledge-platform/cli/releases).
-
 ## Providers supported
 
 - **Hard drive**

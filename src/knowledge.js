@@ -25,588 +25,594 @@ const prompt = require('readcommand')
 const FormData = require('form-data')
 
 const {
-  get,
-  set,
-  getAbsolutePath,
-  refreshAccessToken,
-  generateBodyAndHeaders,
-  getExtForMime,
-  printInfo,
-  printBright,
-  printError,
-  printFiles,
-  highlight,
+	get,
+	set,
+	getAbsolutePath,
+	refreshAccessToken,
+	generateBodyAndHeaders,
+	getExtForMime,
+	printInfo,
+	printBright,
+	printError,
+	printFiles,
+	highlight
 } = require('./utils')
 
 // A helper function to list files in a folder
 const listRequest = async (drive, folderPath) => {
-  // First (before parsing further) refresh the access token
-  await refreshAccessToken(drive)
+	// First (before parsing further) refresh the access token
+	await refreshAccessToken(drive)
 
-  // Generate request body and headers
-  let [body, headers] = await generateBodyAndHeaders(drive)
+	// Generate request body and headers
+	const [body, headers] = await generateBodyAndHeaders(drive)
 
-  // Get the server address, provider ID and URL encode the folder path
-  let server = get('server')
-  let provider = get(`drives.${drive}.provider`)
-  let encodedFolderPath = encodeURIComponent(
-    folderPath === '' ? '/' : folderPath
-  )
+	// Get the server address, provider ID and URL encode the folder path
+	const server = get('server')
+	const provider = get(`drives.${drive}.provider`)
+	const encodedFolderPath = encodeURIComponent(
+		folderPath === '' ? '/' : folderPath
+	)
 
-  // The URL to send the request to
-  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
-  // Send a GET request
-  let res = await axios.get(url, {
-    data: body, // The appropriate request body for this provider
-    headers: headers, // The appropriate headers for this provider
-  })
+	// The URL to send the request to
+	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
+	// Send a GET request
+	const result = await axios.get(url, {
+		data: body, // The appropriate request body for this provider
+		headers // The appropriate headers for this provider
+	})
 
-  // Check if there is a response
-  if (res.data.content.length > 0) {
-    // Get the files from the response
-    let files = res.data.content
-    // Return the files
-    return files
-  } else {
-    // Else return null if it is an empty folder
-    return null
-  }
+	// Check if there is a response
+	if (result.data.content.length > 0) {
+		// Get the files from the response
+		const files = result.data.content
+		// Return the files
+		return files
+	}
+
+	// Else return null if it is an empty folder
+	return null
 }
 
 // A helper function to download a file based on its content URI
 const downloadRequest = async (drive, folderPath, fileName) => {
-  // The file object (from Dabbu Server), the file data retrieved from its
-  // contentURI and the path on the local disk where the file is downloaded
-  let file, fileData, localPath
-  // Generate request body and headers
-  let [body, headers] = await generateBodyAndHeaders(drive)
+	// The file object (from Dabbu Server), the file data retrieved from its
+	// contentURI and the path on the local disk where the file is downloaded
+	let file
+	let fileData
+	let localPath
+	// Generate request body and headers
+	const [body, headers] = await generateBodyAndHeaders(drive)
 
-  // Get the server address, provider ID and URL encode the folder path and file name
-  let server = get('server')
-  let provider = get(`drives.${drive}.provider`)
-  let encodedFolderPath = encodeURIComponent(
-    folderPath === '' ? '/' : folderPath
-  )
-  let encodedFileName = encodeURIComponent(fileName)
-  // The URL to send the GET request to
-  let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
-  // Send a GET request
-  let res = await axios.get(url, {
-    data: body,
-    headers: headers,
-  })
+	// Get the server address, provider ID and URL encode the folder path and file name
+	const server = get('server')
+	const provider = get(`drives.${drive}.provider`)
+	const encodedFolderPath = encodeURIComponent(
+		folderPath === '' ? '/' : folderPath
+	)
+	const encodedFileName = encodeURIComponent(fileName)
+	// The URL to send the GET request to
+	let url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}/${encodedFileName}?exportType=media`
+	// Send a GET request
+	let result = await axios.get(url, {
+		data: body,
+		headers
+	})
 
-  // Check if a file was returned
-  if (res.data.content) {
-    // If there is a file, download it
-    file = res.data.content
-    // If it is a folder, error out
-    if (file.kind === 'folder') {
-      throw new Error(`Cannot download folder ${file.name}`)
-    }
-  } else {
-    // Else error out
-    throw new Error(`${res.response.data.error.message}`)
-  }
+	// Check if a file was returned
+	if (result.data.content) {
+		// If there is a file, download it
+		file = result.data.content
+		// If it is a folder, error out
+		if (file.kind === 'folder') {
+			throw new Error(`Cannot download folder ${file.name}`)
+		}
+	} else {
+		// Else error out
+		throw new Error(`${result.response.data.error.message}`)
+	}
 
-  // Download the file's data from the content URI
-  url = file.contentURI
-  if (file && file.contentURI) {
-    // If a content URI is provided, download the file
-    // Check if it is a file:// URI
-    if (file.contentURI.startsWith('file://')) {
-      // If so, parse the file path and fetch that using the get-uri library
-      res = fs.createReadStream(
-        unescape(file.contentURI).replace('file://', '')
-      )
-      // If there is data, return it
-      if (res) {
-        fileData = res
-      } else {
-        // Else error out
-        throw new Error("No data received from file's contentURI")
-      }
-    } else {
-      // Else it is a normal url, fetch it using axios
-      // Add the headers and body only if they really are
-      // needed, else risk getting a 400 Bad request
-      let meta = {}
-      if (Object.keys(body || {}).length > 0) {
-        meta['data'] = body
-      }
-      if (Object.keys(headers || {}).length > 0) {
-        meta['headers'] = headers
-      }
-      meta['responseType'] = 'stream'
-      res = await axios.get(url, meta)
-      // If there is data, return it
-      if (res.data) {
-        fileData = res.data
-      } else if (res) {
-        fileData = res
-      } else {
-        throw new Error("No data received from file's contentURI")
-      }
-    }
-  } else {
-    // Else return null
-    throw new Error('No such file/folder was found.')
-  }
+	// Download the file's data from the content URI
+	url = file.contentURI
+	if (file && file.contentURI) {
+		// If a content URI is provided, download the file
+		// Check if it is a file:// URI
+		if (file.contentURI.startsWith('file://')) {
+			// If so, parse the file path and fetch that using the get-uri library
+			result = fs.createReadStream(
+				unescape(file.contentURI).replace('file://', '')
+			)
+			// If there is data, return it
+			if (result) {
+				fileData = result
+			} else {
+				// Else error out
+				throw new Error("No data received from file's contentURI")
+			}
+		} else {
+			// Else it is a normal url, fetch it using axios
+			// Add the headers and body only if they really are
+			// needed, else risk getting a 400 Bad request
+			const meta = {}
+			if (Object.keys(body || {}).length > 0) {
+				meta.data = body
+			}
 
-  // Pipe the data to a local file
-  if (fileData) {
-    // Download the file
-    // Get the file's extension based on its mime type first
-    let ext = getExtForMime(file.mimeType)
-    // Path to the file
-    localPath = `./_dabbu/_cli/_${provider}/${file.name || file.fileName}`
-    localPath = `${localPath}${localPath.includes(ext) ? '' : `.${ext}`}`
-    // Create the file
-    await fs.createFile(localPath)
-    // Open a write stream so we can write the data we got to it
-    const writer = fs.createWriteStream(localPath)
-    // Pipe the bytes to the file
-    fileData.pipe(writer)
-    await new Promise((resolve, reject) => {
-      writer.on('finish', () => {
-        // Stop loading
-        resolve()
-      })
-      writer.on('error', reject) // Pass the error back on, if any
-    })
-  } else {
-    // Else return null
-    throw new Error('No such file/folder was found.')
-  }
+			if (Object.keys(headers || {}).length > 0) {
+				meta.headers = headers
+			}
 
-  return { localPath: localPath, fileMeta: file }
+			meta.responseType = 'stream'
+			result = await axios.get(url, meta)
+			// If there is data, return it
+			if (result.data) {
+				fileData = result.data
+			} else if (result) {
+				fileData = result
+			} else {
+				throw new Error("No data received from file's contentURI")
+			}
+		}
+	} else {
+		// Else return null
+		throw new Error('No such file/folder was found.')
+	}
+
+	// Pipe the data to a local file
+	if (fileData) {
+		// Download the file
+		// Get the file's extension based on its mime type first
+		const ext = getExtForMime(file.mimeType)
+		// Path to the file
+		localPath = `./_dabbu/_cli/_${provider}/${file.name || file.fileName}`
+		localPath = `${localPath}${localPath.includes(ext) ? '' : `.${ext}`}`
+		// Create the file
+		await fs.createFile(localPath)
+		// Open a write stream so we can write the data we got to it
+		const writer = fs.createWriteStream(localPath)
+		// Pipe the bytes to the file
+		fileData.pipe(writer)
+		await new Promise((resolve, reject) => {
+			writer.on('finish', () => {
+				// Stop loading
+				resolve()
+			})
+			writer.on('error', reject) // Pass the error back on, if any
+		})
+	} else {
+		// Else return null
+		throw new Error('No such file/folder was found.')
+	}
+
+	return { localPath, fileMeta: file }
 }
 
 // A helper function to list files recursively
 const listFilesRecursively = (drive, folder, spinner) => {
-  // Tell the user which folder we are querying
-  spinner.text = `Fetching files in ${highlight(folder)}`
-  // An array to hold all the files whose names contain any
-  // one of the search terms
-  let matchingFiles = []
-  // Wrap everything in a promise
-  return new Promise((resolve, reject) => {
-    // Call the module's list function
-    listRequest(drive, folder)
-      .then((list) => {
-        if (list) {
-          // First get all of the files not folders (we do !=== folder)
-          // as we might have the "file" and "other" types
-          let filesOnlyList = list.filter((item, pos) => {
-            return item.kind !== 'folder'
-          })
+	// Tell the user which folder we are querying
+	spinner.text = `Fetching files in ${highlight(folder)}`
+	// An array to hold all the files whose names contain any
+	// one of the search terms
+	let matchingFiles = []
+	// Wrap everything in a promise
+	return new Promise((resolve, reject) => {
+		// Call the module's list function
+		listRequest(drive, folder)
+			.then((list) => {
+				if (list) {
+					// First get all of the files not folders (we do !=== folder)
+					// as we might have the "file" and "other" types
+					const filesOnlyList = list.filter((item, pos) => {
+						return item.kind !== 'folder'
+					})
 
-          // Add the matched ones to the final array
-          matchingFiles = matchingFiles.concat(filesOnlyList)
+					// Add the matched ones to the final array
+					matchingFiles = matchingFiles.concat(filesOnlyList)
 
-          // Now recurse through the remaining folders
-          let i = 0
-          // Create a function that will walk through the directories
-          const next = () => {
-            // Current file
-            let file = list[i++]
-            // If there is no such file, return all the matching
-            // files found so far (we've reached the end)
-            if (!file) {
-              return resolve(matchingFiles)
-            }
-            if (file.kind === 'folder') {
-              // If it's a folder, then call the listFilesRecursively method again
-              // with the folder path
-              listFilesRecursively(drive, file.path, spinner)
-                .then((files) => {
-                  // Add the matching files to the matching files array
-                  matchingFiles = matchingFiles.concat(files)
-                })
-                .then(() => next())
-            } else {
-              // We have already printed and added these files to the array,
-              // so continue
-              next()
-            }
-          }
+					// Now recurse through the remaining folders
+					let i = 0
+					// Create a function that will walk through the directories
+					const next = () => {
+						// Current file
+						const file = list[i++]
+						// If there is no such file, return all the matching
+						// files found so far (we've reached the end)
+						if (!file) {
+							return resolve(matchingFiles)
+						}
 
-          // Start the chain
-          next()
-        } else {
-          resolve([])
-        }
-      })
-      .catch(reject) // Pass the error back on
-  })
+						if (file.kind === 'folder') {
+							// If it's a folder, then call the listFilesRecursively method again
+							// with the folder path
+							listFilesRecursively(drive, file.path, spinner)
+								.then((files) => {
+									// Add the matching files to the matching files array
+									matchingFiles = matchingFiles.concat(files)
+								})
+								.then(() => next())
+						} else {
+							// We have already printed and added these files to the array,
+							// so continue
+							next()
+						}
+					}
+
+					// Start the chain
+					next()
+				} else {
+					resolve([])
+				}
+			})
+			.catch(reject) // Pass the error back on
+	})
 }
 
 // The Klient class (Knowledge + Client = Klient) (bad joke)
 const Klient = class {
-  constructor() {
-    this.ops = {
-      pwd: this.pwd,
-      whereami: this.pwd,
-      cd: this.cd,
-      ct: this.cd,
-      changedir: this.cd,
-      changetopic: this.cd,
-      l: this.list,
-      ls: this.list,
-      ll: this.list,
-      dir: this.list,
-      list: this.list,
-      op: this.onepager,
-      onepager: this.onepager,
-    }
-  }
+	constructor() {
+		this.ops = {
+			pwd: this.pwd,
+			whereami: this.pwd,
+			cd: this.cd,
+			ct: this.cd,
+			changedir: this.cd,
+			changetopic: this.cd,
+			l: this.list,
+			ls: this.list,
+			ll: this.list,
+			dir: this.list,
+			list: this.list,
+			op: this.onepager,
+			onepager: this.onepager
+		}
+	}
 
-  async init(drive) {
-    // Ask the user which providers we should index
-    const reqDrivesToIndex = () => {
-      return new Promise((resolve, reject) => {
-        // Get the user's drives
-        let drives = ''
-        let driveJson = get('drives')
-        for (const drive of Object.keys(driveJson)) {
-          drives += `${drive} (${driveJson[drive].provider}), `
-        }
-        // Tell the user what they need to do
-        printInfo(
-          [
-            'The knowledge drive uses the Dabbu Intel API to extract topics, people and places',
-            'from the information stored in your drives. It will then allow you to view all files',
-            'regarding a certain topic or regarding a certain person. Pick the drives whose',
-            'files we should extract topics, people and places from.',
-            '',
-            `The current drives setup are => ${drives}`,
-          ].join('\n')
-        )
+	async init(drive) {
+		// Ask the user which providers we should index
+		const requestDrivesToIndex = () => {
+			return new Promise((resolve, reject) => {
+				// Get the user's drives
+				let drives = ''
+				const driveJson = get('drives')
+				for (const drive of Object.keys(driveJson)) {
+					drives += `${drive} (${driveJson[drive].provider}), `
+				}
 
-        prompt.read(
-          {
-            ps1: `Enter the names of the drives, separated by commas > `,
-          },
-          (err, args) => {
-            // If there is an error, handle it
-            if (err) {
-              reject(err)
-            } else {
-              // If there is no error, get the value
-              let drivesToIndex = args.join('')
-              // If they haven't entered anything, flag it and ask again
-              if (!drivesToIndex) {
-                printBright(`Please enter the names of the drives`)
-                resolve(reqDrivesToIndex())
-              } else {
-                // Turn it into an array
-                drivesToIndex = drivesToIndex
-                  .split(',')
-                  .map((val) => val.replace(/:/g, ''))
-                  .filter((val) => val && val !== '')
-                // Store its value in the config file
-                set(`drives.${drive}.vars.drives_to_index`, drivesToIndex)
-                // Return successfully
-                resolve(drivesToIndex)
-              }
-            }
-          }
-        )
-      })
-    }
+				// Tell the user what they need to do
+				printInfo(
+					[
+						'The knowledge drive uses the Dabbu Intel API to extract topics, people and places',
+						'from the information stored in your drives. It will then allow you to view all files',
+						'regarding a certain topic or regarding a certain person. Pick the drives whose',
+						'files we should extract topics, people and places from.',
+						'',
+						`The current drives setup are => ${drives}`
+					].join('\n')
+				)
 
-    // Ask the user which drives they want to index
-    const drivesToIndex = await reqDrivesToIndex()
+				prompt.read(
+					{
+						ps1: `Enter the names of the drives, separated by commas > `
+					},
+					(error, args) => {
+						// If there is an error, handle it
+						if (error) {
+							reject(error)
+						} else {
+							// If there is no error, get the value
+							let drivesToIndex = args.join('')
+							// Check if they have entered a non null value
+							if (drivesToIndex) {
+								// Turn it into an array
+								drivesToIndex = drivesToIndex
+									.split(',')
+									.map((value) => value.replace(/:/g, ''))
+									.filter((value) => value && value !== '')
+								// Store its value in the config file
+								set(`drives.${drive}.vars.drives_to_index`, drivesToIndex)
+								// Return successfully
+								resolve(drivesToIndex)
+							} else {
+								// If they haven't entered anything, flag it and ask again
+								printBright(`Please enter the names of the drives`)
+								resolve(requestDrivesToIndex())
+							}
+						}
+					}
+				)
+			})
+		}
 
-    // Tell the user what we are going to do
-    printBright(
-      'Hang on while we fetch and index your files, this might take a long time depending on the number of files...'
-    )
-    // Show a loading indicator
-    const spinner = ora('Loading...').start()
+		// Ask the user which drives they want to index
+		const drivesToIndex = await requestDrivesToIndex()
 
-    // The file in which to store the index data
-    let indexFilePath = `./_dabbu/dabbu_knowledge_index.json`
-    // Create that file
-    await fs.createFile(indexFilePath)
-    // The json object to write to that file
-    let indexJson = { files: [], keywords: {} }
+		// Tell the user what we are going to do
+		printBright(
+			'Hang on while we fetch and index your files, this might take a long time depending on the number of files...'
+		)
+		// Show a loading indicator
+		const spinner = ora('Loading...').start()
 
-    // For each drive, index all its files
-    for (const driveToIndex of drivesToIndex) {
-      // Tell the user what we are doing
-      spinner.text = `Fetching files from ${highlight(driveToIndex)}`
+		// The file in which to store the index data
+		const indexFilePath = `./_dabbu/dabbu_knowledge_index.json`
+		// Create that file
+		await fs.createFile(indexFilePath)
+		// The json object to write to that file
+		const indexJson = { files: [], keywords: {} }
 
-      // Fetch the file's metadata recursively
-      const files = await listFilesRecursively(driveToIndex, '/', spinner)
-      // Add the files to the JSON
-      indexJson.files.push(...files)
+		// For each drive, index all its files
+		for (const driveToIndex of drivesToIndex) {
+			// Tell the user what we are doing
+			spinner.text = `Fetching files from ${highlight(driveToIndex)}`
 
-      // Number of files skipped due to errors
-      let skippedFiles = 0
+			// Fetch the file's metadata recursively
+			// eslint-disable-next-line no-await-in-loop
+			const files = await listFilesRecursively(driveToIndex, '/', spinner)
+			// Add the files to the JSON
+			indexJson.files.push(...files)
 
-      // Check if there are some files
-      if (files && files.length > 0) {
-        // If so, fetch the contents of each file using the content URI and index them
-        for (const file of files) {
-          if (file.kind === 'file') {
-            // Tell the user what we are doing
-            spinner.text = `Indexing file ${highlight(
-              driveToIndex + ':' + file.path
-            )}`
-            // Get the file name and the folder path
-            let fileName = file.name
-            let folderPath = file.path.split('/')
-            folderPath = folderPath.slice(0, folderPath.length - 1).join('/')
+			// Number of files skipped due to errors
+			let skippedFiles = 0
 
-            // Surround with a try-catch
-            try {
-              // Download the file based on its content URI
-              let { localPath, fileMeta } = await downloadRequest(
-                driveToIndex,
-                folderPath,
-                fileName
-              )
+			// Check if there are some files
+			if (files && files.length > 0) {
+				// If so, fetch the contents of each file using the content URI and index them
+				for (const file of files) {
+					if (file.kind === 'file') {
+						// Tell the user what we are doing
+						spinner.text = `Indexing file ${highlight(
+							driveToIndex + ':' + file.path
+						)}`
+						// Get the file name and the folder path
+						const fileName = file.name
+						let folderPath = file.path.split('/')
+						folderPath = folderPath.slice(0, -1).join('/')
 
-              // Now get the topics, people and places from the files
+						// Surround with a try-catch
+						try {
+							// Download the file based on its content URI
+							// eslint-disable-next-line no-await-in-loop
+							const { localPath, fileMeta } = await downloadRequest(
+								driveToIndex,
+								folderPath,
+								fileName
+							)
 
-              // Make a form data object to upload the files
-              const formData = new FormData()
-              // Add the file's data as a readable stream to the content field
-              formData.append('content', fs.createReadStream(localPath), {
-                filename: fileName,
-              })
+							// Now get the topics, people and places from the files
 
-              let extractedData = await axios.post(
-                'http://dabbu-intel.herokuapp.com/intel-api/v2/extract-info',
-                formData,
-                {
-                  headers: formData.getHeaders(),
-                  maxContentLength: Infinity,
-                  maxBodyLength: Infinity,
-                }
-              )
+							// Make a form data object to upload the files
+							const formData = new FormData()
+							// Add the file's data as a readable stream to the content field
+							formData.append('content', fs.createReadStream(localPath), {
+								filename: fileName
+							})
 
-              // Check if data was returned
-              if (extractedData.data && extractedData.data.content) {
-                // Check if there were topics extracted
-                if (
-                  extractedData.data.content.topics &&
-                  extractedData.data.content.topics.length > 0
-                ) {
-                  for (const topic of extractedData.data.content.topics) {
-                    if (!indexJson.keywords[topic.text]) {
-                      indexJson.keywords[topic.text] = []
-                    }
+							// eslint-disable-next-line no-await-in-loop
+							const extractedData = await axios.post(
+								'http://dabbu-intel.herokuapp.com/intel-api/v2/extract-info',
+								formData,
+								{
+									headers: formData.getHeaders(),
+									maxContentLength: Number.POSITIVE_INFINITY,
+									maxBodyLength: Number.POSITIVE_INFINITY
+								}
+							)
 
-                    indexJson.keywords[topic.text].push(file)
-                  }
-                }
+							// Check if data was returned
+							if (extractedData.data && extractedData.data.content) {
+								// Check if there were topics extracted
+								if (
+									extractedData.data.content.topics &&
+									extractedData.data.content.topics.length > 0
+								) {
+									for (const topic of extractedData.data.content.topics) {
+										if (!indexJson.keywords[topic.text]) {
+											indexJson.keywords[topic.text] = []
+										}
 
-                // Check if there were people-related details extracted
-                if (
-                  extractedData.data.content.people &&
-                  extractedData.data.content.people.length > 0
-                ) {
-                  for (const person of extractedData.data.content.people) {
-                    if (!indexJson.keywords[person.email]) {
-                      indexJson.keywords[person.email] = []
-                    }
+										indexJson.keywords[topic.text].push(file)
+									}
+								}
 
-                    indexJson.keywords[person.email].push(file)
-                  }
-                }
+								// Check if there were people-related details extracted
+								if (
+									extractedData.data.content.people &&
+									extractedData.data.content.people.length > 0
+								) {
+									for (const person of extractedData.data.content.people) {
+										if (!indexJson.keywords[person.email]) {
+											indexJson.keywords[person.email] = []
+										}
 
-                // Check if there were places extracted
-                if (
-                  extractedData.data.content.places &&
-                  extractedData.data.content.places.length > 0
-                ) {
-                  for (const place of extractedData.data.content.places) {
-                    if (!indexJson.keywords[place.name]) {
-                      indexJson.keywords[place.name] = []
-                    }
+										indexJson.keywords[person.email].push(file)
+									}
+								}
 
-                    indexJson.keywords[place.name].push(file)
-                  }
-                }
-              }
-            } catch (err) {
-              // Just print out the error if any one of the files fails and continue
-              spinner.stop()
-              printError(`Skipping ${fileName}, error encountered: ${err}`)
-              skippedFiles++
-              spinner.start()
-            }
-          }
-        }
-      } else {
-        // If there are no files, continue
-        continue
-      }
+								// Check if there were places extracted
+								if (
+									extractedData.data.content.places &&
+									extractedData.data.content.places.length > 0
+								) {
+									for (const place of extractedData.data.content.places) {
+										if (!indexJson.keywords[place.name]) {
+											indexJson.keywords[place.name] = []
+										}
 
-      // Write the data to the file (save progress)
-      await fs.writeFile(indexFilePath, JSON.stringify(indexJson, null, 2))
+										indexJson.keywords[place.name].push(file)
+									}
+								}
+							}
+						} catch (error) {
+							// Just print out the error if any one of the files fails and continue
+							spinner.stop()
+							printError(`Skipping ${fileName}, error encountered: ${error}`)
+							skippedFiles++
+							spinner.start()
+						}
+					}
+				}
+			} else {
+				// If there are no files, continue
+				continue
+			}
 
-      // Tell the user we are finished with that drive
-      spinner.stop()
-      printBright(
-        `Successfully indexed all files in ${driveToIndex}: (${skippedFiles} skipped due to errors)`
-      )
-      spinner.start()
-    }
+			// Write the data to the file (save progress)
+			// eslint-disable-next-line no-await-in-loop
+			await fs.writeFile(indexFilePath, JSON.stringify(indexJson, null, 2))
 
-    spinner.stop()
+			// Tell the user we are finished with that drive
+			spinner.stop()
+			printBright(
+				`Successfully indexed all files in ${driveToIndex}: (${skippedFiles} skipped due to errors)`
+			)
+			spinner.start()
+		}
 
-    // Return succesfully
-    return
-  }
+		spinner.stop()
 
-  // Show the user their current drive and path
-  async pwd(args) {
-    // Current drive
-    const drive = (args[1] || get('current-drive')).replace(/:/g, '')
-    // Print the drive name and path
-    printInfo(
-      `(${get(`drives.${drive}.provider`)}) ${drive}:${get(
-        `drives.${drive}.path`
-      )}`
-    )
+		// Return succesfully
+	}
 
-    // Return
-    return
-  }
+	// Show the user their current drive and path
+	async pwd(args) {
+		// Current drive
+		const drive = (args[1] || get('current-drive')).replace(/:/g, '')
+		// Print the drive name and path
+		printInfo(
+			`(${get(`drives.${drive}.provider`)}) ${drive}:${get(
+				`drives.${drive}.path`
+			)}`
+		)
 
-  // Change the topic the user is viewing
-  async cd(args) {
-    // The user given relative path
-    const inputPath = args[1]
-    // The current path in that drive
-    const currentPath = get(`drives.${get('current-drive')}.path`) || ''
+		// Return
+	}
 
-    // Parse the relative path and get an absolute one
-    const finalPath = getAbsolutePath(inputPath, currentPath)
-    // Set the path
-    set(`drives.${get('current-drive')}.path`, finalPath)
+	// Change the topic the user is viewing
+	async cd(args) {
+		// The user given relative path
+		const inputPath = args[1]
+		// The current path in that drive
+		const currentPath = get(`drives.${get('current-drive')}.path`) || ''
 
-    // Return
-    return
-  }
+		// Parse the relative path and get an absolute one
+		const finalPath = getAbsolutePath(inputPath, currentPath)
+		// Set the path
+		set(`drives.${get('current-drive')}.path`, finalPath)
 
-  async list(args) {
-    // The user given relative path
-    const inputPath = args[1] || '.'
-    // The current path in that drive
-    const currentPath = get(`drives.${get('current-drive')}.path`) || ''
+		// Return
+	}
 
-    // Parse the relative path and get an absolute one
-    const keywords = getAbsolutePath(inputPath, currentPath)
+	async list(args) {
+		// The user given relative path
+		const inputPath = args[1] || '.'
+		// The current path in that drive
+		const currentPath = get(`drives.${get('current-drive')}.path`) || ''
 
-    // Get the indexed files
-    let indexJson
-    try {
-      indexJson = await fs.readJSON('./_dabbu/dabbu_knowledge_index.json')
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        throw new Error(
-          `Could not find the index file, ${chalk.yellow(
-            './_dabbu/dabbu_knowledge_index.json'
-          )}. Try recreating the drive with the same settings again.`
-        )
-      }
-    }
+		// Parse the relative path and get an absolute one
+		const keywords = getAbsolutePath(inputPath, currentPath)
 
-    if (indexJson) {
-      // First check what the path is
-      // For the root path, simply show them topics, places and people
-      if (keywords === '/') {
-        printInfo(Object.keys(indexJson.keywords).join('   '))
-      } else {
-        // Else find the files with the topic/person/place and show their info
-        let path = keywords.split('/')
+		// Get the indexed files
+		let indexJson
+		try {
+			indexJson = await fs.readJSON('./_dabbu/dabbu_knowledge_index.json')
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(
+					`Could not find the index file, ${chalk.yellow(
+						'./_dabbu/dabbu_knowledge_index.json'
+					)}. Try recreating the drive with the same settings again.`
+				)
+			}
+		}
 
-        // Each folder is a topic/place/person that the file must be
-        // related to to get listed
-        let allFiles = []
-        let matchingFiles = []
-        let numberOfTopics = path.slice(1).length
+		if (indexJson) {
+			// First check what the path is
+			// For the root path, simply show them topics, places and people
+			if (keywords === '/') {
+				printInfo(Object.keys(indexJson.keywords).join('   '))
+			} else {
+				// Else find the files with the topic/person/place and show their info
+				const path = keywords.split('/')
 
-        // For AND queries between two or more topics, just keep `cd`ing into
-        // the topics/people/places. For OR queries, `cd` into:
-        // `cd "{topic1}|{topic2}"`
-        // Quotes neccessary only if the topics contain spaces.
-        for (let i = 1; i < path.length; i++) {
-          // If there is a trailing slash, don't consider it a topic
-          if (path[i] && path[i] !== '') {
-            // Check if the path has an OR operator (|)
-            if (path[i].includes('|')) {
-              let orTopics = path[i].split('|')
-              for (let j = 0; j < orTopics.length; j++) {
-                // Add all files matching each topic to the list
-                let files = indexJson['keywords'][orTopics[j]]
-                if (files) {
-                  allFiles.push(...files)
-                } else {
-                  printBright(`Couldn't find topic ${orTopics[j]}`)
-                }
-              }
-            } else {
-              let files = indexJson['keywords'][path[i]]
-              if (files) {
-                allFiles.push(...files)
-              } else {
-                printBright(`Couldn't find topic ${path[i]}`)
-              }
-            }
-          } else {
-            // If there is a trailing slash, don't consider it a topic
-            numberOfTopics -= 1
-          }
-        }
+				// Each folder is a topic/place/person that the file must be
+				// related to to get listed
+				const allFiles = []
+				let matchingFiles = []
+				let numberOfTopics = path.slice(1).length
 
-        // Check if the user has specified multiple topics
-        if (path.length > 2) {
-          // Make an array of provider+name of file
-          let fileIds = allFiles.map((file) => {
-            return `${file.provider}:${file.path}`
-          })
+				// For AND queries between two or more topics, just keep `cd`ing into
+				// the topics/people/places. For OR queries, `cd` into:
+				// `cd "{topic1}|{topic2}"`
+				// Quotes neccessary only if the topics contain spaces.
+				for (let i = 1; i < path.length; i++) {
+					// If there is a trailing slash, don't consider it a topic
+					if (path[i] && path[i] !== '') {
+						// Check if the path has an OR operator (|)
+						if (path[i].includes('|')) {
+							const orTopics = path[i].split('|')
+							for (const orTopic of orTopics) {
+								// Add all files matching each topic to the list
+								const files = indexJson.keywords[orTopic]
+								if (files) {
+									allFiles.push(...files)
+								} else {
+									printBright(`Couldn't find topic ${orTopic}`)
+								}
+							}
+						} else {
+							const files = indexJson.keywords[path[i]]
+							if (files) {
+								allFiles.push(...files)
+							} else {
+								printBright(`Couldn't find topic ${path[i]}`)
+							}
+						}
+					} else {
+						// If there is a trailing slash, don't consider it a topic
+						numberOfTopics -= 1
+					}
+				}
 
-          // Get the number of times each file appears
-          let occurrences = {}
+				// Check if the user has specified multiple topics
+				if (path.length > 2) {
+					// Make an array of provider+name of file
+					const fileIds = allFiles.map((file) => {
+						return `${file.provider}:${file.path}`
+					})
 
-          let count = (keys) => {
-            occurrences[keys] = ++occurrences[keys] || 1
-          }
-          fileIds.forEach(count)
+					// Get the number of times each file appears
+					const occurrences = {}
+					for (const fileId of fileIds) {
+						occurrences[fileId] = ++occurrences[fileId] || 1
+					}
 
-          // Get the ones that appear n number of times, where
-          // n is the number of topics it should match
-          for (const fileId of Object.keys(occurrences)) {
-            if (occurrences[fileId] === numberOfTopics) {
-              // Add it to the final array
-              matchingFiles.push(allFiles[fileIds.indexOf(fileId)])
-            }
-          }
-        } else {
-          // Else just return the files for the topic we got
-          matchingFiles = allFiles
-        }
+					// Get the ones that appear n number of times, where
+					// n is the number of topics it should match
+					for (const fileId of Object.keys(occurrences)) {
+						if (occurrences[fileId] === numberOfTopics) {
+							// Add it to the final array
+							matchingFiles.push(allFiles[fileIds.indexOf(fileId)])
+						}
+					}
+				} else {
+					// Else just return the files for the topic we got
+					matchingFiles = allFiles
+				}
 
-        // Print out the files
-        printFiles(matchingFiles, true)
-      }
-    } else {
-      throw new Error(
-        `Could not read the index file, ${chalk.yellow(
-          './_dabbu/dabbu_knowledge_index.json'
-        )}. Try recreating the drive with the same settings again.`
-      )
-    }
-  }
+				// Print out the files
+				printFiles(matchingFiles, true)
+			}
+		} else {
+			throw new Error(
+				`Could not read the index file, ${chalk.yellow(
+					'./_dabbu/dabbu_knowledge_index.json'
+				)}. Try recreating the drive with the same settings again.`
+			)
+		}
+	}
 
-  async onepager(args) {
-    throw new Error('Not yet implemented')
-  }
+	async onepager(args) {
+		throw new Error('Not yet implemented')
+	}
 }
 
 // Export the class
