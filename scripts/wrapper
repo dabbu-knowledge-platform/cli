@@ -2,12 +2,12 @@
 
 old_pwd="$PWD"
 
-cd "/opt/dabbu/files-api-server/"
+cd "$HOME/.local/opt/dabbu/files-api-server/"
 
 DO_NOT_LOG_TO_CONSOLE=true ./files-api-server-executable &
 pid=$!
 
-cd "/opt/dabbu/cli/"
+cd "$HOME/.local/opt/dabbu/cli/"
 
 ./dabbu-cli-executable
 
