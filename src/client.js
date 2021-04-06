@@ -39,7 +39,10 @@ const {
 	printBright,
 	printError,
 	printFiles,
-	highlight
+	highlight,
+	startSpin,
+	stopSpin,
+	diskPath
 } = require('./utils')
 
 const listRequest = async (
@@ -79,12 +82,14 @@ const listRequest = async (
 		// Add the files we got right now to the main list
 		if (result.data.content) {
 			if (printOnReceive) {
+				const spinnerText = stopSpin()
 				// Print the files
 				printFiles(
 					result.data.content,
 					false /* Don't show full path */,
 					nextSetToken === '' /* Print the headers only on the first request */
 				)
+				startSpin(spinnerText)
 			}
 
 			allFiles = [...allFiles, ...result.data.content]
@@ -274,7 +279,7 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
 		throw new Error(result.data.error.message)
 	} catch (error) {
 		if (error.code === 409 || error.status === 409) {
-			printInfo(`\nOverwriting file ${folderPath}/${fileName}`)
+			printInfo(`\nOverwriting file ${diskPath(folderPath, fileName)}`)
 			return updateRequest(drive, folderPath, fileName)
 		}
 	}
@@ -732,8 +737,6 @@ const Client = class {
 				`drives.${drive}.path`
 			)}`
 		)
-
-		// Return
 	}
 
 	// Change the user's directory
@@ -747,15 +750,11 @@ const Client = class {
 		const finalPath = getAbsolutePath(inputPath, currentPath)
 		// Set the path
 		set(`drives.${get('current-drive')}.path`, finalPath)
-
-		// Return
 	}
 
 	async list(args) {
 		// Show a loading indicator
-		const spinner = ora(
-			`Loading your ${highlight('files and folders')}`
-		).start()
+		startSpin(`Loading your ${highlight('files and folders')}`)
 
 		// Get the path the user entered, default to current directory
 		const { drive, folderPath, regex } = await parseUserInputForPath(
@@ -763,29 +762,29 @@ const Client = class {
 			true
 		)
 
-		spinner.text = `Loading all files ${highlight(
-			regex ? `matching regex ${regex}` : `in folder ${folderPath}`
-		)}`
+		startSpin(
+			`Loading all files ${
+				regex
+					? `matching regex ${highlight(regex)}`
+					: `in folder ${highlight(diskPath(folderPath))}`
+			}`
+		)
 
 		// Fetch the files from the server and print them as you get them
 		const files = await listRequest(drive, folderPath, regex, true)
 
 		// Stop loading
-		spinner.stop()
+		stopSpin()
 
 		// If there were no files returned, the folder is empty
 		if (!files) {
 			printBright('Folder is empty')
 		}
-
-		// Return successfully
 	}
 
 	async read(args) {
 		// Show a loading indicator
-		const spinner = ora(
-			`Loading your ${highlight('files and folders')}`
-		).start()
+		startSpin(`Loading your ${highlight('files and folders')}`)
 
 		// Get the path the user entered
 		let { drive, folderPath } = await parseUserInputForPath(args[1], false)
@@ -802,15 +801,17 @@ const Client = class {
 			folderPath = folderPath.slice(0, folderPath - 1).join('/')
 		}
 
-		spinner.text = `Fetching file ${highlight(fileName)}`
+		startSpin(`Fetching file ${highlight(diskPath(folderPath, fileName))}`)
 
 		// Fetch the files from the server
 		const localPath = await downloadRequest(drive, folderPath, fileName)
 
 		// Stop loading
-		spinner.stop()
+		stopSpin()
 		// Tell the user where the file is stored
-		printInfo(`File downloaded ${highlight('temporarily')} to ${localPath}`)
+		printInfo(
+			`File downloaded ${highlight('temporarily')} to ${diskPath(localPath)}`
+		)
 		// Open it in the default app
 		open(localPath, { wait: false })
 
@@ -819,9 +820,7 @@ const Client = class {
 
 	async copy(args) {
 		// Show a loading indicator
-		const spinner = ora(
-			`Copying your ${highlight('files and folders')}`
-		).start()
+		startSpin(`Copying your ${highlight('files and folders')}`)
 
 		// Get the path the user entered (the file(s) to copy)
 		let {
@@ -878,7 +877,11 @@ const Client = class {
 					const file = files[i]
 
 					// Update the spinner
-					spinner.text = `Copying file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
+					startSpin(
+						`Copying file ${highlight(
+							diskPath(fromFolderPath, file.name)
+						)} to ${highlight(diskPath(toFolderPath, file.name))}`
+					)
 
 					// Surround in try-catch to stop spinner in case
 					// an error is thrown
@@ -905,23 +908,25 @@ const Client = class {
 						copiedFilesCount++
 
 						// Tell the user
-						spinner.stop()
+						const spinnerText = stopSpin()
 						printInfo(
-							`Copied file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
+							`Copied file ${highlight(
+								diskPath(fromFolderPath, file.name)
+							)} to ${highlight(diskPath(toFolderPath, file.name))}`
 						)
-						spinner.start()
+						startSpin(spinnerText)
 					} catch (error) {
 						// Increase the error count
 						erroredFilesCount++
 						// Print the error, but continue
-						spinner.stop()
-						printError(error)
-						spinner.start()
+						const spinnerText = stopSpin()
+						printError(error, false)
+						startSpin(spinnerText)
 					}
 				}
 
 				// Stop loading, we are done
-				spinner.stop()
+				stopSpin()
 				// Tell the user the number of files we copied and skipped
 				printInfo(
 					`Copied ${highlight(
@@ -933,16 +938,19 @@ const Client = class {
 				// Return succesfully
 			} else {
 				// Stop loading, error out
-				spinner.stop()
 				throw new Error('No files matched that regex')
 			}
 		} else {
 			// Surround in a try catch to stop spinner when an error is thrown
 			try {
 				// Update the spinner
-				spinner.text = `Copying file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
-					toFileName || fromFileName
-				}`
+				startSpin(
+					`Copying file ${highlight(
+						diskPath(fromFolderPath, fromFileName)
+					)} to ${highlight(
+						diskPath(toFolderPath, toFileName || fromFileName)
+					)}`
+				)
 
 				// Fetch the file
 				const localPath = await downloadRequest(
@@ -958,14 +966,15 @@ const Client = class {
 					localPath
 				)
 				// Tell the user
-				spinner.stop()
+				stopSpin()
 				printInfo(
-					`Copied file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
-						toFileName || fromFileName
-					}`
+					`Copied file ${highlight(
+						diskPath(fromFolderPath, fromFileName)
+					)} to ${highlight(
+						diskPath(toFolderPath, toFileName || fromFileName)
+					)}`
 				)
 			} catch (error) {
-				spinner.stop()
 				throw error
 			}
 		}
@@ -975,7 +984,7 @@ const Client = class {
 
 	async move(args) {
 		// Show a loading indicator
-		const spinner = ora(`Moving your ${highlight('files and folders')}`).start()
+		startSpin(`Moving your ${highlight('files and folders')}`)
 
 		// Get the path the user entered (the file(s) to move)
 		let {
@@ -1033,9 +1042,11 @@ const Client = class {
 					const file = files[i]
 
 					// Update the spinner
-					spinner.text = `Moving file ${fromFolderPath}/${
-						fromFileName || file.name
-					} to ${toFolderPath}/${fromFileName || file.name}`
+					startSpin(
+						`Moving file ${highlight(
+							diskPath(toFolderPath, file.name)
+						)} to ${highlight(diskPath(toFolderPath, file.name))}`
+					)
 
 					// If the drive is the same, then simply update the file
 					if (fromDrive === toDrive) {
@@ -1061,18 +1072,20 @@ const Client = class {
 							// Increase the moved files count
 							movedFilesCount++
 							// Tell the user
-							spinner.stop()
+							const spinnerText = stopSpin()
 							printInfo(
-								`Moved file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
+								`Moved file ${highlight(
+									diskPath(fromFolderPath, file.name)
+								)} to ${highlight(diskPath(toFolderPath, file.name))}`
 							)
-							spinner.start()
+							startSpin(spinnerText)
 						} catch (error) {
 							// Increase the error count
 							erroredFilesCount++
 							// Print the error, but continue
-							spinner.stop()
-							printError(error)
-							spinner.start()
+							const spinnerText = stopSpin()
+							printError(error, false)
+							startSpin(spinnerText)
 						}
 					} else {
 						// Surround in try-catch to stop spinner in case
@@ -1101,24 +1114,26 @@ const Client = class {
 							// Increase the moved files count
 							movedFilesCount++
 							// Tell the user
-							spinner.stop()
+							const spinnerText = stopSpin()
 							printInfo(
-								`Moved file ${fromFolderPath}/${file.name} to ${toFolderPath}/${file.name}`
+								`Moved file ${highlight(
+									diskPath(fromFolderPath, file.name)
+								)} to ${highlight(diskPath(toFolderPath, file.name))}`
 							)
-							spinner.start()
+							startSpin(spinnerText)
 						} catch (error) {
 							// Increase the error count
 							erroredFilesCount++
 							// Print the error, but continue
-							spinner.stop()
-							printError(error)
-							spinner.start()
+							const spinnerText = stopSpin()
+							printError(error, false)
+							startSpin(spinnerText)
 						}
 					}
 				}
 
 				// Stop loading, we are done
-				spinner.stop()
+				stopSpin()
 				// Tell the user the number of files we copied and skipped
 				printInfo(
 					`Moved ${highlight(movedFilesCount)} files successfully, ${highlight(
@@ -1128,7 +1143,6 @@ const Client = class {
 				// Return succesfully
 			} else {
 				// Stop loading, error out
-				spinner.stop()
 				throw new Error('No files matched that regex')
 			}
 		} else {
@@ -1137,7 +1151,7 @@ const Client = class {
 				// If the drive is the same, then simply update the file
 				if (fromDrive === toDrive) {
 					// Update the file
-					const result = await updateRequest(
+					await updateRequest(
 						fromDrive,
 						fromFolderPath,
 						fromFileName,
@@ -1145,11 +1159,11 @@ const Client = class {
 						toFileName || fromFileName
 					)
 					// Tell the user
-					spinner.stop()
+					stopSpin()
 					printInfo(
-						`Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
-							toFileName || fromFileName
-						}`
+						`Moved file ${highlight(
+							diskPath(fromFolderPath, fromFileName)
+						)} to ${toFolderPath}/${toFileName || fromFileName}`
 					)
 				} else {
 					// Fetch the file
@@ -1166,15 +1180,14 @@ const Client = class {
 						localPath
 					)
 					// Tell the user
-					spinner.stop()
+					stopSpin()
 					printInfo(
-						`Moved file ${fromFolderPath}/${fromFileName} to ${toFolderPath}/${
-							toFileName || fromFileName
-						}`
+						`Moved file ${highlight(
+							diskPath(fromFolderPath, fromFileName)
+						)} to ${toFolderPath}/${toFileName || fromFileName}`
 					)
 				}
 			} catch (error) {
-				spinner.stop()
 				throw error
 			}
 		}
@@ -1184,9 +1197,7 @@ const Client = class {
 
 	async delete(args) {
 		// Show a loading indicator
-		const spinner = ora(
-			`Loading your ${highlight('files and folders')}`
-		).start()
+		startSpin(`Loading your ${highlight('files and folders')}`)
 
 		// Get the path the user entered, default to current directory
 		let { drive, folderPath, regex } = await parseUserInputForPath(
@@ -1210,11 +1221,13 @@ const Client = class {
 			}
 		}
 
-		spinner.text = `Deleting ${
-			regex
-				? `all files matching regex ${highlight(regex)}`
-				: highlight(`${folderPath}/${fileName || ''}`)
-		}`
+		startSpin(
+			`Deleting ${
+				regex
+					? `all files matching regex ${highlight(regex)}`
+					: highlight(diskPath(folderPath, fileName || ''))
+			}`
+		)
 
 		// List the files matching that regex so we can count how many we deleted
 		let deletedFilesCount = 0
@@ -1229,12 +1242,11 @@ const Client = class {
 			)
 		} catch (error) {
 			// Throw the error
-			spinner.stop()
 			throw error
 		}
 
 		// Stop loading
-		spinner.stop()
+		stopSpin()
 		// Tell the user
 		printInfo(
 			`Deleted ${
@@ -1242,7 +1254,7 @@ const Client = class {
 					? `${highlight(deletedFilesCount)} files matching regex ${highlight(
 							regex
 					  )}`
-					: highlight(`${folderPath}/${fileName ? fileName : ''}`)
+					: highlight(diskPath(folderPath, fileName ? fileName : ''))
 			}`
 		)
 		// Return successfully
@@ -1250,9 +1262,7 @@ const Client = class {
 
 	async sync(args) {
 		// Show a loading indicator
-		const spinner = ora(
-			`Listing files in the ${highlight('source and target folders')}`
-		).start()
+		startSpin(`Listing files in the ${highlight('source and target folders')}`)
 
 		// Get the path the user entered, default to current directory (to sync from)
 		const {
@@ -1264,18 +1274,22 @@ const Client = class {
 		const {
 			drive: toDrive,
 			folderPath: toFolderPath
-		} = await parseUserInputForPath(args[2], false, true)
+		} = await parseUserInputForPath(args[2], false, get('current-drive'))
 
-		spinner.text = `Listing all files in source folder ${chalk.keyword(
-			'orange'
-		)(`${fromDrive}:${fromFolderPath}`)}`
+		startSpin(
+			`Listing all files in source folder ${highlight(
+				`${fromDrive}:${fromFolderPath}`
+			)}`
+		)
 
 		// Fetch the files from the server
 		let fromFiles = (await listRequest(fromDrive, fromFolderPath)) || []
 
-		spinner.text = `Listing existing files in target folder ${chalk.keyword(
-			'orange'
-		)(`${toDrive}:${toFolderPath}`)}`
+		startSpin(
+			`Listing existing files in target folder ${highlight(
+				`${toDrive}:${toFolderPath}`
+			)}`
+		)
 
 		// Now list all those that exist in the target folder already
 		let toFiles
@@ -1348,9 +1362,13 @@ const Client = class {
 		// Function to update files, called individually for the filesToAdd and
 		// filesToUpdate arrays so we can keep count of files updated and created
 		const processFile = async (fileToSync, updateWhichCount) => {
-			spinner.text = `Syncing file ${highlight(
-				`${fromDrive}:${fromFolderPath}/${fileToSync.name}`
-			)} to ${highlight(`${toDrive}:${toFolderPath}/${fileToSync.name}`)}`
+			startSpin(
+				`Syncing file ${highlight(
+					`${fromDrive}:${diskPath(fromFolderPath, fileToSync.name)}`
+				)} to ${highlight(
+					`${toDrive}:${diskPath(toFolderPath, fileToSync.name)}`
+				)}`
+			)
 
 			try {
 				// Fetch the file
@@ -1370,20 +1388,22 @@ const Client = class {
 				}
 
 				// Tell the user
-				spinner.stop()
+				const spinnerText = stopSpin()
 				printInfo(
 					`Synced file ${highlight(
-						`${fromDrive}:${fromFolderPath}/${fileToSync.name}`
-					)} to ${highlight(`${toDrive}:${toFolderPath}/${fileToSync.name}`)}`
+						`${fromDrive}:${diskPath(fromFolderPath, fileToSync.name)}`
+					)} to ${highlight(
+						`${toDrive}:${diskPath(toFolderPath, fileToSync.name)}`
+					)}`
 				)
-				spinner.start()
+				startSpin(spinnerText)
 			} catch (error) {
 				// Increase the number of files updated/created
 				erroredFilesCount++
 				// Print the error and skip the file
-				spinner.stop()
-				printError(error)
-				spinner.start()
+				const spinnerText = stopSpin()
+				printError(error, false)
+				startSpin(spinnerText)
 			}
 		}
 
@@ -1399,7 +1419,7 @@ const Client = class {
 		}
 
 		// Stop loading
-		spinner.stop()
+		stopSpin()
 
 		printInfo(
 			`${highlight(updatedFilesCount)} files updated, ${highlight(
@@ -1413,8 +1433,6 @@ const Client = class {
 				erroredFilesCount
 			)} files were skipped due to errors encountered.`
 		)
-
-		// Return successfully
 	}
 }
 

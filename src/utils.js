@@ -17,6 +17,8 @@
  */
 
 const fs = require('fs-extra')
+const path = require('path')
+const ora = require('ora')
 const link = require('terminal-link')
 const chalk = require('chalk')
 const figlet = require('figlet')
@@ -461,6 +463,22 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
 	}
 }
 
+// The universal spinner
+const spinner = ora('Loading...')
+exports.startSpin = (text) => {
+	spinner.text = text
+	spinner.start()
+}
+
+exports.stopSpin = () => {
+	const stoppedSpinner = spinner.stop()
+	return stoppedSpinner.text
+}
+
+exports.diskPath = (...folderPaths) => {
+	return path.normalize(folderPaths.join('/'))
+}
+
 // Wrap the console.log in a print function
 exports.print = console.log
 
@@ -478,7 +496,8 @@ exports.printBright = (anything) => {
 }
 
 // Print out an error in red
-exports.printError = (error) => {
+exports.printError = (error, stopSpinner = true) => {
+	if (stopSpinner) this.stopSpin()
 	console.error(error)
 	if (error.isAxiosError) {
 		if (error.code === 'ECONNRESET') {
