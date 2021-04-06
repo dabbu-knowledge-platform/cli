@@ -36,7 +36,9 @@ const {
 	printInfo,
 	printBright,
 	printError,
-	highlight
+	highlight,
+	startSpin,
+	stopSpin
 } = require('./utils.js')
 
 // Main function
@@ -142,12 +144,14 @@ function createNewDrive() {
 	const getProviders = (server) => {
 		// Wrap everything in a promise
 		return new Promise((resolve, reject) => {
+			startSpin('Loading available providers...')
 			// The URL to send the request to
 			const url = `${server}/files-api/v2/providers`
 			// Send a GET request
 			axios
 				.get(url)
 				.then((result) => {
+					stopSpin()
 					if (result.data.content.providers.length > 0) {
 						// If there are some providers, return them
 						resolve([...result.data.content.providers, 'knowledge'])
@@ -160,7 +164,10 @@ function createNewDrive() {
 						)
 					}
 				})
-				.catch(reject) // Pass error back if any
+				.catch((error) => {
+					stopSpin()
+					reject(error)
+				}) // Pass error back if any
 		})
 	}
 
