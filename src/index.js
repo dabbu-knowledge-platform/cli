@@ -17,7 +17,7 @@
  */
 
 const chalk = require('chalk')
-const axios = require('axios')
+const axios = require('axios').default
 const prompt = require('readcommand')
 
 const Client = require('./client.js').Client

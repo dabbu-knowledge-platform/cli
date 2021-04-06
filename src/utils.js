@@ -20,7 +20,7 @@ const fs = require('fs-extra')
 const link = require('terminal-link')
 const chalk = require('chalk')
 const figlet = require('figlet')
-const axios = require('axios')
+const axios = require('axios').default
 
 const Conf = require('conf')
 const config = new Conf()
@@ -153,22 +153,22 @@ exports.refreshAccessToken = async (drive) => {
 			const result = await axios.post(
 				tokenURL,
 				// In the body
-				`refresh-token=${refreshToken}&client_id=${this.get(
+				providerConfig.auth['send-auth-metadata-in'] === 'request-body' ?`refresh_token=${refreshToken}&client_id=${this.get(
 					`drives.${drive}.auth-meta.client-id`
 				)}&client_secret=${this.get(
 					`drives.${drive}.auth-meta.client-secret`
 				)}&redirect_uri=${this.get(
 					`drives.${drive}.auth-meta.redirect-uri`
-				)}&grant_type=${'refresh_token'}`,
+				)}&grant_type=refresh_token` : null,
 				// In the URL query parameters
 				{
-					params: {
+					params: providerConfig.auth['send-auth-metadata-in'] === 'query-param' ? {
 						refresh_token: refreshToken, // eslint-disable-line camelcase
 						client_id: this.get(`drives.${drive}.auth-meta.client-id`), // eslint-disable-line camelcase
 						client_secret: this.get(`drives.${drive}.auth-meta.client-secret`), // eslint-disable-line camelcase
 						redirect_uri: this.get(`drives.${drive}.auth-meta.redirect-uri`), // eslint-disable-line camelcase
 						grant_type: 'refresh_token' // eslint-disable-line camelcase
-					}
+					} : {}
 				}
 			)
 			// Store the access token and update the expiry time
@@ -465,6 +465,7 @@ exports.printBright = (anything) => {
 
 // Print out an error in red
 exports.printError = (error) => {
+	console.error(error)
 	if (error.isAxiosError) {
 		if (error.code === 'ECONNRESET') {
 			this.print(

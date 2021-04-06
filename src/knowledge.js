@@ -19,7 +19,7 @@
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const axios = require('axios')
+const axios = require('axios').default
 const prompt = require('readcommand')
 
 const FormData = require('form-data')

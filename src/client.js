@@ -19,7 +19,7 @@
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const axios = require('axios')
+const axios = require('axios').default
 const prompt = require('readcommand')
 const express = require('express')
 const open = require('open')
@@ -62,7 +62,7 @@ const listRequest = async (drive, folderPath, regex) => {
 	})
 
 	// Check if there is a response
-	if (result.data.content.length > 0) {
+	if (result.data.content && result.data.content.length > 0) {
 		// Get the files from the response
 		let files = result.data.content
 		if (regex) {
@@ -615,22 +615,22 @@ const Client = class {
 					.post(
 						tokenURL,
 						// In the body
-						`code=${code}&client_id=${get(
+						providerConfig.auth['send-auth-metadata-in'] === 'request-body' ? `code=${code}&client_id=${get(
 							`drives.${drive}.auth-meta.client-id`
 						)}&client_secret=${get(
 							`drives.${drive}.auth-meta.client-secret`
 						)}&redirect_uri=${get(
 							`drives.${drive}.auth-meta.redirect-uri`
-						)}&grant_type=${'authorization_code'}`,
+						)}&grant_type=${'authorization_code'}` : null,
 						// In the URL query parameters
 						{
-							params: {
+							params: providerConfig.auth['send-auth-metadata-in'] === 'query-param' ? {
 								code,
 								client_id: get(`drives.${drive}.auth-meta.client-id`), // eslint-disable-line camelcase
 								client_secret: get(`drives.${drive}.auth-meta.client-secret`), // eslint-disable-line camelcase
 								redirect_uri: get(`drives.${drive}.auth-meta.redirect-uri`), // eslint-disable-line camelcase
 								grant_type: 'authorization_code' // eslint-disable-line camelcase
-							}
+							} : {}
 						}
 					)
 					.then((result) => {
