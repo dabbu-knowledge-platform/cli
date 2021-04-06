@@ -1,11 +1,7 @@
 name: NodeJS CI
 
 # Triggers the workflow on push or pull request events but only for the main branch
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main, develop]
+on: [push, pull_request]
 
 # This workflow contains three jobs: run tests, build and release
 jobs:

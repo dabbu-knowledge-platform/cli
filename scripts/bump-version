@@ -111,7 +111,8 @@ function push_to_git {
 	# Add the changed files
 	git add version package.json package-lock.json release-notes.md
 
-	# Commit and tag it as a prerelease or a release
+	# Commit it as a prerelease or a release
+	# NOTE: Do not tag the commit, as the CI will then not create a release
 	# Pre-releases will contain a dash in their version
 	if [[ $new_release_tag =~ "-" ]]; then
 		git commit --signoff -m "chore(release): prerelease $new_release_tag"

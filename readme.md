@@ -1,6 +1,6 @@
 # Dabbu CLI
 
-[![Code Style and Build Check](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml)
+[![NodeJS CI](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml) [![Platforms: Alpine Linux MacOS Windows](https://img.shields.io/badge/platforms-alpine%20linux%20macos%20windows-blue)](https://img.shields.io/badge/platforms-windows%20linux%20macos%20alpine-blue) [![Code Style: XO/Prettier](https://img.shields.io/badge/code%20style-xo%2Fprettier-ff69b4)](https://img.shields.io/badge/code%20style-xo%2Fprettier-ff69b4)
 
 A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
 

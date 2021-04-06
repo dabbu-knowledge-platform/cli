@@ -19,7 +19,7 @@
 const fs = require('fs-extra')
 const ora = require('ora')
 const chalk = require('chalk')
-const axios = require('axios')
+const axios = require('axios').default
 const prompt = require('readcommand')
 
 const FormData = require('form-data')
@@ -28,25 +28,20 @@ const {
 	get,
 	set,
 	getAbsolutePath,
-	refreshAccessToken,
 	generateBodyAndHeaders,
 	getExtForMime,
 	printInfo,
 	printBright,
 	printError,
 	printFiles,
-	highlight
+	highlight,
+	startSpin,
+	stopSpin
 } = require('./utils')
 
 // A helper function to list files in a folder
 const listRequest = async (drive, folderPath) => {
-	// First (before parsing further) refresh the access token
-	await refreshAccessToken(drive)
-
-	// Generate request body and headers
-	const [body, headers] = await generateBodyAndHeaders(drive)
-
-	// Get the server address, provider ID and URL encode the folder path
+	/// Get the server address, provider ID and URL encode the folder path
 	const server = get('server')
 	const provider = get(`drives.${drive}.provider`)
 	const encodedFolderPath = encodeURIComponent(
@@ -54,19 +49,37 @@ const listRequest = async (drive, folderPath) => {
 	)
 
 	// The URL to send the request to
-	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
-	// Send a GET request
-	const result = await axios.get(url, {
-		data: body, // The appropriate request body for this provider
-		headers // The appropriate headers for this provider
-	})
+	let allFiles = []
+	let nextSetToken = ''
+	do {
+		const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc&nextSetToken=${nextSetToken}`
+
+		// Generate request body and headers
+		// eslint-disable-next-line no-await-in-loop
+		const [body, headers] = await generateBodyAndHeaders(drive)
+
+		// Send a GET request
+		// eslint-disable-next-line no-await-in-loop
+		const result = await axios.get(url, {
+			data: body, // The appropriate request body for this provider
+			headers // The appropriate headers for this provider
+		})
+
+		// Get the next page token (incase the server returned incomplete
+		// results)
+		nextSetToken = result.data.nextSetToken
+
+		// Add the files we got right now to the main list
+		if (result.data.content) {
+			allFiles = [...allFiles, ...result.data.content]
+		}
+	} while (nextSetToken) // Keep doing the
+	// above list request until there is no nextSetToken returned
 
 	// Check if there is a response
-	if (result.data.content.length > 0) {
-		// Get the files from the response
-		const files = result.data.content
+	if (allFiles.length > 0) {
 		// Return the files
-		return files
+		return allFiles
 	}
 
 	// Else return null if it is an empty folder
@@ -187,9 +200,9 @@ const downloadRequest = async (drive, folderPath, fileName) => {
 }
 
 // A helper function to list files recursively
-const listFilesRecursively = (drive, folder, spinner) => {
+const listFilesRecursively = (drive, folder) => {
 	// Tell the user which folder we are querying
-	spinner.text = `Fetching files in ${highlight(folder)}`
+	startSpin(`Fetching files in ${highlight(folder)}`)
 	// An array to hold all the files whose names contain any
 	// one of the search terms
 	let matchingFiles = []
@@ -223,7 +236,7 @@ const listFilesRecursively = (drive, folder, spinner) => {
 						if (file.kind === 'folder') {
 							// If it's a folder, then call the listFilesRecursively method again
 							// with the folder path
-							listFilesRecursively(drive, file.path, spinner)
+							listFilesRecursively(drive, file.path)
 								.then((files) => {
 									// Add the matching files to the matching files array
 									matchingFiles = matchingFiles.concat(files)
@@ -330,7 +343,7 @@ const Klient = class {
 			'Hang on while we fetch and index your files, this might take a long time depending on the number of files...'
 		)
 		// Show a loading indicator
-		const spinner = ora('Loading...').start()
+		startSpin('Loading...')
 
 		// The file in which to store the index data
 		const indexFilePath = `./_dabbu/dabbu_knowledge_index.json`
@@ -342,11 +355,11 @@ const Klient = class {
 		// For each drive, index all its files
 		for (const driveToIndex of drivesToIndex) {
 			// Tell the user what we are doing
-			spinner.text = `Fetching files from ${highlight(driveToIndex)}`
+			startSpin(`Fetching files from ${highlight(driveToIndex)}`)
 
 			// Fetch the file's metadata recursively
 			// eslint-disable-next-line no-await-in-loop
-			const files = await listFilesRecursively(driveToIndex, '/', spinner)
+			const files = await listFilesRecursively(driveToIndex, '/')
 			// Add the files to the JSON
 			indexJson.files.push(...files)
 
@@ -359,9 +372,9 @@ const Klient = class {
 				for (const file of files) {
 					if (file.kind === 'file') {
 						// Tell the user what we are doing
-						spinner.text = `Indexing file ${highlight(
-							driveToIndex + ':' + file.path
-						)}`
+						startSpin(
+							`Indexing file ${highlight(driveToIndex + ':' + file.path)}`
+						)
 						// Get the file name and the folder path
 						const fileName = file.name
 						let folderPath = file.path.split('/')
@@ -443,10 +456,10 @@ const Klient = class {
 							}
 						} catch (error) {
 							// Just print out the error if any one of the files fails and continue
-							spinner.stop()
+							const spinnerText = stopSpin()
 							printError(`Skipping ${fileName}, error encountered: ${error}`)
 							skippedFiles++
-							spinner.start()
+							startSpin(spinnerText)
 						}
 					}
 				}
@@ -460,16 +473,11 @@ const Klient = class {
 			await fs.writeFile(indexFilePath, JSON.stringify(indexJson, null, 2))
 
 			// Tell the user we are finished with that drive
-			spinner.stop()
+			stopSpin()
 			printBright(
 				`Successfully indexed all files in ${driveToIndex}: (${skippedFiles} skipped due to errors)`
 			)
-			spinner.start()
 		}
-
-		spinner.stop()
-
-		// Return succesfully
 	}
 
 	// Show the user their current drive and path
@@ -482,8 +490,6 @@ const Klient = class {
 				`drives.${drive}.path`
 			)}`
 		)
-
-		// Return
 	}
 
 	// Change the topic the user is viewing

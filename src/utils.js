@@ -17,10 +17,12 @@
  */
 
 const fs = require('fs-extra')
+const path = require('path')
+const ora = require('ora')
 const link = require('terminal-link')
 const chalk = require('chalk')
 const figlet = require('figlet')
-const axios = require('axios')
+const axios = require('axios').default
 
 const Conf = require('conf')
 const config = new Conf()
@@ -153,22 +155,36 @@ exports.refreshAccessToken = async (drive) => {
 			const result = await axios.post(
 				tokenURL,
 				// In the body
-				`refresh-token=${refreshToken}&client_id=${this.get(
-					`drives.${drive}.auth-meta.client-id`
-				)}&client_secret=${this.get(
-					`drives.${drive}.auth-meta.client-secret`
-				)}&redirect_uri=${this.get(
-					`drives.${drive}.auth-meta.redirect-uri`
-				)}&grant_type=${'refresh_token'}`,
+				providerConfig.auth['send-auth-metadata-in'] === 'request-body'
+					? `refresh_token=${refreshToken}&client_id=${this.get(
+							`drives.${drive}.auth-meta.client-id`
+					  )}&client_secret=${this.get(
+							`drives.${drive}.auth-meta.client-secret`
+					  )}&redirect_uri=${this.get(
+							`drives.${drive}.auth-meta.redirect-uri`
+					  )}&grant_type=refresh_token`
+					: null,
 				// In the URL query parameters
 				{
-					params: {
-						refresh_token: refreshToken, // eslint-disable-line camelcase
-						client_id: this.get(`drives.${drive}.auth-meta.client-id`), // eslint-disable-line camelcase
-						client_secret: this.get(`drives.${drive}.auth-meta.client-secret`), // eslint-disable-line camelcase
-						redirect_uri: this.get(`drives.${drive}.auth-meta.redirect-uri`), // eslint-disable-line camelcase
-						grant_type: 'refresh_token' // eslint-disable-line camelcase
-					}
+					params:
+						providerConfig.auth['send-auth-metadata-in'] === 'query-param'
+							? {
+									// eslint-disable-next-line camelcase
+									refresh_token: refreshToken,
+									// eslint-disable-next-line camelcase
+									client_id: this.get(`drives.${drive}.auth-meta.client-id`),
+									// eslint-disable-next-line camelcase
+									client_secret: this.get(
+										`drives.${drive}.auth-meta.client-secret`
+									),
+									// eslint-disable-next-line camelcase
+									redirect_uri: this.get(
+										`drives.${drive}.auth-meta.redirect-uri`
+									),
+									// eslint-disable-next-line camelcase
+									grant_type: 'refresh_token'
+							  }
+							: {}
 				}
 			)
 			// Store the access token and update the expiry time
@@ -447,6 +463,22 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
 	}
 }
 
+// The universal spinner
+const spinner = ora('Loading...')
+exports.startSpin = (text) => {
+	spinner.text = text
+	spinner.start()
+}
+
+exports.stopSpin = () => {
+	const stoppedSpinner = spinner.stop()
+	return stoppedSpinner.text
+}
+
+exports.diskPath = (...folderPaths) => {
+	return path.normalize(folderPaths.join('/'))
+}
+
 // Wrap the console.log in a print function
 exports.print = console.log
 
@@ -464,7 +496,9 @@ exports.printBright = (anything) => {
 }
 
 // Print out an error in red
-exports.printError = (error) => {
+exports.printError = (error, stopSpinner = true) => {
+	if (stopSpinner) this.stopSpin()
+	if (process.env.PRINT_ERRORS) console.error(error)
 	if (error.isAxiosError) {
 		if (error.code === 'ECONNRESET') {
 			this.print(

@@ -1,22 +1,22 @@
 #!/bin/bash
-set -e -o pipefail
 
 # install
-# Installs the CLI to $HOME/.local/opt/dabbu/cli
+# Installs the CLI to /usr/bin/dabbu-cli (executables at $HOME/.local/opt/dabbu/)
 # 
-# Usage: scripts/install
+# Usage: ./install
 # Options:
 #     -h       Show usage
-#     -f       Simply show what is going to happen
-#     -o       Download executables even if they exist
+#     -d       Simply show what is going to happen
 #
 # NOTE: This install script is ONLY FOR LINUX/MACOS. Do NOT run this on Windows (it most probably won't work, not tested)
 
-# Steps:
+# What happens during installation:
 # - Create the $HOME/.local/opt/dabbu/cli directory
 # - Create the $HOME/.local/opt/dabbu/files-api-server directory
 # - Download the CLI and Files API Server executables to the respective directories
-# - Create the wrapper shell script and save it as $HOME/.local/opt/dabbu/cli/dabbu-cli
+# - Download the wrapper shell script and save it to $HOME/.local/opt/dabbu/cli/
+# - Copy the wrapper to /usr/bin/dabbu-cli
+# Done!
 
 # ANSI colour codes so we can highlight text in the terminal
 colour_black="\033[0;30m"
@@ -43,6 +43,7 @@ underline="\e[4"
 strikethrough="\e[9"
 normal="\e[0m"
 
+# Show a help message
 function help {
 	echo -e "${colour_cyan}${bold}install${normal}"
 	echo -e "${colour_blue}Installs the Dabbu CLI and Files API Server${normal}"
@@ -51,8 +52,7 @@ function help {
 	echo -e ""
 	echo -e "${color_cyan}Options:${normal}"
 	echo -e "${color_blue}    -h       Show usage${normal}"
-	echo -e "${color_blue}    -f       Simply show what is going to happen${normal}"
-	echo -e "${color_blue}    -o       Download executables even if they exist${normal}"
+	echo -e "${color_blue}    -d       Simply show what is going to happen${normal}"
 	echo -e ""
 	echo -e "${colour_red}NOTE: This install script is ONLY FOR LINUX/MACOS. Do NOT run this${normal}"
 	echo -e "${colour_red}on Windows (it most probably won't work, not tested)${normal}"
@@ -60,8 +60,9 @@ function help {
 	exit
 }
 
-function fake_run {
-	echo -e "${colour_blue}${colour_cyan}Steps:${normal}"
+# Explain what the script does
+function dry_run {
+	echo -e "${colour_blue}${colour_cyan}What will happen during installation:${normal}"
 	echo -e "${colour_blue}- Create the folder ${colour_cyan}$HOME/.local/opt/dabbu/cli${normal}"
 	echo -e "${colour_blue}- Create the folder ${colour_cyan}$HOME/.local/opt/dabbu/files-api-server${normal}"
 	echo -e "${colour_blue}- Download the latest CLI and Files API Server executables to the respective folders${normal}"
@@ -72,12 +73,14 @@ function fake_run {
 	exit
 }
 
+# The actual function that installs the CLI
 function install {
 	echo -e "${colour_blue}Installing dabbu to ${colour_cyan}$HOME/.local/opt/dabbu/cli/${colour_blue} (wrapper script at ${colour_cyan}/usr/bin/dabbu-cli${colour_blue})${normal}"
 	echo -e "${colour_red}You might need to run this script with sudo${normal}"
 
 	echo -e "${colour_blue}Checking environment...${normal}"
 
+	# Check that we are running on either linux or mac
 	machine="$(uname -s)"
 	case "$machine" in
 			Linux*)  machine="linux";;
@@ -85,68 +88,69 @@ function install {
 			*)       machine="unknown";;
 	esac
 
+	# If not, error out
 	if [ $machine == "unknown" ]; then
 		echo -e "${colour_red}This install script is meant only for Linux/MacOS${normal}"
-			exit 1
+		exit 1
 	fi
 
-	echo -e "${colour_blue}Creating install directory at ${colour_cyan}$HOME/.local/opt/dabbu/cli/${colour_blue}...${normal}"
+	echo -e "${colour_blue}Creating install directory at ${colour_cyan}$HOME/.local/opt/dabbu/${colour_blue}...${normal}"
+
+	# Ensure the installation location exists, else create it
 	mkdir -p "$HOME/.local/opt/dabbu/cli"
 	mkdir -p "$HOME/.local/opt/dabbu/files-api-server"
 
-	echo -e "${colour_blue}Downloading executable to ${colour_cyan}$HOME/.local/opt/dabbu/cli/${colour_blue}...${normal}"
+	echo -e "${colour_blue}Downloading CLI executable to ${colour_cyan}$HOME/.local/opt/dabbu/cli/dabbu-cli-executable${colour_blue}...${normal}"
 
-	if [ -f "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable" ] || [ $1 == "--overwrite" ]; then
-		echo -e "${color_cyan}Executable already downloaded${normal}"
-		chmod 755 "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable"
-	else
-		curl -L "https://github.com/dabbu-knowledge-platform/cli/releases/latest/download/dabbu-cli-$machine" --output "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable" --progress-bar
-		chmod 755 "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable"
-	fi
+	# Download the latest release version of the CLI from Github
+	curl -L "https://github.com/dabbu-knowledge-platform/cli/releases/latest/download/dabbu-cli-$machine" --output "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable" --progress-bar
+	# Make it an executable
+	chmod 755 "$HOME/.local/opt/dabbu/cli/dabbu-cli-executable"
 
-	if [ -f "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable" ] || [ $1 == "--overwrite" ]; then
-		echo -e "${color_cyan}Executable already downloaded${normal}"
-		chmod 755 "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable"
-	else
-		curl -L "https://github.com/dabbu-knowledge-platform/files-api-server/releases/latest/download/files-api-server-$machine" --output "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable" --progress-bar
-		chmod 755 "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable"
-	fi
+	echo -e "${colour_blue}Downloading Files API Server executable to ${colour_cyan}$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable${colour_blue}...${normal}"
 
+	# Download the latest release version of the Files API Server from Github
+	curl -L "https://github.com/dabbu-knowledge-platform/files-api-server/releases/latest/download/files-api-server-$machine" --output "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable" --progress-bar
+	# Make the file executable
+	chmod 755 "$HOME/.local/opt/dabbu/files-api-server/files-api-server-executable"
+
+	echo -e "${colour_blue}Downloading wrapper script to ${colour_cyan}$HOME/.local/opt/dabbu/cli/wrapper${colour_blue}...${normal}"
+
+	# Download the wrapper script from the main branch
 	curl -L "https://raw.githubusercontent.com/dabbu-knowledge-platform/cli/main/scripts/wrapper" --output "$HOME/.local/opt/dabbu/cli/wrapper" --progress-bar
 
 	echo -e "${colour_blue}Installing CLI (you may need to enter your root password)...${normal}"
 
+	# Move it to /usr/bin/dabbu-cli (this will need root permission)
 	sudo cp "$HOME/.local/opt/dabbu/cli/wrapper" "/usr/bin/dabbu-cli"
+	# Make it executable
 	sudo chmod 777 "/usr/bin/dabbu-cli"
 
 	echo -e "${colour_blue}Setting up CLI...${normal}"
 
+	# Initialise the config file if not already done, and set the server url to http://localhost:8080
+
+	# Get the path to the config file (it is different on different machines)
 	if [ $machine == "macos" ]; then
-		macos_config_path="~/Library/Preferences/dabbu-cli-nodejs/"
-
-		mkdir -p "$macos_config_path"
-
-		if [ -f "$macos_config_path/config.json" ]; then
-			mv "$macos_config_path/config.json" "$macos_config_path/config.json.bak"
-		fi
-
-		touch "$macos_config_path/config.json"
-		echo "{\"server\": \"http://localhost:8080\"}" >> "$macos_config_path/config.json"
+		cli_config_path="~/Library/Preferences/dabbu-cli-nodejs/"
 	fi
 
 	if [ $machine == "linux" ]; then
-		linux_config_path="$XDG_CONFIG_HOME/dabbu-cli-nodejs/"
+		cli_config_path="$XDG_CONFIG_HOME/dabbu-cli-nodejs/"
 		if [ -z "$XDG_CONFIG_HOME" ]; then
-			linux_config_path="$HOME/.config/dabbu-cli-nodejs"
+			cli_config_path="$HOME/.config/dabbu-cli-nodejs"
 		fi
+	fi
 
-		mkdir -p "$linux_config_path"
+	# Ensure the directory exists
+	mkdir -p "$cli_config_path"
 
-		if [ -f "$linux_config_path/config.json" ]; then
-			mv "$linux_config_path/config.json" "$linux_config_path/config.json.bak"
-		fi
-
-		echo "{\"server\": \"http://localhost:8080\"}" >> "$linux_config_path/config.json"
+	# If it exists, make a backup, but do nothing else
+	if [ -f "$cli_config_path/config.json" ]; then
+		cp "$cli_config_path/config.json" "$cli_config_path/config.json.bak"
+	else
+		# If it doesn't, initialise it and set the server url
+		echo "{\"server\": \"http://localhost:8080\"}" >> "$cli_config_path/config.json"
 	fi
 
 	echo -e "${colour_green}${bold}Successfully installed Dabbu CLI! Type dabbu-cli to run it.${normal}"
@@ -154,7 +158,12 @@ function install {
 	exit
 }
 
+# The main function
 function main {
+	# Fail fast, don't skip errors
+	set -e -o pipefail
+
+	# Print the CLI logo (though it is in blue)
 	echo -e "${colour_cyan}${bold}  ____        _     _            ${normal}"
 	echo -e "${colour_cyan}${bold} |  _ \  __ _| |__ | |__  _   _  ${normal}"
 	echo -e "${colour_cyan}${bold} | | | |/ _\` | '_ \| '_ \| | | | ${normal}"
@@ -162,15 +171,17 @@ function main {
 	echo -e "${colour_cyan}${bold} |____/ \__,_|_.__/|_.__/ \__,_| ${normal}"
 	echo -e "${colour_cyan}${bold}                                 ${normal}"
 
-	while getopts "hfr" opt; do
+	# Parse options, if specified
+	while getopts "hd" opt; do
 		case $opt in
-			h) help;;
-			f) fake_run;;
-			o) install --overwrite;;
+			h) help;; # If the option is -h, show help and exit
+			d) dry_run;; # If the option is -d, just show what will happen and exit
 			esac
 	done
 
+	# Else by default run the install process
 	install
 }
 
+# Call the main function with the options provided
 main "$*"
