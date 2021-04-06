@@ -498,7 +498,7 @@ exports.printBright = (anything) => {
 // Print out an error in red
 exports.printError = (error, stopSpinner = true) => {
 	if (stopSpinner) this.stopSpin()
-	console.error(error)
+	if (process.env.PRINT_ERRORS) console.error(error)
 	if (error.isAxiosError) {
 		if (error.code === 'ECONNRESET') {
 			this.print(
