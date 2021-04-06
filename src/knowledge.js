@@ -40,13 +40,7 @@ const {
 
 // A helper function to list files in a folder
 const listRequest = async (drive, folderPath) => {
-	// First (before parsing further) refresh the access token
-	await refreshAccessToken(drive)
-
-	// Generate request body and headers
-	const [body, headers] = await generateBodyAndHeaders(drive)
-
-	// Get the server address, provider ID and URL encode the folder path
+	/// Get the server address, provider ID and URL encode the folder path
 	const server = get('server')
 	const provider = get(`drives.${drive}.provider`)
 	const encodedFolderPath = encodeURIComponent(
@@ -54,19 +48,37 @@ const listRequest = async (drive, folderPath) => {
 	)
 
 	// The URL to send the request to
-	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view`
-	// Send a GET request
-	const result = await axios.get(url, {
-		data: body, // The appropriate request body for this provider
-		headers // The appropriate headers for this provider
-	})
+	let allFiles = []
+	let nextSetToken = ''
+	do {
+		const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc&nextSetToken=${nextSetToken}`
+
+		// Generate request body and headers
+		// eslint-disable-next-line no-await-in-loop
+		const [body, headers] = await generateBodyAndHeaders(drive)
+
+		// Send a GET request
+		// eslint-disable-next-line no-await-in-loop
+		const result = await axios.get(url, {
+			data: body, // The appropriate request body for this provider
+			headers // The appropriate headers for this provider
+		})
+
+		// Get the next page token (incase the server returned incomplete
+		// results)
+		nextSetToken = result.data.nextSetToken
+
+		// Add the files we got right now to the main list
+		if (result.data.content) {
+			allFiles = [...allFiles, ...result.data.content]
+		}
+	} while (nextSetToken) // Keep doing the
+	// above list request until there is no nextSetToken returned
 
 	// Check if there is a response
-	if (result.data.content.length > 0) {
-		// Get the files from the response
-		const files = result.data.content
+	if (allFiles.length > 0) {
 		// Return the files
-		return files
+		return allFiles
 	}
 
 	// Else return null if it is an empty folder

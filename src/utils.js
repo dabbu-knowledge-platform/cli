@@ -153,22 +153,36 @@ exports.refreshAccessToken = async (drive) => {
 			const result = await axios.post(
 				tokenURL,
 				// In the body
-				providerConfig.auth['send-auth-metadata-in'] === 'request-body' ?`refresh_token=${refreshToken}&client_id=${this.get(
-					`drives.${drive}.auth-meta.client-id`
-				)}&client_secret=${this.get(
-					`drives.${drive}.auth-meta.client-secret`
-				)}&redirect_uri=${this.get(
-					`drives.${drive}.auth-meta.redirect-uri`
-				)}&grant_type=refresh_token` : null,
+				providerConfig.auth['send-auth-metadata-in'] === 'request-body'
+					? `refresh_token=${refreshToken}&client_id=${this.get(
+							`drives.${drive}.auth-meta.client-id`
+					  )}&client_secret=${this.get(
+							`drives.${drive}.auth-meta.client-secret`
+					  )}&redirect_uri=${this.get(
+							`drives.${drive}.auth-meta.redirect-uri`
+					  )}&grant_type=refresh_token`
+					: null,
 				// In the URL query parameters
 				{
-					params: providerConfig.auth['send-auth-metadata-in'] === 'query-param' ? {
-						refresh_token: refreshToken, // eslint-disable-line camelcase
-						client_id: this.get(`drives.${drive}.auth-meta.client-id`), // eslint-disable-line camelcase
-						client_secret: this.get(`drives.${drive}.auth-meta.client-secret`), // eslint-disable-line camelcase
-						redirect_uri: this.get(`drives.${drive}.auth-meta.redirect-uri`), // eslint-disable-line camelcase
-						grant_type: 'refresh_token' // eslint-disable-line camelcase
-					} : {}
+					params:
+						providerConfig.auth['send-auth-metadata-in'] === 'query-param'
+							? {
+									// eslint-disable-next-line camelcase
+									refresh_token: refreshToken,
+									// eslint-disable-next-line camelcase
+									client_id: this.get(`drives.${drive}.auth-meta.client-id`),
+									// eslint-disable-next-line camelcase
+									client_secret: this.get(
+										`drives.${drive}.auth-meta.client-secret`
+									),
+									// eslint-disable-next-line camelcase
+									redirect_uri: this.get(
+										`drives.${drive}.auth-meta.redirect-uri`
+									),
+									// eslint-disable-next-line camelcase
+									grant_type: 'refresh_token'
+							  }
+							: {}
 				}
 			)
 			// Store the access token and update the expiry time

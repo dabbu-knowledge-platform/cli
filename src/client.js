@@ -42,10 +42,12 @@ const {
 	highlight
 } = require('./utils')
 
-const listRequest = async (drive, folderPath, regex) => {
-	// Generate request body and headers
-	const [body, headers] = await generateBodyAndHeaders(drive)
-
+const listRequest = async (
+	drive,
+	folderPath,
+	regex,
+	printOnReceive = false
+) => {
 	// Get the server address, provider ID and URL encode the folder path
 	const server = get('server')
 	const provider = get(`drives.${drive}.provider`)
@@ -54,17 +56,46 @@ const listRequest = async (drive, folderPath, regex) => {
 	)
 
 	// The URL to send the request to
-	const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc`
-	// Send a GET request
-	const result = await axios.get(url, {
-		data: body, // The appropriate request body for this provider
-		headers // The appropriate headers for this provider
-	})
+	let allFiles = []
+	let nextSetToken = ''
+	do {
+		const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc&nextSetToken=${nextSetToken}`
+
+		// Generate request body and headers
+		// eslint-disable-next-line no-await-in-loop
+		const [body, headers] = await generateBodyAndHeaders(drive)
+
+		// Send a GET request
+		// eslint-disable-next-line no-await-in-loop
+		const result = await axios.get(url, {
+			data: body, // The appropriate request body for this provider
+			headers // The appropriate headers for this provider
+		})
+
+		// Get the next page token (incase the server returned incomplete
+		// results)
+		nextSetToken = result.data.nextSetToken
+
+		// Add the files we got right now to the main list
+		if (result.data.content) {
+			if (printOnReceive) {
+				// Print the files
+				printFiles(
+					result.data.content,
+					false /* Don't show full path */,
+					nextSetToken === '' /* Print the headers only on the first request */
+				)
+			}
+
+			allFiles = [...allFiles, ...result.data.content]
+		}
+	} while (nextSetToken) // Keep doing the
+	// above list request until there is no nextSetToken returned
 
 	// Check if there is a response
-	if (result.data.content && result.data.content.length > 0) {
+	if (allFiles.length > 0) {
 		// Get the files from the response
-		let files = result.data.content
+		let files = allFiles
 		if (regex) {
 			// Filter using the regex (if any)
 			files = files.filter((file) => {
@@ -615,22 +646,35 @@ const Client = class {
 					.post(
 						tokenURL,
 						// In the body
-						providerConfig.auth['send-auth-metadata-in'] === 'request-body' ? `code=${code}&client_id=${get(
-							`drives.${drive}.auth-meta.client-id`
-						)}&client_secret=${get(
-							`drives.${drive}.auth-meta.client-secret`
-						)}&redirect_uri=${get(
-							`drives.${drive}.auth-meta.redirect-uri`
-						)}&grant_type=${'authorization_code'}` : null,
+						providerConfig.auth['send-auth-metadata-in'] === 'request-body'
+							? `code=${code}&client_id=${get(
+									`drives.${drive}.auth-meta.client-id`
+							  )}&client_secret=${get(
+									`drives.${drive}.auth-meta.client-secret`
+							  )}&redirect_uri=${get(
+									`drives.${drive}.auth-meta.redirect-uri`
+							  )}&grant_type=${'authorization_code'}`
+							: null,
 						// In the URL query parameters
 						{
-							params: providerConfig.auth['send-auth-metadata-in'] === 'query-param' ? {
-								code,
-								client_id: get(`drives.${drive}.auth-meta.client-id`), // eslint-disable-line camelcase
-								client_secret: get(`drives.${drive}.auth-meta.client-secret`), // eslint-disable-line camelcase
-								redirect_uri: get(`drives.${drive}.auth-meta.redirect-uri`), // eslint-disable-line camelcase
-								grant_type: 'authorization_code' // eslint-disable-line camelcase
-							} : {}
+							params:
+								providerConfig.auth['send-auth-metadata-in'] === 'query-param'
+									? {
+											code,
+											// eslint-disable-next-line camelcase
+											client_id: get(`drives.${drive}.auth-meta.client-id`),
+											// eslint-disable-next-line camelcase
+											client_secret: get(
+												`drives.${drive}.auth-meta.client-secret`
+											),
+											// eslint-disable-next-line camelcase
+											redirect_uri: get(
+												`drives.${drive}.auth-meta.redirect-uri`
+											),
+											// eslint-disable-next-line camelcase
+											grant_type: 'authorization_code'
+									  }
+									: {}
 						}
 					)
 					.then((result) => {
@@ -723,15 +767,14 @@ const Client = class {
 			regex ? `matching regex ${regex}` : `in folder ${folderPath}`
 		)}`
 
-		// Fetch the files from the server
-		const files = await listRequest(drive, folderPath, regex)
+		// Fetch the files from the server and print them as you get them
+		const files = await listRequest(drive, folderPath, regex, true)
 
 		// Stop loading
 		spinner.stop()
-		// Print them out
-		if (files) {
-			printFiles(files)
-		} else {
+
+		// If there were no files returned, the folder is empty
+		if (!files) {
 			printBright('Folder is empty')
 		}
 
