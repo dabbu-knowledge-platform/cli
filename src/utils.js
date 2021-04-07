@@ -460,7 +460,7 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
 
 	// Print out the table
 	if (table.length > 0) {
-		this.printInfo(`${table.length} files/folders`)
+		if (showHeaders) this.printInfo(`${table.length} files/folders`)
 		console.log(table.toString())
 	}
 }

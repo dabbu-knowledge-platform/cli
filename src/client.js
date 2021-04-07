@@ -61,6 +61,7 @@ const listRequest = async (
 	// The URL to send the request to
 	let allFiles = []
 	let nextSetToken = ''
+	let firstRun = true
 	do {
 		const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc&nextSetToken=${nextSetToken}`
 
@@ -87,15 +88,23 @@ const listRequest = async (
 				printFiles(
 					result.data.content,
 					false /* Don't show full path */,
-					nextSetToken === '' /* Print the headers only on the first request */
+					firstRun /* Print the headers only on the first request */
 				)
 				startSpin(spinnerText)
 			}
 
 			allFiles = [...allFiles, ...result.data.content]
 		}
+
+		// Don't show headers after the first run
+		firstRun = false
 	} while (nextSetToken) // Keep doing the
 	// above list request until there is no nextSetToken returned
+
+	// Once we are done getting all files, print out the number of files
+	const spinnerText = stopSpin()
+	printInfo(`${allFiles.length} files/folders`)
+	startSpin(spinnerText)
 
 	// Check if there is a response
 	if (allFiles.length > 0) {
