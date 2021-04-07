@@ -99,7 +99,7 @@ const listRequest = async (
 	} while (nextSetToken) // Keep doing the
 	// above list request until there is no nextSetToken returned
 
-	// Once we are done getting all files, print out the number of files (this is 
+	// Once we are done getting all files, print out the number of files (this is
 	// only if the no of files is > 50)
 	if (allFiles.length > 50) {
 		const spinnerText = stopSpin()
@@ -808,7 +808,7 @@ const Client = class {
 		// If there is a file name, remove it from the folder path
 		if (fileName) {
 			folderPath = folderPath.split('/')
-			folderPath = folderPath.slice(0, folderPath.length - 1).join('/')
+			folderPath = folderPath.slice(0, -1).join('/')
 		}
 
 		startSpin(`Fetching file ${highlight(diskPath(folderPath, fileName))}`)
