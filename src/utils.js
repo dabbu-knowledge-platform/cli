@@ -205,7 +205,7 @@ exports.refreshAccessToken = async (drive) => {
 			) // Multiply by thousands to keep milliseconds)
 			// Tell the user
 			this.printInfo(
-				`\nRefreshed access token, expires at ${new Date(
+				`Refreshed access token, expires at ${new Date(
 					this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
 				).toLocaleString()}`
 			)
