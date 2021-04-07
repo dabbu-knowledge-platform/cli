@@ -101,10 +101,13 @@ const listRequest = async (
 	} while (nextSetToken) // Keep doing the
 	// above list request until there is no nextSetToken returned
 
-	// Once we are done getting all files, print out the number of files
-	const spinnerText = stopSpin()
-	printInfo(`${allFiles.length} files/folders`)
-	startSpin(spinnerText)
+	// Once we are done getting all files, print out the number of files (this is 
+	// only if the no of files is > 50)
+	if (allFiles.length > 50) {
+		const spinnerText = stopSpin()
+		printInfo(`${allFiles.length} files/folders`)
+		startSpin(spinnerText)
+	}
 
 	// Check if there is a response
 	if (allFiles.length > 0) {
