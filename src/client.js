@@ -17,8 +17,6 @@
  */
 
 const fs = require('fs-extra')
-const ora = require('ora')
-const chalk = require('chalk')
 const axios = require('axios').default
 const prompt = require('readcommand')
 const express = require('express')
@@ -810,7 +808,7 @@ const Client = class {
 		// If there is a file name, remove it from the folder path
 		if (fileName) {
 			folderPath = folderPath.split('/')
-			folderPath = folderPath.slice(0, folderPath - 1).join('/')
+			folderPath = folderPath.slice(0, folderPath.length - 1).join('/')
 		}
 
 		startSpin(`Fetching file ${highlight(diskPath(folderPath, fileName))}`)
