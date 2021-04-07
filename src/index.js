@@ -454,7 +454,9 @@ function getPromptPs() {
 	const drive = get('current-drive')
 	const driveVars = get(`drives.${drive}`) || {}
 	// Return the drive and the current path as the PS
-	return chalk.cyan(`${drive}:${driveVars.path || ''}$ `)
+	return chalk.cyan(
+		`${drive}:${(driveVars.path || '') === '' ? '/' : driveVars.path}$ `
+	)
 }
 
 function getPromptHistory() {
