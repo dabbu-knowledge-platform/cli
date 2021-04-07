@@ -115,6 +115,8 @@ exports.generateBodyAndHeaders = async (drive) => {
 // A helper function to regenerate the access token in case
 // it has expired
 exports.refreshAccessToken = async (drive) => {
+	// Stop loading
+	const spinnerText = this.stopSpin()
 	// The provider config
 	let providerConfigJson = await axios.get(
 		'https://dabbu-knowledge-platform.github.io/schema/provider-fields.json'
@@ -207,13 +209,13 @@ exports.refreshAccessToken = async (drive) => {
 					this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
 				).toLocaleString()}`
 			)
-			// Return successfully
-		} else {
-			// If it is not expired, return successfully
 		}
-	} else {
-		// If there is no auth required for that provider, return successfully
+		// If it is not expired, return successfully
 	}
+
+	// If there is no auth required for that provider, return successfully
+	// Before returning, resume loading
+	this.startSpin(spinnerText)
 }
 
 // Return an absolute path based on the current path in
