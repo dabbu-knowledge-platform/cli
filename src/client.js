@@ -824,8 +824,6 @@ const Client = class {
 		)
 		// Open it in the default app
 		open(localPath, { wait: false })
-
-		// Return successfully
 	}
 
 	async copy(args) {
@@ -988,8 +986,6 @@ const Client = class {
 				throw error
 			}
 		}
-
-		// Return successfully
 	}
 
 	async move(args) {
@@ -1201,8 +1197,6 @@ const Client = class {
 				throw error
 			}
 		}
-
-		// Return successfully
 	}
 
 	async delete(args) {
@@ -1267,7 +1261,6 @@ const Client = class {
 					: highlight(diskPath(folderPath, fileName ? fileName : ''))
 			}`
 		)
-		// Return successfully
 	}
 
 	async sync(args) {
