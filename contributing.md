@@ -68,7 +68,6 @@ $ git checkout -b feature/add-awesome-new-feature -t upstream/develop
 
 ### Step 4: Code
 
-
 The code is heavily commented to allow you to understand exactly what happens where.
 
 - `src/index.js` contains UI code.
