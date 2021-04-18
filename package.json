@@ -14,14 +14,14 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/gamemaker1/dabbu-cli.git"
+		"url": "git+https://github.com/dabbu-knowledge-platform/cli.git"
 	},
 	"author": "gamemaker1",
 	"license": "GPL-3.0-or-later",
 	"bugs": {
-		"url": "https://github.com/gamemaker1/dabbu-cli/issues"
+		"url": "https://github.com/dabbu-knowledge-platform/cli/issues"
 	},
-	"homepage": "https://github.com/gamemaker1/dabbu-cli#readme",
+	"homepage": "https://github.com/dabbu-knowledge-platform/cli#readme",
 	"dependencies": {
 		"axios": "^0.21.1",
 		"chalk": "^4.1.0",

@@ -1,6 +1,6 @@
 /* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
  *
- * Copyright (C) 2021  gamemaker1
+ * Copyright (C) 2021  Dabbu Knowledge Platform <dabbuknowledgeplatform@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -454,7 +454,9 @@ function getPromptPs() {
 	const drive = get('current-drive')
 	const driveVars = get(`drives.${drive}`) || {}
 	// Return the drive and the current path as the PS
-	return chalk.cyan(`${drive}:${driveVars.path || ''}$ `)
+	return chalk.cyan(
+		`${drive}:${(driveVars.path || '') === '' ? '/' : driveVars.path}$ `
+	)
 }
 
 function getPromptHistory() {

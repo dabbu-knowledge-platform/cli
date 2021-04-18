@@ -82,6 +82,9 @@ function add_release_notes {
 		exit 1
 	fi
 
+	# Do a git fetch to get new tags (if any)
+	git fetch origin --quiet
+
 	# Get the new version
 	local new_release_tag=`cat version`
 	# Get the last version

@@ -1,6 +1,6 @@
 /* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
  *
- * Copyright (C) 2021  gamemaker1
+ * Copyright (C) 2021  Dabbu Knowledge Platform <dabbuknowledgeplatform@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
  */
 
 const fs = require('fs-extra')
-const ora = require('ora')
-const chalk = require('chalk')
 const axios = require('axios').default
 const prompt = require('readcommand')
 const express = require('express')
@@ -61,6 +59,7 @@ const listRequest = async (
 	// The URL to send the request to
 	let allFiles = []
 	let nextSetToken = ''
+	let firstRun = true
 	do {
 		const url = `${server}/files-api/v2/data/${provider}/${encodedFolderPath}?exportType=view&orderBy=kind&direction=desc&nextSetToken=${nextSetToken}`
 
@@ -87,15 +86,26 @@ const listRequest = async (
 				printFiles(
 					result.data.content,
 					false /* Don't show full path */,
-					nextSetToken === '' /* Print the headers only on the first request */
+					firstRun /* Print the headers only on the first request */
 				)
 				startSpin(spinnerText)
 			}
 
 			allFiles = [...allFiles, ...result.data.content]
 		}
+
+		// Don't show headers after the first run
+		firstRun = false
 	} while (nextSetToken) // Keep doing the
 	// above list request until there is no nextSetToken returned
+
+	// Once we are done getting all files, print out the number of files (this is
+	// only if the no of files is > 50)
+	if (allFiles.length > 50) {
+		const spinnerText = stopSpin()
+		printInfo(`${allFiles.length} files/folders`)
+		startSpin(spinnerText)
+	}
 
 	// Check if there is a response
 	if (allFiles.length > 0) {
@@ -798,7 +808,7 @@ const Client = class {
 		// If there is a file name, remove it from the folder path
 		if (fileName) {
 			folderPath = folderPath.split('/')
-			folderPath = folderPath.slice(0, folderPath - 1).join('/')
+			folderPath = folderPath.slice(0, -1).join('/')
 		}
 
 		startSpin(`Fetching file ${highlight(diskPath(folderPath, fileName))}`)
@@ -814,8 +824,6 @@ const Client = class {
 		)
 		// Open it in the default app
 		open(localPath, { wait: false })
-
-		// Return successfully
 	}
 
 	async copy(args) {
@@ -978,8 +986,6 @@ const Client = class {
 				throw error
 			}
 		}
-
-		// Return successfully
 	}
 
 	async move(args) {
@@ -1191,8 +1197,6 @@ const Client = class {
 				throw error
 			}
 		}
-
-		// Return successfully
 	}
 
 	async delete(args) {
@@ -1257,7 +1261,6 @@ const Client = class {
 					: highlight(diskPath(folderPath, fileName ? fileName : ''))
 			}`
 		)
-		// Return successfully
 	}
 
 	async sync(args) {

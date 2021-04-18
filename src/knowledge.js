@@ -1,6 +1,6 @@
 /* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
  *
- * Copyright (C) 2021  gamemaker1
+ * Copyright (C) 2021  Dabbu Knowledge Platform <dabbuknowledgeplatform@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
  */
 
 const fs = require('fs-extra')
-const ora = require('ora')
 const chalk = require('chalk')
 const axios = require('axios').default
 const prompt = require('readcommand')

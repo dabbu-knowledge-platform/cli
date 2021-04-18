@@ -1,6 +1,6 @@
 /* Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online
  *
- * Copyright (C) 2021  gamemaker1
+ * Copyright (C) 2021  Dabbu Knowledge Platform <dabbuknowledgeplatform@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,6 +115,8 @@ exports.generateBodyAndHeaders = async (drive) => {
 // A helper function to regenerate the access token in case
 // it has expired
 exports.refreshAccessToken = async (drive) => {
+	// Stop loading
+	const spinnerText = this.stopSpin()
 	// The provider config
 	let providerConfigJson = await axios.get(
 		'https://dabbu-knowledge-platform.github.io/schema/provider-fields.json'
@@ -203,17 +205,17 @@ exports.refreshAccessToken = async (drive) => {
 			) // Multiply by thousands to keep milliseconds)
 			// Tell the user
 			this.printInfo(
-				`\nRefreshed access token, expires at ${new Date(
+				`Refreshed access token, expires at ${new Date(
 					this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
 				).toLocaleString()}`
 			)
-			// Return successfully
-		} else {
-			// If it is not expired, return successfully
 		}
-	} else {
-		// If there is no auth required for that provider, return successfully
+		// If it is not expired, return successfully
 	}
+
+	// If there is no auth required for that provider, return successfully
+	// Before returning, resume loading
+	this.startSpin(spinnerText)
 }
 
 // Return an absolute path based on the current path in
@@ -458,7 +460,7 @@ exports.printFiles = (files, printFullPath = false, showHeaders = true) => {
 
 	// Print out the table
 	if (table.length > 0) {
-		this.printInfo(`${table.length} files/folders`)
+		if (showHeaders) this.printInfo(`${table.length} files/folders`)
 		console.log(table.toString())
 	}
 }
