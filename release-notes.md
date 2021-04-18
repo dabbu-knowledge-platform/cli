@@ -1,27 +1,21 @@
-## Features added
-
-- feat(logging): log errors only if env var PRINT_ERRORS is set [544f51a]
-	- run `PRINT_ERRORS=true dabbu-cli` to enable verbose error logging
-- feat(list method/`ls`): folders are returned first (though this might not be seen when the result is more than 50 items long)
-- feat(list api): implement pagination [d641cfc]
-	- results are requested in batches of 50
-	- as the results come in, they are printed
-	- only exception is the hard drive provider, as it does not support pagination
-
 ## Bug fixes
+- fix(read): folder path is always null [fbbd944]
+	- typo in code, did not specify .length in slice() function call
+- fix(utils): remove unnecessary \n while printing token expiry [99ec1bf]
+- fix(list): don't print no of files/folders in dir twice [9997c23]
 
-- fix(spinner): use only one spinner throughout the CLI [4615dcc, 59daa55]
-- fix(oauth): 400 error while refreshing access token [cca941e]
-	- send auth metadata in query param or request body based on send-auth-metadata-in variable in provider-fields.json
-- fix(setup): init method had names with _ [9e90719]
-	- changed them to -	
+- fix(list): show number of files listed at the end if no of files > 50 [6eb8290]
+	- also show headers when listing files, they were not shown since last release due to a bug
+- fix(spinner): hide spinner while printing access token expiry time [973cd34]
+- fix(prompt): show / in prompt if in root dir [59edb12]
 
-## Changes to install script
+## Documentation
+- docs: add code of conduct [9bf14ba]
+- fix(contributing): update instructions regarding linter [035d18e]
+- docs(readme): copy website intro, install and getting started parts to readme [8fc2929]
 
-- feat(install scipt): add comments, rename -f to -d (for dry run) and remove -o in install script [3054fed]
-- fix(bump version script): don't push tags, else ci doesn't release assets [15257a9]
+## Legal stuff
+- docs: change copyright headers to Dabbu Knowledge Platform [6467227]
 
-## Builds/CI
-
-- ci: test and build for all branches, release only for main [aa02a8f]
-- ci: release builds only from main branch [2a273f9]
+## Build/CI
+- fix(version script): fetch tags before generating release notes [87ab616]
