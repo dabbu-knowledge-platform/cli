@@ -43,12 +43,7 @@ const {
 	diskPath
 } = require('./utils')
 
-const listRequest = async (
-	drive,
-	folderPath,
-	regex,
-	printOnReceive = false
-) => {
+const listRequest = async (drive, folderPath, regex, callback = null) => {
 	// Get the server address, provider ID and URL encode the folder path
 	const server = get('server')
 	const provider = get(`drives.${drive}.provider`)
@@ -80,21 +75,15 @@ const listRequest = async (
 
 		// Add the files we got right now to the main list
 		if (result.data.content) {
-			if (printOnReceive) {
-				const spinnerText = stopSpin()
-				// Print the files
-				printFiles(
-					result.data.content,
-					false /* Don't show full path */,
-					firstRun /* Print the headers only on the first request */
-				)
-				startSpin(spinnerText)
+			// Run the callback, if any
+			if (callback) {
+				// eslint-disable-next-line no-await-in-loop
+				await callback(result.data.content, firstRun)
 			}
 
 			allFiles = [...allFiles, ...result.data.content]
 		}
 
-		// Don't show headers after the first run
 		firstRun = false
 	} while (nextSetToken) // Keep doing the
 	// above list request until there is no nextSetToken returned
@@ -781,7 +770,21 @@ const Client = class {
 		)
 
 		// Fetch the files from the server and print them as you get them
-		const files = await listRequest(drive, folderPath, regex, true)
+		const files = await listRequest(
+			drive,
+			folderPath,
+			regex,
+			(files, firstRun) => {
+				const spinnerText = stopSpin()
+				// Print the files
+				printFiles(
+					files,
+					false /* Don't show full path */,
+					firstRun /* Print the headers only on the first request */
+				)
+				startSpin(spinnerText)
+			}
+		)
 
 		// Stop loading
 		stopSpin()
@@ -874,11 +877,10 @@ const Client = class {
 		// Check if the user has given some regex and matching files are to
 		// be copied
 		if (fromRegex) {
-			const files = await listRequest(fromDrive, fromFolderPath, fromRegex)
-			if (files && files.length > 0) {
-				// Keep a count of copied files and errored files
-				let copiedFilesCount = 0
-				let erroredFilesCount = 0
+			// Keep a count of copied files and errored files
+			let copiedFilesCount = 0
+			let erroredFilesCount = 0
+			await listRequest(fromDrive, fromFolderPath, fromRegex, async (files) => {
 				// Loop through the files, download then upload each one
 				for (let i = 0, length = files.length; i < length; i++) {
 					// The file obj
@@ -932,22 +934,15 @@ const Client = class {
 						startSpin(spinnerText)
 					}
 				}
-
-				// Stop loading, we are done
-				stopSpin()
-				// Tell the user the number of files we copied and skipped
-				printInfo(
-					`Copied ${highlight(
-						copiedFilesCount
-					)} files successfully, ${highlight(
-						erroredFilesCount
-					)} skipped due to errors`
-				)
-				// Return succesfully
-			} else {
-				// Stop loading, error out
-				throw new Error('No files matched that regex')
-			}
+			})
+			// Stop loading, we are done
+			stopSpin()
+			// Tell the user the number of files we copied and skipped
+			printInfo(
+				`Copied ${highlight(copiedFilesCount)} files successfully, ${highlight(
+					erroredFilesCount
+				)} skipped due to errors`
+			)
 		} else {
 			// Surround in a try catch to stop spinner when an error is thrown
 			try {
@@ -1036,121 +1031,121 @@ const Client = class {
 		// Check if the user has given some regex and matching files are to
 		// be copied
 		if (fromRegex) {
-			const files = await listRequest(fromDrive, fromFolderPath, fromRegex)
-			if (files && files.length > 0) {
-				// Keep a count of number of files moved and skipped due to errors
-				let movedFilesCount = 0
-				let erroredFilesCount = 0
-				// Else loop through the files, download then upload and then delete
-				// each one
-				for (let i = 0, length = files.length; i < length; i++) {
-					// The file obj
-					const file = files[i]
+			// Keep a count of number of files moved and skipped due to errors
+			let movedFilesCount = 0
+			let erroredFilesCount = 0
+			const files = await listRequest(
+				fromDrive,
+				fromFolderPath,
+				fromRegex,
+				async (files) => {
+					// Loop through the files, download then upload and then delete
+					// each one
+					for (let i = 0, length = files.length; i < length; i++) {
+						// The file obj
+						const file = files[i]
 
-					// Update the spinner
-					startSpin(
-						`Moving file ${highlight(
-							diskPath(toFolderPath, file.name)
-						)} to ${highlight(diskPath(toFolderPath, file.name))}`
-					)
+						// Update the spinner
+						startSpin(
+							`Moving file ${highlight(
+								diskPath(toFolderPath, file.name)
+							)} to ${highlight(diskPath(toFolderPath, file.name))}`
+						)
 
-					// If the drive is the same, then simply update the file
-					if (fromDrive === toDrive) {
-						// Surround in try-catch to stop spinner in case
-						// an error is thrown
-						try {
-							// Skip if its a folder
-							if (file.kind === 'folder') {
-								throw new Error(
-									'Copying/moving/downloading folders is not yet supported, only deleting is'
+						// If the drive is the same, then simply update the file
+						if (fromDrive === toDrive) {
+							// Surround in try-catch to stop spinner in case
+							// an error is thrown
+							try {
+								// Skip if its a folder
+								if (file.kind === 'folder') {
+									throw new Error(
+										'Copying/moving/downloading folders is not yet supported, only deleting is'
+									)
+								}
+
+								// Update the file
+								// eslint-disable-next-line no-await-in-loop
+								await updateRequest(
+									fromDrive,
+									fromFolderPath,
+									file.name,
+									toFolderPath,
+									file.name
 								)
-							}
-
-							// Update the file
-							// eslint-disable-next-line no-await-in-loop
-							await updateRequest(
-								fromDrive,
-								fromFolderPath,
-								file.name,
-								toFolderPath,
-								file.name
-							)
-							// Increase the moved files count
-							movedFilesCount++
-							// Tell the user
-							const spinnerText = stopSpin()
-							printInfo(
-								`Moved file ${highlight(
-									diskPath(fromFolderPath, file.name)
-								)} to ${highlight(diskPath(toFolderPath, file.name))}`
-							)
-							startSpin(spinnerText)
-						} catch (error) {
-							// Increase the error count
-							erroredFilesCount++
-							// Print the error, but continue
-							const spinnerText = stopSpin()
-							printError(error, false)
-							startSpin(spinnerText)
-						}
-					} else {
-						// Surround in try-catch to stop spinner in case
-						// an error is thrown
-						try {
-							// Skip if its a folder
-							if (file.kind === 'folder') {
-								throw new Error(
-									'Copying/moving/downloading folders is not yet supported, only deleting is'
+								// Increase the moved files count
+								movedFilesCount++
+								// Tell the user
+								const spinnerText = stopSpin()
+								printInfo(
+									`Moved file ${highlight(
+										diskPath(fromFolderPath, file.name)
+									)} to ${highlight(diskPath(toFolderPath, file.name))}`
 								)
+								startSpin(spinnerText)
+							} catch (error) {
+								// Increase the error count
+								erroredFilesCount++
+								// Print the error, but continue
+								const spinnerText = stopSpin()
+								printError(error, false)
+								startSpin(spinnerText)
 							}
+						} else {
+							// Surround in try-catch to stop spinner in case
+							// an error is thrown
+							try {
+								// Skip if its a folder
+								if (file.kind === 'folder') {
+									throw new Error(
+										'Copying/moving/downloading folders is not yet supported, only deleting is'
+									)
+								}
 
-							// Fetch the file
-							// eslint-disable-next-line no-await-in-loop
-							const localPath = await downloadRequest(
-								fromDrive,
-								fromFolderPath,
-								file.name
-							)
-							// Upload the file
-							// eslint-disable-next-line no-await-in-loop
-							await uploadRequest(toDrive, toFolderPath, file.name, localPath)
-							// Delete the original file
-							// eslint-disable-next-line no-await-in-loop
-							await deleteRequest(fromDrive, fromFolderPath, file.name)
-							// Increase the moved files count
-							movedFilesCount++
-							// Tell the user
-							const spinnerText = stopSpin()
-							printInfo(
-								`Moved file ${highlight(
-									diskPath(fromFolderPath, file.name)
-								)} to ${highlight(diskPath(toFolderPath, file.name))}`
-							)
-							startSpin(spinnerText)
-						} catch (error) {
-							// Increase the error count
-							erroredFilesCount++
-							// Print the error, but continue
-							const spinnerText = stopSpin()
-							printError(error, false)
-							startSpin(spinnerText)
+								// Fetch the file
+								// eslint-disable-next-line no-await-in-loop
+								const localPath = await downloadRequest(
+									fromDrive,
+									fromFolderPath,
+									file.name
+								)
+								// Upload the file
+								// eslint-disable-next-line no-await-in-loop
+								await uploadRequest(toDrive, toFolderPath, file.name, localPath)
+								// Delete the original file
+								// eslint-disable-next-line no-await-in-loop
+								await deleteRequest(fromDrive, fromFolderPath, file.name)
+								// Increase the moved files count
+								movedFilesCount++
+								// Tell the user
+								const spinnerText = stopSpin()
+								printInfo(
+									`Moved file ${highlight(
+										diskPath(fromFolderPath, file.name)
+									)} to ${highlight(diskPath(toFolderPath, file.name))}`
+								)
+								startSpin(spinnerText)
+							} catch (error) {
+								// Increase the error count
+								erroredFilesCount++
+								// Print the error, but continue
+								const spinnerText = stopSpin()
+								printError(error, false)
+								startSpin(spinnerText)
+							}
 						}
 					}
 				}
+			)
 
-				// Stop loading, we are done
-				stopSpin()
-				// Tell the user the number of files we copied and skipped
-				printInfo(
-					`Moved ${highlight(movedFilesCount)} files successfully, ${highlight(
-						erroredFilesCount
-					)} skipped due to errors`
-				)
-				// Return succesfully
-			} else {
-				// Stop loading, error out
-				throw new Error('No files matched that regex')
-			}
+			// Stop loading, we are done
+			stopSpin()
+			// Tell the user the number of files we copied and skipped
+			printInfo(
+				`Moved ${highlight(movedFilesCount)} files successfully, ${highlight(
+					erroredFilesCount
+				)} skipped due to errors`
+			)
 		} else {
 			// Surround in a try catch to stop spinner when an error is thrown
 			try {
