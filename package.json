@@ -8,8 +8,8 @@
 		"clean": "rm -r dist/ && mkdir dist/",
 		"format": "xo --fix",
 		"prebuild": "npm run test",
-		"build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
-		"ci-build": "npm prune --production && npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
+		"build": "npx pkg --output dist/dabbu-cli . --targets node14.16.1-win-x64,node14.16.1-macos-x64,node14.16.1-linux-x64,node14.16.1-alpine-x64",
+		"ci-build": "npm prune --production && npx pkg --output dist/dabbu-cli . --targets node14.16.1-win-x64,node14.16.1-macos-x64,node14.16.1-linux-x64,node14.16.1-alpine-x64",
 		"test": "xo"
 	},
 	"repository": {
@@ -38,8 +38,8 @@
 		"terminal-link": "^2.1.1"
 	},
 	"devDependencies": {
-		"pkg": "^4.5.1",
-		"xo": "^0.38.2"
+		"pkg": "^5.1.0",
+		"xo": "^0.39.1"
 	},
 	"bin": "src/index.js",
 	"pkg": {
