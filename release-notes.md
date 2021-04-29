@@ -1,9 +1,8 @@
-## Changes
+## Fixes
 
-- feat(list): add callback to list function [6aa04d6]
-  - call the callback for every fifty files instead of waiting for all files to be returned
-  - this applies to copy and move operations as well - they will be performed in batches of 50
+- fix(create): overwrite file when it already exists [c545421]
+  - also update access token even if it is still valid for the next 60 seconds
 
-## Maintenance
+## Builds/CI
 
-- chore(deps): update pkg and xo [c809e64]
+- fix(ci): allow prereleases from non main branches [5c6d66d]
