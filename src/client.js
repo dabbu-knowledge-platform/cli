@@ -277,7 +277,7 @@ const uploadRequest = async (drive, folderPath, fileName, localPath) => {
 		// Else error out
 		throw new Error(result.data.error.message)
 	} catch (error) {
-		if (error.code === 409 || error.status === 409) {
+		if (error && error.response && error.response.data && error.response.data.code === 409) {
 			printInfo(`\nOverwriting file ${diskPath(folderPath, fileName)}`)
 			return updateRequest(drive, folderPath, fileName)
 		}

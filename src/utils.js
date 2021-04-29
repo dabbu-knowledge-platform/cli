@@ -143,7 +143,8 @@ exports.refreshAccessToken = async (drive) => {
 		const expiresAtDate = Number(
 			this.get(`drives.${drive}.${providerConfig.auth.path}.expires-at`)
 		)
-		if (expiresAtDate < date) {
+		// Allow for a range of +- 60 seconds (60000 milliseconds)
+		if (expiresAtDate < date - 600000) {
 			// If it has expired, get the auth metadata and the refresh token first
 			const refreshToken = this.get(
 				`drives.${drive}.${providerConfig.auth.path}.refresh-token`
