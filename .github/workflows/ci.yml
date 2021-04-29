@@ -112,7 +112,7 @@ jobs:
         id: check-version
       - name: Create release
         # Run it only if the version has been changed
-        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version && github.ref == 'refs/heads/main' }}
+        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version }}
         uses: softprops/action-gh-release@v1
         with:
           body_path: release-notes.md
