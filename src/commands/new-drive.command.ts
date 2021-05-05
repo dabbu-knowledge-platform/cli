@@ -201,13 +201,17 @@ const setupDrive = async (
 				) &&
 				providerDetails.authDetails.redirectUri.split(':').length === 3
 			) {
-				Logger.debug(`command.new-drive.setupDrive: localhost redirect uri`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: localhost redirect uri`,
+				)
+
 				const port = providerDetails.authDetails.redirectUri.split(
 					':',
 				)[2]
-				Logger.debug(`command.new-drive.setupDrive: starting server on port ${port}`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: starting server on port ${port}`,
+				)
+
 				// Start a server and return the authorisation code when the user
 				// authorises the CLI
 				const code = await new Promise((resolve, reject) => {
@@ -215,11 +219,15 @@ const setupDrive = async (
 						// Return the code only if there is no error and the state variable matches
 						const queryParams = UrlLib.parse(request.url || '', true)
 							.query
-						Logger.debug(`command.new-drive.setupDrive: server received request with params: ${queryParams}`) 
-						
+						Logger.debug(
+							`command.new-drive.setupDrive: server received request with params: ${queryParams}`,
+						)
+
 						if (queryParams.error) {
-							Logger.debug(`command.new-drive.setupDrive: error occurred, aborting: ${queryParams.error}`)
-							
+							Logger.debug(
+								`command.new-drive.setupDrive: error occurred, aborting: ${queryParams.error}`,
+							)
+
 							result.writeHead(500)
 							result.end(
 								`The following error occurred: ${queryParams.error}`,
@@ -227,20 +235,26 @@ const setupDrive = async (
 							server.close()
 							reject(queryParams.error)
 						} else {
-							Logger.debug(`command.new-drive.setupDrive: authorisation successfull`)
-							
+							Logger.debug(
+								`command.new-drive.setupDrive: authorisation successfull`,
+							)
+
 							// Check that the state sent with the request matches the state received
 							// eslint-disable-next-line no-lonely-if
 							if (queryParams.state === state) {
-								Logger.debug(`command.new-drive.setupDrive: state verification successfull: ${queryParams.state} === ${state}`)
+								Logger.debug(
+									`command.new-drive.setupDrive: state verification successfull: ${queryParams.state} === ${state}`,
+								)
 								result.writeHead(200)
 								result.end(
 									'Thank you for authorising Dabbu CLI. Please close this window and go back to the CLI to complete the new drive setup.',
 								)
 								resolve(queryParams.code)
 							} else {
-								Logger.debug(`command.new-drive.setupDrive: state verification failed: ${queryParams.state} !== ${state}`)
-								
+								Logger.debug(
+									`command.new-drive.setupDrive: state verification failed: ${queryParams.state} !== ${state}`,
+								)
+
 								result.writeHead(400)
 								result.end(
 									'Error: URL state does not match. Please try again.',
@@ -257,13 +271,17 @@ const setupDrive = async (
 				})
 
 				// Make a POST request with the required params
-				Logger.debug(`command.new-drive.setupDrive: sending access token request`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: sending access token request`,
+				)
+
 				// Put the params as query params or in the request body depending on
 				// the provider
 				let tokenUrl = providerDetails.authDetails.tokenUri
-				Logger.debug(`command.new-drive.setupDrive: tokenUri: ${tokenUrl}`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: tokenUri: ${tokenUrl}`,
+				)
+
 				tokenUrl +=
 					providerDetails.authDetails.sendAuthMetadataIn ===
 					'requestQueryParameters'
@@ -279,10 +297,18 @@ const setupDrive = async (
 							? `code=${code}&client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${providerDetails.authDetails.redirectUri}&grant_type=authorization_code`
 							: {},
 				}
-				Logger.debug(`command.new-drive.setupDrive: making post request for access token: ${json(requestOptions)}`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: making post request for access token: ${json(
+						requestOptions,
+					)}`,
+				)
+
 				const { data } = await axios(requestOptions)
-				Logger.debug(`command.new-drive.setupDrive: received response from provider: ${json(data)}`)
+				Logger.debug(
+					`command.new-drive.setupDrive: received response from provider: ${json(
+						data,
+					)}`,
+				)
 
 				// Get the access token, refresh token and expiry time
 				const {
@@ -292,8 +318,14 @@ const setupDrive = async (
 					token_type: tokenType,
 				} = data
 
-				Logger.debug(`command.new-drive.setupDrive: storing accessToken: ${(tokenType || 'Bearer') + ' ' + accessToken}; refreshToken: ${refreshToken} and expiresAt: ${Number(Date.now()) + expiresIn * 1000}`)
-				
+				Logger.debug(
+					`command.new-drive.setupDrive: storing accessToken: ${
+						(tokenType || 'Bearer') + ' ' + accessToken
+					}; refreshToken: ${refreshToken} and expiresAt: ${
+						Number(Date.now()) + expiresIn * 1000
+					}`,
+				)
+
 				// Store it in config
 				Config.set(
 					`drives.${driveName}.auth.accessToken`,
@@ -315,13 +347,15 @@ const setupDrive = async (
 // The new drive command
 export const run = async (): Promise<void> => {
 	Logger.debug(`command.new-drive.run: fetching available providers`)
-	
+
 	// List the available
 	const providers = await getAvailableProviders()
 
 	Logger.debug(`command.new-drive.run: providers: ${providers}`)
 
-	Logger.debug(`command.new-drive.run: requesting provider, drive name from user`)
+	Logger.debug(
+		`command.new-drive.run: requesting provider, drive name from user`,
+	)
 	// Ask the user to select the provider to connect to this drive and the
 	// name of the drive
 	let {
@@ -330,25 +364,29 @@ export const run = async (): Promise<void> => {
 		driveName,
 	} = await Prompts.getDriveProviderAndName(providers)
 	Logger.debug(`command.new-drive.run: raw drive name: ${driveName}`)
-	
+
 	// Remove the colon from the drive name, if any
 	driveName = driveName.replace(/:/g, '')
 	Logger.debug(`command.new-drive.run: drive name: ${driveName}`)
 
-	Logger.debug(`command.new-drive.run: storing drive name: ${driveName}; provider ID: ${selectedProvider}`)
+	Logger.debug(
+		`command.new-drive.run: storing drive name: ${driveName}; provider ID: ${selectedProvider}`,
+	)
 	// Add the drive to the configuration file
 	Config.set(`drives.${driveName}.provider`, selectedProvider)
 
-	Logger.debug(`command.new-drive.run: checking for provider-specific fields`)
+	Logger.debug(
+		`command.new-drive.run: checking for provider-specific fields`,
+	)
 	// Now check if the drive requires any special setup
 	await setupDrive(selectedProvider, driveName)
 
-	Logger.debug(`command.new-drive.run: setting ${driveName} as current drive`)
+	Logger.debug(
+		`command.new-drive.run: setting ${driveName} as current drive`,
+	)
 	// Set the drive as the current drive
 	Config.set('currentDrive', driveName)
-	
+
 	// We're done!
-	print(
-		Chalk.green(`Drive ${driveName} was successfully created!`),
-	)
+	print(Chalk.green(`Drive ${driveName} was successfully created!`))
 }
