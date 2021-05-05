@@ -1,0 +1,112 @@
+{
+	"name": "cli",
+	"version": "3.0.0-alpha.0",
+	"main": "dist/index.js",
+	"bin": "dist/index.js",
+	"repository": "https://github.com/dabbu-knowledge-platform/cli",
+	"author": "Vedant K (gamemaker1) <gamemaker0042@gmail.com>",
+	"license": "GPL-3.0-or-later",
+	"scripts": {
+		"start": "yarn build && node dist/index.js",
+		"test": "yarn build && yarn jest --test-timeout 30000",
+		"coverage": "yarn build && yarn test --coverage && echo 'View coverage report at http://localhost:23984' && python -m http.server --directory coverage/lcov-report/ 23984",
+		"lint": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts'",
+		"fix": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
+		"clean": "yarn rimraf dist/ coverage/ execs/",
+		"build": "yarn clean && yarn tsc",
+		"preexecs": "yarn build && yarn global add pkg",
+		"execs": "yarn --prod && pkg --output execs/dabbu-cli . --targets node14-win-x64,node14-macos-x64,node14-linux-x64,node14-alpine-x64",
+		"postexecs": "yarn",
+		"ci": "yarn lint && yarn test && yarn execs"
+	},
+	"dependencies": {
+		"axios": "^0.21.1",
+		"chalk": "^4.1.0",
+		"cli-table3": "^0.6.0",
+		"conf": "^9.0.2",
+		"enquirer": "^2.3.6",
+		"env-paths": "^2.2.1",
+		"figlet": "^1.5.0",
+		"nanoid": "^3.1.22",
+		"ora": "^5.4.0",
+		"readcommand": "0.3.0",
+		"terminal-link": "2.1.1",
+		"winston": "^3.3.3"
+	},
+	"devDependencies": {
+		"@types/axios": "^0.14.0",
+		"@types/chalk": "^2.2.0",
+		"@types/env-paths": "^2.1.0",
+		"@types/figlet": "^1.5.0",
+		"@types/node": "^14.14.41",
+		"@types/ora": "^3.2.0",
+		"@types/terminal-link": "^1.2.0",
+		"@types/winston": "^2.4.4",
+		"@typescript-eslint/eslint-plugin": "^4.22.0",
+		"@typescript-eslint/parser": "^4.22.0",
+		"eslint": "^7.24.0",
+		"eslint-config-prettier": "^8.2.0",
+		"eslint-plugin-prettier": "^3.4.0",
+		"husky": "^6.0.0",
+		"jest": "^26.6.3",
+		"lint-staged": "^10.5.4",
+		"pkg": "^5.0.0",
+		"prettier": "^2.2.1",
+		"rimraf": "^3.0.2",
+		"ts-jest": "^26.5.5",
+		"typescript": "^4.2.4"
+	},
+	"jest": {
+		"transform": {
+			"^.+\\.ts$": "ts-jest"
+		},
+		"testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+		"moduleFileExtensions": [
+			"ts",
+			"js",
+			"json"
+		]
+	},
+	"prettier": {
+		"semi": false,
+		"trailingComma": "all",
+		"singleQuote": true,
+		"printWidth": 72,
+		"useTabs": true,
+		"tabWidth": 2
+	},
+	"eslintConfig": {
+		"parser": "@typescript-eslint/parser",
+		"parserOptions": {
+			"ecmaVersion": 2020,
+			"sourceType": "module"
+		},
+		"extends": [
+			"plugin:@typescript-eslint/recommended",
+			"plugin:prettier/recommended"
+		],
+		"rules": {
+			"@typescript-eslint/no-non-null-assertion": 0,
+			"@typescript-eslint/no-explicit-any": 0,
+			"@typescript-eslint/no-unused-vars": 0
+		}
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*.ts": [
+			"eslint --fix"
+		]
+	},
+	"pkg": {
+		"scripts": [
+			"dist/**/*.js"
+		],
+		"assets": [
+			"node_modules/**/*.js"
+		]
+	}
+}
