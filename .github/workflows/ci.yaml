@@ -33,5 +33,5 @@ jobs:
       - name: Uploading built executables
         uses: actions/upload-artifact@v2
         with:
-          name: Files API Server Executables
+          name: Dabbu CLI Executables
           path: execs/*

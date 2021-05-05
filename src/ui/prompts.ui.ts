@@ -17,6 +17,9 @@ import Logger from '../utils/logger.util'
 
 // Ask which server they want to connect to
 export const getServerUrl = (): Promise<{ serverUrl: string }> => {
+	Logger.debug(
+		`ui.prompts.getServerUrl: requesting user to enter serverUrl`,
+	)
 	return prompt({
 		type: 'input',
 		name: 'serverUrl',
@@ -40,6 +43,10 @@ export const getDriveProviderAndName = (
 	selectedProvider: string
 	driveName: string
 }> => {
+	Logger.debug(
+		`ui.prompts.getDriveProviderAndName: requesting user to enter provider ID and drive name`,
+	)
+
 	return prompt([
 		{
 			type: 'select',
@@ -67,6 +74,10 @@ export const getFieldValueFromUser = (
 	description: string | undefined,
 	type: 'string' | 'number',
 ): Promise<{ fieldValue: string }> => {
+	Logger.debug(
+		`ui.prompts.getFieldValueFromUser: requesting user to enter field value: prompt: ${ps}; description: ${description}; type: ${type}`,
+	)
+
 	let promptType: string
 	switch (type) {
 		case 'string':
@@ -88,6 +99,10 @@ export const getFieldValueFromUser = (
 
 // Read the user's command
 export const getUserCommand = async (): Promise<{ args: string[] }> => {
+	Logger.debug(
+		`ui.prompts.getUserCommand: requesting user to enter command`,
+	)
+
 	// Wrap it all in a promise, the readcommand module uses a callback
 	return new Promise((resolve, reject) => {
 		ReadCommand.read(
@@ -113,7 +128,16 @@ export const getUserCommand = async (): Promise<{ args: string[] }> => {
 						return arg
 					})
 					.join(' ')
+
+				Logger.debug(
+					`ui.prompts.getUserCommand: received command: ${command}`,
+				)
+
 				if (command !== '') {
+					Logger.debug(
+						`ui.prompts.getUserCommand: adding command to history`,
+					)
+
 					// Get current history
 					let history = (Config.get('history') as Array<string>) || []
 
@@ -125,6 +149,10 @@ export const getUserCommand = async (): Promise<{ args: string[] }> => {
 
 				// If there is an error, throw it
 				if (error) {
+					Logger.debug(
+						`ui.prompts.getUserCommand: error while getting command from user`,
+					)
+
 					reject(error)
 				}
 
