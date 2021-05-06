@@ -6,7 +6,7 @@ import * as Config from '../utils/config.util'
 import Logger from '../utils/logger.util'
 
 // Parse the given path for the drive name and the folder path
-export function parsePath(
+export function parseFolderPath(
 	rawPath: string | undefined,
 ): { drive: string; folderPath: string } {
 	// The name of the drive
@@ -44,6 +44,62 @@ export function parsePath(
 
 	// Return the drive name and the folder path
 	return { drive: drive, folderPath: folderPath }
+}
+
+// Parse the given path for the drive name, the folder path and the file name
+export function parseFilePath(
+	rawPath: string | undefined,
+): { drive: string; folderPath: string; fileName: string } {
+	// The name of the drive
+	let drive = ''
+	// If there is no path, let the path be '.', or the current folder
+	let folderPath = rawPath || '.'
+	// The name of the file
+	let fileName = ''
+
+	// Check if the path contains a drive
+	// If the path is 'c:/Dabbu/some-folder-with:a:colon', the split path will be
+	// ['c', '/Dabbu/some-folder-with', 'a', 'colon']
+	let splitPath = folderPath.split(':')
+	if (splitPath.length > 1) {
+		// The drive is the first element, i.e., 'c'
+		drive = splitPath[0]
+		// The rest of the array is the folder path, ignore colons in there, i.e.,
+		// '/Dabbu/some-folder-with:a:colon'
+		folderPath = splitPath.slice(1).join(':')
+	} else {
+		// If there is no drive, set the drive to the current drive. Also, the
+		// array will have only one element, which is the path
+		drive = Config.get('currentDrive') as string
+		folderPath = splitPath[0]
+	}
+
+	// Next, resolve relative paths like '..' and '.'
+	folderPath = resolvePath(
+		folderPath,
+		(Config.get(`drives.${drive}.path`) as string) || '',
+	)
+
+	// Check if the drive exists
+	if (!Config.get(`drives.${drive}.provider`)) {
+		throw new Error(`Drive ${drive} does not exist`)
+	}
+
+	// Now split out the file name
+	// This should result in ['', 'Dabbu', 'fileName']
+	splitPath = folderPath.split('/')
+	// The last element is the folder path
+	fileName = splitPath[splitPath.length - 1]
+	if (splitPath.length === 2) {
+		// The file is in the root folder
+		folderPath = '/'
+	} else {
+		// The file is in a subfolder
+		folderPath = splitPath.slice(0, splitPath.length - 1).join('/')
+	}
+
+	// Return the drive name, the folder path and the file name
+	return { drive, folderPath, fileName }
 }
 
 // Return an absolute path based on the current path in

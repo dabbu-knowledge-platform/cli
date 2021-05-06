@@ -1,6 +1,7 @@
 // Import all commands
 import { run as runCdCommand } from './commands/cd.command'
 import { run as runListCommand } from './commands/list.command'
+import { run as runReadCommand } from './commands/read.command'
 import { run as runNewDriveCommand } from './commands/new-drive.command'
 import { run as runClearCommand } from './commands/clear.command'
 
@@ -46,9 +47,18 @@ export default class Shell {
 				case 'l':
 				case 'la':
 				case 'lf':
+				case 'list':
 					Logger.debug(`shell.run: running ls: ${args.slice(1)}`)
 
 					await runListCommand(args.slice(1))
+					break
+				case 'cat':
+				case 'dl':
+				case 'read':
+				case 'open':
+					Logger.debug(`shell.run: running cat: ${args.slice(1)}`)
+
+					await runReadCommand(args.slice(1))
 					break
 				case 'new-drive':
 				case 'nd':
@@ -66,6 +76,8 @@ export default class Shell {
 					await runClearCommand()
 					break
 				case 'exit':
+				case 'q':
+				case 'quit':
 					Logger.debug(`shell.run: running exit: []`)
 
 					process.exit(0)

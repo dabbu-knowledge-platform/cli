@@ -12,7 +12,7 @@ export const run = async (args: string[]): Promise<void> => {
 
 	// Parse the drive and folder path from the args. If there are no args
 	// specified, go to the root folder
-	const { drive, folderPath } = FsUtils.parsePath(args[0] || '/')
+	const { drive, folderPath } = FsUtils.parseFolderPath(args[0] || '/')
 
 	Logger.debug(`command.cd.run: drive: ${drive}`)
 	Logger.debug(`command.cd.run: folderPath: ${folderPath}`)

@@ -24,7 +24,7 @@ import Logger from '../utils/logger.util'
 export const run = async (args: string[]): Promise<void> => {
 	Logger.debug(`command.list.run: ls called with args: ${args}`)
 	// Parse the drive and folder path from the args
-	const { drive, folderPath } = FsUtils.parsePath(args[0])
+	const { drive, folderPath } = FsUtils.parseFolderPath(args[0])
 
 	Logger.debug(`command.list.run: drive: ${drive}`)
 	Logger.debug(`command.list.run: folderPath: ${folderPath}`)
@@ -52,8 +52,9 @@ export const run = async (args: string[]): Promise<void> => {
 	// than 50 files in that folder. We need to make the same request and supply
 	// the nextSetToken as well in the query parameters to get the next 50 files,
 	// and so on, until the server does not return a nextSetToken.
-	const nextSetToken: string | undefined = undefined
+	let nextSetToken: string | undefined = undefined
 	do {
+		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',
 			baseURL: Config.get('serverUrl') as string,
@@ -71,6 +72,7 @@ export const run = async (args: string[]): Promise<void> => {
 			`command.list.run: making list request: ${json(requestOptions)}`,
 		)
 
+		// Make the request using axios
 		const { data } = await axios(requestOptions)
 
 		Logger.debug(`command.list.run: response received: ${json(data)}`)
@@ -152,6 +154,9 @@ export const run = async (args: string[]): Promise<void> => {
 
 			print(Chalk.yellow('Folder is empty'))
 		}
+
+		// Set the nextSetToken variable to the one returned by the server
+		nextSetToken = data.nextSetToken
 
 		// Start loading again
 		Spinner.start(text)

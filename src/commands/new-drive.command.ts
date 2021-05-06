@@ -4,8 +4,8 @@
 import axios, { AxiosRequestConfig } from 'axios'
 // Use the chalk library to write colourful text
 import Chalk from 'chalk'
-// Use the nanoid library to secure generate random strings
-import { nanoid } from 'nanoid'
+// Use the nanoid library to generate secure random strings
+import { nanoid as Nanoid } from 'nanoid'
 // Use the HTTP library to create a tiny web server to listen to requests
 import * as Http from 'http'
 import * as UrlLib from 'url'
@@ -166,7 +166,7 @@ const setupDrive = async (
 			// Now ask the user to authorise the app
 			// Construct the URL for authorisation
 			// Generate a random string to prevent CORS attacks
-			const state = nanoid()
+			const state = Nanoid()
 			const authorisationUrl =
 				providerDetails.authDetails.authUri +
 				'?client_id=' +
