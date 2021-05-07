@@ -25,9 +25,16 @@ import * as Spinner from '../ui/spinner.ui'
 // Import the logger
 import Logger from '../utils/logger.util'
 
-// The list command
+// The read command
 export const run = async (args: string[]): Promise<void> => {
 	Logger.debug(`command.read.run: read called with args: ${args}`)
+
+	// Check if the user has provided a file name
+	if (!args[0]) {
+		// Else throw an error
+		throw new Error('Please enter the path to the file you want to open, like this: `read ./Presentation.pptx`')
+	}
+
 	// Parse the drive and folder path from the args
 	const { drive, folderPath, fileName } = FsUtils.parseFilePath(args[0])
 

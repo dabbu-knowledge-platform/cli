@@ -102,7 +102,7 @@ export const run = async (args: string[]): Promise<void> => {
 		for (let i = 0, length = data.content.length; i < length; i++) {
 			const file = data.content[i]
 
-			Logger.debug(`command.list.run: printing file: ${file}`)
+			Logger.debug(`command.list.run: printing file: ${json(file)}`)
 
 			// File name - blue if folder, magenta if file
 			const name = file.name

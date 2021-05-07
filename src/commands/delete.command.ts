@@ -1,0 +1,96 @@
+// Command to delete a file/folder
+
+// Use the axios library to make network requests
+import axios, { AxiosRequestConfig } from 'axios'
+// Use the chalk library to write colourful text
+import Chalk from 'chalk'
+
+// Import all methods from config and utils
+import * as Config from '../utils/config.util'
+import * as FsUtils from '../utils/fs.util'
+import * as ProviderUtils from '../utils/provider.util'
+// Import the print statement
+import { print, json, path } from '../utils/general.util'
+// Import the spinner
+import * as Spinner from '../ui/spinner.ui'
+// Import the logger
+import Logger from '../utils/logger.util'
+
+// The delete command
+export const run = async (args: string[]): Promise<void> => {
+	Logger.debug(`command.delete.run: delete called with args: ${args}`)
+	
+	// Check if the user has provided a file/folder path
+	if (!args[0]) {
+		throw new Error('Please enter the path to the file/folder you want to delete, like this: `del ./Presentation.pptx` OR `del "./Work Files/"`')
+	}
+
+	// If the path is a folder path, it will have a trailing '/', else consider it to be a file
+	let drive, folderPath, fileName
+	if (args[0].endsWith('/')) {
+		let parsedPath = FsUtils.parseFolderPath(args[0])
+		drive = parsedPath.drive
+		folderPath = parsedPath.folderPath
+	} else {
+		let parsedPath = FsUtils.parseFilePath(args[0])
+		drive = parsedPath.drive
+		folderPath = parsedPath.folderPath
+		fileName = parsedPath.fileName
+	}
+
+	Logger.debug(`command.delete.run: drive: ${drive}`)
+	Logger.debug(`command.delete.run: folderPath: ${folderPath}`)
+	Logger.debug(`command.delete.run: fileName: ${fileName}`)
+
+	// Show a loading indicator
+	Spinner.start(
+		`Deleting ${Chalk.keyword('orange')(
+			`${drive}:${path(folderPath, fileName)}`,
+		)}`,
+	)
+
+	Logger.debug(
+		`command.delete.run: refreshing access token, retrieving request body and headers`,
+	)
+
+	// Refresh the access token, if any
+	await ProviderUtils.refreshAccessToken(drive)
+	// Get the provider ID, request body and request headers of the drive
+	const requestMeta = ProviderUtils.getRequestMetadata(drive)
+
+	Logger.debug(`command.delete.run: retrieved meta: ${json(requestMeta)}`)
+
+	// Define the options for the request
+	let requestOptions: AxiosRequestConfig = {
+		method: 'DELETE',
+		baseURL: Config.get('serverUrl') as string,
+		url: `/files-api/v3/data/${encodeURIComponent(
+			folderPath,
+		)}/${fileName ? encodeURIComponent(fileName) : ''}`,
+		params: {
+			providerId: requestMeta.providerId,
+		},
+		data: requestMeta.requestBodyFields,
+		headers: requestMeta.requestHeaderFields,
+	}
+
+	Logger.debug(
+		`command.delete.run: making delete request: ${json(requestOptions)}`,
+	)
+
+	// Make the request using axios
+	const { data } = await axios(requestOptions)
+
+	Logger.debug(`command.delete.run: response received: ${json(data)}`)
+
+	// Stop loading
+	Spinner.stop()
+	// Tell the user the file/folder was deleted
+	print(
+		Chalk.yellow(
+			`Deleting ${Chalk.keyword('orange')(
+				`${drive}:${path(folderPath, fileName)}`,
+			)}`
+		)
+	)
+}
