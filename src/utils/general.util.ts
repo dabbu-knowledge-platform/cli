@@ -8,7 +8,7 @@ export const print = console.log
 export const json = (value: any): string => {
 	// Convert the value to json using the toJSON method on it if it is circular
 	let jsonificableValue = value
-	if (value.toJSON) {
+	if (value && value.toJSON) {
 		jsonificableValue = value.toJSON()
 	}
 

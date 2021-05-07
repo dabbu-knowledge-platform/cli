@@ -21,6 +21,7 @@ import * as ProviderUtils from '../utils/provider.util'
 import { print, json } from '../utils/general.util'
 // Import the logger
 import Logger from '../utils/logger.util'
+import { ParsedUrlQuery } from 'node:querystring'
 
 // Get all possible providers we can set up
 const getAvailableProviders = async (): Promise<Array<string>> => {
@@ -72,7 +73,7 @@ const setupDrive = async (
 		// Loop through all fields
 		for (const field of fields) {
 			Logger.debug(
-				`command.new-drive.setupDrives: processing field ${field}`,
+				`command.new-drive.setupDrives: processing field ${json(field)}`,
 			)
 
 			// Check that the value for this field is to be provided by the user
@@ -179,7 +180,8 @@ const setupDrive = async (
 				state +
 				'&include_granted_scopes=true' +
 				'&response_type=code' +
-				'&access_type=offline'
+				'&access_type=offline' +
+				'&prompt=consent'
 
 			Logger.debug(
 				`command.new-drive.setupDrives: generated auth URL: ${authorisationUrl}`,
@@ -220,7 +222,7 @@ const setupDrive = async (
 						const queryParams = UrlLib.parse(request.url || '', true)
 							.query
 						Logger.debug(
-							`command.new-drive.setupDrive: server received request with params: ${queryParams}`,
+							`command.new-drive.setupDrive: server received request with params: ${json(queryParams)}`,
 						)
 
 						if (queryParams.error) {
@@ -293,9 +295,15 @@ const setupDrive = async (
 					url: tokenUrl,
 					data:
 						providerDetails.authDetails.sendAuthMetadataIn ===
-						'requestBody'
+						'requestBodyString'
 							? `code=${code}&client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${providerDetails.authDetails.redirectUri}&grant_type=authorization_code`
-							: {},
+							: providerDetails.authDetails.sendAuthMetadataIn === 'requestBody' ? {
+								code: code,
+								client_id: clientId,
+								client_secret: clientSecret,
+								redirect_uri: providerDetails.authDetails.redirectUri,
+								grant_type: 'authorization_code',
+							} : {},
 				}
 				Logger.debug(
 					`command.new-drive.setupDrive: making post request for access token: ${json(
@@ -321,7 +329,7 @@ const setupDrive = async (
 				Logger.debug(
 					`command.new-drive.setupDrive: storing accessToken: ${
 						(tokenType || 'Bearer') + ' ' + accessToken
-					}; refreshToken: ${refreshToken} and expiresAt: ${
+					}; refreshToken: ${refreshToken || Config.get(`drives.${driveName}.auth.refreshToken`)} and expiresAt: ${
 						Number(Date.now()) + expiresIn * 1000
 					}`,
 				)
@@ -333,7 +341,7 @@ const setupDrive = async (
 				)
 				Config.set(
 					`drives.${driveName}.auth.refreshToken`,
-					refreshToken,
+					refreshToken || Config.get(`drives.${driveName}.auth.refreshToken`),
 				)
 				Config.set(
 					`drives.${driveName}.auth.expiresAt`,
