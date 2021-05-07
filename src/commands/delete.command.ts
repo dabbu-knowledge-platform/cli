@@ -19,20 +19,22 @@ import Logger from '../utils/logger.util'
 // The delete command
 export const run = async (args: string[]): Promise<void> => {
 	Logger.debug(`command.delete.run: delete called with args: ${args}`)
-	
+
 	// Check if the user has provided a file/folder path
 	if (!args[0]) {
-		throw new Error('Please enter the path to the file/folder you want to delete, like this: `del ./Presentation.pptx` OR `del "./Work Files/"`')
+		throw new Error(
+			'Please enter the path to the file/folder you want to delete, like this: `del ./Presentation.pptx` OR `del "./Work Files/"`',
+		)
 	}
 
 	// If the path is a folder path, it will have a trailing '/', else consider it to be a file
 	let drive, folderPath, fileName
 	if (args[0].endsWith('/')) {
-		let parsedPath = FsUtils.parseFolderPath(args[0])
+		const parsedPath = FsUtils.parseFolderPath(args[0])
 		drive = parsedPath.drive
 		folderPath = parsedPath.folderPath
 	} else {
-		let parsedPath = FsUtils.parseFilePath(args[0])
+		const parsedPath = FsUtils.parseFilePath(args[0])
 		drive = parsedPath.drive
 		folderPath = parsedPath.folderPath
 		fileName = parsedPath.fileName
@@ -58,15 +60,17 @@ export const run = async (args: string[]): Promise<void> => {
 	// Get the provider ID, request body and request headers of the drive
 	const requestMeta = ProviderUtils.getRequestMetadata(drive)
 
-	Logger.debug(`command.delete.run: retrieved meta: ${json(requestMeta)}`)
+	Logger.debug(
+		`command.delete.run: retrieved meta: ${json(requestMeta)}`,
+	)
 
 	// Define the options for the request
-	let requestOptions: AxiosRequestConfig = {
+	const requestOptions: AxiosRequestConfig = {
 		method: 'DELETE',
 		baseURL: Config.get('serverUrl') as string,
-		url: `/files-api/v3/data/${encodeURIComponent(
-			folderPath,
-		)}/${fileName ? encodeURIComponent(fileName) : ''}`,
+		url: `/files-api/v3/data/${encodeURIComponent(folderPath)}/${
+			fileName ? encodeURIComponent(fileName) : ''
+		}`,
 		params: {
 			providerId: requestMeta.providerId,
 		},
@@ -75,7 +79,9 @@ export const run = async (args: string[]): Promise<void> => {
 	}
 
 	Logger.debug(
-		`command.delete.run: making delete request: ${json(requestOptions)}`,
+		`command.delete.run: making delete request: ${json(
+			requestOptions,
+		)}`,
 	)
 
 	// Make the request using axios
@@ -90,7 +96,7 @@ export const run = async (args: string[]): Promise<void> => {
 		Chalk.yellow(
 			`Deleting ${Chalk.keyword('orange')(
 				`${drive}:${path(folderPath, fileName)}`,
-			)}`
-		)
+			)}`,
+		),
 	)
 }

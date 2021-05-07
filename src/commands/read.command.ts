@@ -32,7 +32,9 @@ export const run = async (args: string[]): Promise<void> => {
 	// Check if the user has provided a file name
 	if (!args[0]) {
 		// Else throw an error
-		throw new Error('Please enter the path to the file you want to open, like this: `read ./Presentation.pptx`')
+		throw new Error(
+			'Please enter the path to the file you want to open, like this: `read ./Presentation.pptx`',
+		)
 	}
 
 	// Parse the drive and folder path from the args
