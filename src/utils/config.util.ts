@@ -34,6 +34,9 @@ const config = new Conf({
 		history: {
 			type: 'array',
 		},
+		creds: {
+			type: 'object',
+		},
 	},
 })
 
@@ -44,7 +47,9 @@ export const get = (path: string): any => {
 	const value = config.get(path)
 
 	Logger.debug(
-		`util.config.get: retrieving path ${path}, returned value: ${value}`,
+		`util.config.get: retrieving path ${path}, returned value: ${json(
+			value,
+		)}`,
 	)
 
 	return value

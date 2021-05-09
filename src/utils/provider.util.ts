@@ -94,7 +94,7 @@ export const ProviderSpec: Array<Provider> = [
 		[],
 		[
 			new Field(
-				'Authorization',
+				'X-Provider-Credentials',
 				'string',
 				"The access token retrieved from Google's OAuth servers upon user authorisation to access their Google Drive",
 				undefined,
@@ -117,7 +117,7 @@ export const ProviderSpec: Array<Provider> = [
 		[],
 		[
 			new Field(
-				'Authorization',
+				'X-Provider-Credentials',
 				'string',
 				"The access token retrieved from Google's OAuth servers upon user authorisation to access Gmail",
 				undefined,
@@ -140,7 +140,7 @@ export const ProviderSpec: Array<Provider> = [
 		[],
 		[
 			new Field(
-				'Authorization',
+				'X-Provider-Credentials',
 				'string',
 				"The access token retrieved from Microsoft's OAuth servers upon user authorisation to access their OneDrive",
 				undefined,

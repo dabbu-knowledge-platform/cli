@@ -1,8 +1,9 @@
+.vscode
+*.log
+
 logs/
 dist/
 execs/
 ignore/
 coverage/
 node_modules/
-
-*.log

@@ -1,11 +1,11 @@
 // The main file
 
+// Use the axios library to make network requests
+import axios, { AxiosRequestConfig } from 'axios'
 // Use the figlet library to draw the logo
 import Figlet from 'figlet'
 // Use the chalk library to write colourful text
 import Chalk from 'chalk'
-// Use spawn to restart the CLI
-import { spawn } from 'child_process'
 
 // Import all prompts from prompts.ts
 import * as Prompts from './ui/prompts.ui'
@@ -78,6 +78,59 @@ const checkConfig = async (): Promise<void> => {
 		Logger.debug(
 			`startup.checkConfig: set serverUrl to ${Config.get(
 				'serverUrl',
+			)}`,
+		)
+	}
+
+	Logger.debug(`startup.checkConfig: checking client ID - API key pair`)
+
+	// Check if the credentials exist
+	// The creds object will be of the following format: {
+	//	 clientId: '...',
+	//   apiKey: '...',
+	//   token: '...'
+	// }
+	const creds = Config.get('creds')
+
+	Logger.debug(`startup.checkConfig: creds: ${json(creds)}`)
+
+	// If they are undefined, get the credentials
+	if (!creds || !creds.clientId || !creds.apiKey) {
+		// Make a request to the server to register a client
+		// Define the request options
+		const requestOptions: AxiosRequestConfig = {
+			method: 'POST',
+			baseURL: Config.get('serverUrl') as string,
+			url: '/files-api/v3/clients/',
+		}
+
+		Logger.debug(
+			`startup.checkConfig: making post request: ${json(
+				requestOptions,
+			)}`,
+		)
+
+		// Make the request using axios
+		const { data } = await axios(requestOptions)
+
+		Logger.debug(
+			`startup.checkConfig: response received: ${json(data)}`,
+		)
+
+		// Store the received client ID and API key
+		Config.set('creds.clientId', data.content.id)
+		Config.set('creds.apiKey', data.content.apiKey)
+		// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+		Config.set(
+			'creds.token',
+			Buffer.from(`${data.content.id}:${data.content.apiKey}`).toString(
+				'base64',
+			),
+		)
+
+		Logger.debug(
+			`startup.checkConfig: credentials obtained - ${json(
+				Config.get('creds'),
 			)}`,
 		)
 	}

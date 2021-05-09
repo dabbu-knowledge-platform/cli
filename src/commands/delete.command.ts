@@ -75,7 +75,10 @@ export const run = async (args: string[]): Promise<void> => {
 			providerId: requestMeta.providerId,
 		},
 		data: requestMeta.requestBodyFields,
-		headers: requestMeta.requestHeaderFields,
+		headers: {
+			...requestMeta.requestHeaderFields,
+			'X-Credentials': Config.get('creds.token') as string,
+		},
 	}
 
 	Logger.debug(

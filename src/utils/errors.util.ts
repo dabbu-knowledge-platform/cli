@@ -38,7 +38,9 @@ export const getErrorMessage = (
 					: 'Unknown error'
 
 			Logger.debug(
-				`util.error.getErrorMessage: axios error detected; message: ${errorMessage}; response data: ${error.response.data}`,
+				`util.error.getErrorMessage: axios error detected; message: ${errorMessage}; response data: ${json(
+					error.response.data,
+				)}`,
 			)
 
 			return errorMessage

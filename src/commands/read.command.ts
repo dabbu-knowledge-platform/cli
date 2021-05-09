@@ -73,7 +73,10 @@ export const run = async (args: string[]): Promise<void> => {
 			exportType: 'media',
 		},
 		data: requestMeta.requestBodyFields,
-		headers: requestMeta.requestHeaderFields,
+		headers: {
+			...requestMeta.requestHeaderFields,
+			'X-Credentials': Config.get('creds.token') as string,
+		},
 	}
 
 	Logger.debug(
@@ -98,8 +101,12 @@ export const run = async (args: string[]): Promise<void> => {
 	requestOptions = {
 		method: 'GET',
 		url: data.content.contentUri,
-		// Add the provider header fields, in case authentication is needed
-		headers: requestMeta.requestHeaderFields,
+		// Add the provider credentials under the authorization header if auth is needed
+		headers: {
+			Authorization:
+				requestMeta.requestHeaderFields['X-Provider-Credentials'],
+			'X-Credentials': Config.get('creds.token') as string,
+		},
 		// Return the response as a stream
 		responseType: 'stream',
 	}
@@ -110,12 +117,12 @@ export const run = async (args: string[]): Promise<void> => {
 		)}`,
 	)
 
-	const { data: stream } = await axios(requestOptions)
+	const response = await axios(requestOptions)
 
 	Logger.debug(`command.read.run: response stream receieved`)
 
 	// The path where the file will be temporarily downloaded
-	const cacheFilePath = `${cachePath}/${Nanoid()}`
+	const cacheFilePath = `${cachePath}/${Nanoid()}-${fileName}`
 
 	// Create the file
 	await Fs.createFile(cacheFilePath)
@@ -125,7 +132,7 @@ export const run = async (args: string[]): Promise<void> => {
 	Logger.debug(`command.read.run: writing stream to ${cacheFilePath}`)
 
 	// Pipe the bytes to the file
-	stream.pipe(writer)
+	response.data.pipe(writer)
 	// Wait for it to finish
 	await new Promise<void>((resolve, reject) => {
 		writer.on('finish', () => {
@@ -150,6 +157,7 @@ export const run = async (args: string[]): Promise<void> => {
 			)} to ${cacheFilePath}. To download it permanently, use the \`cp\` command.`,
 		),
 	)
+
 	// Open the file using the user's default app
 	Open(cacheFilePath, { wait: false })
 }
