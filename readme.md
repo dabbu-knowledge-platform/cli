@@ -195,10 +195,6 @@ Please read [contributing.md](./contributing.md) for a detailed guide to setting
 
 Also, if you need any help on the code, please do ask on [this](https://github.com/dabbu-knowledge-platform/cli/discussions/readegories/want-to-contribute) Github discussion. We will only be glad to help :)
 
-## Docs
-
-The documentation for the CLI can be found on the [website](https://dabbu-knowledge-platform.github.io/impls/cli). The source for the documentation can be found [here](https://github.com/dabbu-knowledge-platform/dabbu-knowledge-platform.github.io/).
-
 ## Issues and pull requests
 
 You can contribute to Dabbu by reporting bugs, fixing bugs, adding features, and spreading the word! If you want to report a bug, create an issue by clicking [here](https://github.com/dabbu-knowledge-platform/cli/issues/new/choose). While creating an issue, try to follow the Bug report or Feature request template.
