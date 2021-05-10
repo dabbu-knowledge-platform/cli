@@ -34,4 +34,8 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Dabbu CLI Executables
-          path: execs/*
+          path: |
+            execs/cli-alpine
+            execs/cli-linux
+            execs/cli-macos
+            execs/cli-win.exe

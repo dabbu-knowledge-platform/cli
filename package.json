@@ -14,8 +14,7 @@
 		"fix": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
 		"clean": "yarn rimraf dist/ coverage/ execs/",
 		"build": "yarn clean && yarn tsc",
-		"preexecs": "yarn build && yarn global add pkg",
-		"execs": "yarn --prod && pkg --output execs/dabbu-cli . --targets node14-win-x64,node14-macos-x64,node14-linux-x64,node14-alpine-x64",
+		"execs": "yarn build && yarn pkg . --compress",
 		"postexecs": "yarn",
 		"ci": "yarn lint && yarn test && yarn execs"
 	},
@@ -55,7 +54,7 @@
 		"husky": "^6.0.0",
 		"jest": "^26.6.3",
 		"lint-staged": "^10.5.4",
-		"pkg": "^5.0.0",
+		"pkg": "^5.1.0",
 		"prettier": "^2.2.1",
 		"rimraf": "^3.0.2",
 		"ts-jest": "^26.5.5",
@@ -83,7 +82,7 @@
 	"eslintConfig": {
 		"parser": "@typescript-eslint/parser",
 		"parserOptions": {
-			"ecmaVersion": 2020,
+			"ecmaVersion": "next",
 			"sourceType": "module"
 		},
 		"extends": [
@@ -103,15 +102,22 @@
 	},
 	"lint-staged": {
 		"*.ts": [
-			"eslint --fix"
+			"yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix"
 		]
 	},
 	"pkg": {
+		"outputPath": "execs",
 		"scripts": [
 			"dist/**/*.js"
 		],
 		"assets": [
-			"node_modules/**/*.js"
+			"node_modules/figlet/fonts/Standard.flf"
+		],
+		"targets": [
+			"node14-win-x64",
+			"node14-macos-x64",
+			"node14-linux-x64",
+			"node14-alpine-x64"
 		]
 	}
 }

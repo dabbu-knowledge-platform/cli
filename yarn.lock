@@ -4026,7 +4026,7 @@ pkg-up@^3.1.0:
   dependencies:
     find-up "^3.0.0"
 
-pkg@^5.0.0:
+pkg@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/pkg/-/pkg-5.1.0.tgz#25f92666a4164bbc5495c862de9370ed48788667"
   integrity sha512-rWTwvLJakQnEVg03s97KNtGkhM3pPfxk7XinjR7H1bToMZQMNpBTwahrAPoFHdQyfn6odI76DP6vX3Br9VubNQ==
