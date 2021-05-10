@@ -6,7 +6,7 @@ With the Dabbu Knowledge Platform, we aim to rethink the way we organize and tra
 
 Dabbu allows you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders from Dabbu CLI. 
 
-It not only allows you to seamlessly search/traverse your information across these sources (as simple as `cd`, `list`), but also move information around between drives (`copy`, `mv`, `sync`) - yes even your Gmail messages in a thread get copied to your hard drive as `.md` files in a zip if you do a `c:/$ cp m:/INBOX/* ./"My Emails"`.
+It not only allows you to seamlessly search/traverse your information across these sources (as simple as `cd`, `list`), but also move information around between drives (`copy`) - yes even your Gmail messages in a thread get copied to your hard drive as `.md` files in a zip if you do a `c:/$ cp m:/INBOX/* ./"My Emails"`.
 
 You can also go into the special knowledge drive where you can pivot information by topics/people/places e.g. `k:/$ cd austin` (will return you all your information from Gmail, Google Drive, OneDrive that has a reference to the place Austin). You can further narrow your search by doing `k:/austin$ cd ravi@example.com` (yes it even extracts people and allows you to pivot information by them). This would show you all emails and files that are related to Austin and from/to ravi@example.com. 
 
@@ -109,13 +109,13 @@ If you want to save the file to your hard drive or to another drive, use the `co
 To copy a file from one drive to another drive, use the `copy` (short form for **c**o**p**y) command as follows:
 
 ```
-cp <path to file that you want to copy> <path to destination folder>
+copy <path to file that you want to copy> <path to destination folder>
 ```
 
 For example, if I want to copy a file (say, `School Project.docx`) from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive), I would type the following and hit `enter`:
 
 ```
-cp "g:/Personal/School Project.docx" c:/Work/
+copy "g:/Personal/School Project.docx" c:/Work/
 ```
 
 Notice two things:
@@ -125,7 +125,7 @@ Notice two things:
 If I want to copy the file `School Project.docx` from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive) and rename it to `MyProject.docx`, I would type the following and hit `enter`:
 
 ```
-cp "g:/Personal/School Project.docx" c:/Work/MyProject.docx
+copy "g:/Personal/School Project.docx" c:/Work/MyProject.docx
 ```
 
 Notice two things:
@@ -139,7 +139,7 @@ To rename a file without copying it, or to move a file instead of copying it, ju
 To delete a file on a certain drive, use the `del` ((short form for **r**e**m**ove)) command. For example, to delete the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
 
 ```
-rm "Work/Dabbu Design Document"
+del "Work/Dabbu Design Document"
 ```
 
 Notice that the path to the file is surrounded by quotes (`"`). This is only required if the file/folder name contains spaces.
@@ -147,7 +147,7 @@ Notice that the path to the file is surrounded by quotes (`"`). This is only req
 To delete the entire work folder:
 
 ```
-rm Work/
+del Work/
 ```
 
 Notice that the path to the `Work` folder ends with a `/`. This is to tell Dabbu that `Work` is a folder.
