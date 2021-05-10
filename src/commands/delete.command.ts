@@ -33,6 +33,7 @@ export const run = async (args: string[]): Promise<void> => {
 		const parsedPath = FsUtils.parseFolderPath(args[0])
 		drive = parsedPath.drive
 		folderPath = parsedPath.folderPath
+		fileName = undefined
 	} else {
 		const parsedPath = FsUtils.parseFilePath(args[0])
 		drive = parsedPath.drive
