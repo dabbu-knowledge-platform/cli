@@ -2,9 +2,9 @@
 import axios from 'axios'
 
 // Import all methods from config and utils
-import * as Config from '../utils/config.util'
+import * as Config from './config.util'
 // Import the logger
-import Logger from '../utils/logger.util'
+import Logger from './logger.util'
 
 // A Provider is represented by the following class
 export class Provider {
@@ -89,6 +89,21 @@ export class AuthDetails {
 
 // A list of providers supported by the CLI
 export const ProviderSpec: Array<Provider> = [
+	new Provider(
+		'harddrive',
+		[
+			new Field(
+				'basePath',
+				'string',
+				'The path to treat as root for this drive, usually your home directory (on Windows, it is C:\\Users\\<user name>\\) (on Linux, it is /home/<user name>/) (on MacOS, it is /Users/<user name>/)',
+				'The folder to treat as root for this drive',
+				true,
+				'basePath',
+			),
+		],
+		[],
+		undefined,
+	),
 	new Provider(
 		'googledrive',
 		[],

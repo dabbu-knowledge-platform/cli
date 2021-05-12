@@ -4,13 +4,15 @@
 import axios, { AxiosRequestConfig } from 'axios'
 // Use the chalk library to write colourful text
 import Chalk from 'chalk'
+// Use the fs-extra library to delete files
+import * as Fs from 'fs-extra'
 
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
 import * as FsUtils from '../utils/fs.util'
 import * as ProviderUtils from '../utils/provider.util'
 // Import the print statement
-import { print, json, path } from '../utils/general.util'
+import { print, json, path as diskPath } from '../utils/general.util'
 // Import the spinner
 import * as Spinner from '../ui/spinner.ui'
 // Import the logger
@@ -48,9 +50,51 @@ export const run = async (args: string[]): Promise<void> => {
 	// Show a loading indicator
 	Spinner.start(
 		`Deleting ${Chalk.keyword('orange')(
-			`${drive}:${path(folderPath, fileName)}`,
+			`${drive}:${diskPath(folderPath, fileName)}`,
 		)}`,
 	)
+
+	// If the provider is harddrive, then manually read the file from the hard drive
+	if (Config.get(`drives.${drive}.provider`) === 'harddrive') {
+		const basePath =
+			(Config.get(`drives.${drive}.basePath`) as string | undefined) ||
+			'/'
+
+		// Check if the file/folder exists
+		// If there is no fileName, the diskPath function will ignore it,
+		// effectively checking for only the folder
+		if (
+			!(await Fs.pathExists(diskPath(basePath, folderPath, fileName)))
+		) {
+			print(
+				Chalk.red(
+					`File/Folder ${diskPath(
+						basePath,
+						folderPath,
+						fileName,
+					)} was not found`,
+				),
+			)
+		}
+
+		// Delete the file/folder using Fs.rm()
+		await Fs.rm(diskPath(basePath, folderPath, fileName), {
+			recursive: true,
+		})
+
+		// Stop loading
+		Spinner.stop()
+
+		// Now tell the user the file has been deleted
+		print(
+			Chalk.yellow(
+				`Deleted ${drive}:${diskPath(folderPath, fileName)}`,
+			),
+		)
+
+		// Return
+		return
+	}
 
 	Logger.debug(
 		`command.delete.run: refreshing access token, retrieving request body and headers`,
@@ -99,7 +143,7 @@ export const run = async (args: string[]): Promise<void> => {
 	print(
 		Chalk.yellow(
 			`Deleting ${Chalk.keyword('orange')(
-				`${drive}:${path(folderPath, fileName)}`,
+				`${drive}:${diskPath(folderPath, fileName)}`,
 			)}`,
 		),
 	)

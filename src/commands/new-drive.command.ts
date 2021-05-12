@@ -25,7 +25,12 @@ import { ParsedUrlQuery } from 'node:querystring'
 
 // Get all possible providers we can set up
 const getAvailableProviders = async (): Promise<Array<string>> => {
-	const availableProviders = ['googledrive', 'gmail', 'onedrive']
+	const availableProviders = [
+		'harddrive',
+		'googledrive',
+		'gmail',
+		'onedrive',
+	]
 
 	Logger.debug(
 		`command.new-drive.getAvailableProviders: available providers: ${availableProviders}`,

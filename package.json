@@ -14,8 +14,7 @@
 		"fix": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
 		"clean": "yarn rimraf dist/ coverage/ execs/",
 		"build": "yarn clean && yarn tsc",
-		"execs": "yarn build && yarn pkg . --compress",
-		"postexecs": "yarn",
+		"execs": "yarn build && yarn pkg .",
 		"ci": "yarn lint && yarn test && yarn execs"
 	},
 	"dependencies": {
@@ -26,6 +25,7 @@
 		"enquirer": "^2.3.6",
 		"env-paths": "^2.2.1",
 		"figlet": "^1.5.0",
+		"file-type": "^16.4.0",
 		"fs-extra": "^10.0.0",
 		"nanoid": "^3.1.22",
 		"open": "^8.0.7",
@@ -39,6 +39,7 @@
 		"@types/chalk": "^2.2.0",
 		"@types/env-paths": "^2.1.0",
 		"@types/figlet": "^1.5.0",
+		"@types/file-type": "^10.9.1",
 		"@types/fs-extra": "^9.0.11",
 		"@types/jest": "^26.0.23",
 		"@types/node": "^14.14.41",

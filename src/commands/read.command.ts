@@ -19,7 +19,7 @@ import * as Config from '../utils/config.util'
 import * as FsUtils from '../utils/fs.util'
 import * as ProviderUtils from '../utils/provider.util'
 // Import the print statement
-import { print, json, path } from '../utils/general.util'
+import { print, json, path as diskPath } from '../utils/general.util'
 // Import the spinner
 import * as Spinner from '../ui/spinner.ui'
 // Import the logger
@@ -46,9 +46,58 @@ export const run = async (args: string[]): Promise<void> => {
 	// Show a loading indicator
 	Spinner.start(
 		`Downloading file ${Chalk.keyword('orange')(
-			`${drive}:${path(folderPath, fileName)}`,
+			`${drive}:${diskPath(folderPath, fileName)}`,
 		)}`,
 	)
+
+	// If the provider is harddrive, then manually read the file from the hard drive
+	if (Config.get(`drives.${drive}.provider`) === 'harddrive') {
+		const basePath =
+			(Config.get(`drives.${drive}.basePath`) as string | undefined) ||
+			'/'
+
+		// Check if the folder exists
+		if (!(await Fs.pathExists(diskPath(basePath, folderPath)))) {
+			print(
+				Chalk.red(
+					`Folder ${diskPath(basePath, folderPath)} was not found`,
+				),
+			)
+		}
+
+		// Check if the file exists
+		// NOTE: This might actually note work, as the file might be deleted
+		// right after we check if it exists
+		if (
+			!(await Fs.pathExists(diskPath(basePath, folderPath, fileName)))
+		) {
+			print(
+				Chalk.red(
+					`File ${diskPath(
+						basePath,
+						folderPath,
+						fileName,
+					)} was not found`,
+				),
+			)
+		}
+
+		// Stop loading
+		Spinner.stop()
+
+		// Now tell the user the file has been downloaded
+		print(
+			Chalk.yellow(
+				`Opening file ${drive}:${diskPath(folderPath, fileName)}`,
+			),
+		)
+
+		// Open the file using the user's default app
+		Open(diskPath(basePath, folderPath, fileName), { wait: false })
+
+		// Return
+		return
+	}
 
 	Logger.debug(
 		`command.read.run: refreshing access token, retrieving request body and headers`,
@@ -149,7 +198,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// Now tell the user the file has been downloaded
 	print(
 		Chalk.yellow(
-			`File ${drive}:${path(
+			`File ${drive}:${diskPath(
 				folderPath,
 				fileName,
 			)} downloaded ${Chalk.keyword('orange')(
