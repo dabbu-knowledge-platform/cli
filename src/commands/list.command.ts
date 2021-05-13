@@ -228,8 +228,6 @@ export const run = async (args: string[]): Promise<void> => {
 	// and so on, until the server does not return a nextSetToken.
 	let nextSetToken: string | undefined = undefined
 	do {
-		// Check the providerId first - if it is `harddrive`, use the method from the hard drive module instead.
-
 		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',

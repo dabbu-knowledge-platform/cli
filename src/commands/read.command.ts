@@ -50,7 +50,8 @@ export const run = async (args: string[]): Promise<void> => {
 		)}`,
 	)
 
-	// If the provider is harddrive, then manually read the file from the hard drive
+	// If the provider is harddrive, then manually read the file
+	// from the hard drive
 	if (Config.get(`drives.${drive}.provider`) === 'harddrive') {
 		const basePath =
 			(Config.get(`drives.${drive}.basePath`) as string | undefined) ||
@@ -137,8 +138,10 @@ export const run = async (args: string[]): Promise<void> => {
 
 	Logger.debug(`command.read.run: response received: ${json(data)}`)
 
-	// Download the file from the content URI (and send along the headers just in case Authorization is required)
-	// First check that the resource returned - exists, is not a folder, and has a content URI
+	// Download the file from the content URI (and send along the headers
+	// just in case Authorization is required)
+	// First check that the resource returned - exists, is not a folder,
+	// and has a content URI
 	if (!data.content || !data.content.contentUri) {
 		throw new Error('Invalid response from Files API Server')
 	}
@@ -153,7 +156,7 @@ export const run = async (args: string[]): Promise<void> => {
 		// Add the provider credentials under the authorization header if auth is needed
 		headers: {
 			Authorization:
-				requestMeta.requestHeaderFields['X-Provider-Credentials'],
+				requestMeta.requestHeaderFields['X-Provider-Credentials'] || '',
 			'X-Credentials': Config.get('creds.token') as string,
 		},
 		// Return the response as a stream
