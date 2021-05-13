@@ -142,7 +142,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// Tell the user the file/folder was deleted
 	print(
 		Chalk.yellow(
-			`Deleting ${Chalk.keyword('orange')(
+			`Deleted ${Chalk.keyword('orange')(
 				`${drive}:${diskPath(folderPath, fileName)}`,
 			)}`,
 		),
