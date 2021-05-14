@@ -13,7 +13,11 @@ export const json = (value: any): string => {
 	}
 
 	// Return the formatted json
-	return JSON.stringify(jsonificableValue, null, 2)
+	try {
+		return JSON.stringify(jsonificableValue, null, 2)
+	} catch {
+		return '{circularError: true}'
+	}
 }
 
 // Join folder path and file name without multiple consecutive slashes
