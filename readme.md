@@ -1,12 +1,12 @@
 # Dabbu CLI
 
-[![NodeJS CI](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yml) [![Platforms: Alpine Linux MacOS Windows](https://img.shields.io/badge/platforms-alpine%20linux%20macos%20windows-blue)](https://img.shields.io/badge/platforms-windows%20linux%20macos%20alpine-blue) [![Code Style: XO/Prettier](https://img.shields.io/badge/code%20style-xo%2Fprettier-ff69b4)](https://img.shields.io/badge/code%20style-xo%2Fprettier-ff69b4)
+[![NodeJS CI](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/dabbu-knowledge-platform/cli/actions/workflows/ci.yaml) [![Platforms: Alpine Linux MacOS Windows](https://img.shields.io/badge/platforms-alpine%20linux%20macos%20windows-blue)](https://img.shields.io/badge/platforms-windows%20linux%20macos%20alpine-blue)
 
 With the Dabbu Knowledge Platform, we aim to rethink the way we organize and traverse large amounts of knowledge, no matter where it is stored. 
 
 Dabbu allows you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders from Dabbu CLI. 
 
-It not only allows you to seamlessly search/traverse your information across these sources (as simple as `cd`, `ls`), but also move information around between drives (`cp`, `mv`, `sync`) - yes even your Gmail messages in a thread get copied to your hard drive as `.md` files in a zip if you do a `c:/$ cp m:/INBOX/* ./"My Emails"`.
+It not only allows you to seamlessly search/traverse your information across these sources (as simple as `cd`, `list`), but also move information around between drives (`copy`) - yes even your Gmail messages in a thread get copied to your hard drive as `.md` files in a zip if you do a `c:/$ cp m:/INBOX/* ./"My Emails"`.
 
 You can also go into the special knowledge drive where you can pivot information by topics/people/places e.g. `k:/$ cd austin` (will return you all your information from Gmail, Google Drive, OneDrive that has a reference to the place Austin). You can further narrow your search by doing `k:/austin$ cd ravi@example.com` (yes it even extracts people and allows you to pivot information by them). This would show you all emails and files that are related to Austin and from/to ravi@example.com. 
 
@@ -18,46 +18,17 @@ The only way to use Dabbu (at the moment) is through a command-line interface (C
 
 Excited to use Dabbu? Here's how to get started:
 
-### Linux/MacOS
+To install Dabbu on your computer, you can simply download the latest version of it [here](https://github.com/dabbu-knowledge-platform/cli/releases/latest).
 
-On Linux/MacOS, simply type the following in your terminal and follow on-screen instructions:
+Once downloaded, simply double click on the file to run it. If it shows you a permission error on Linux/MacOS, run the following in terminal: `chmod 775 /path/to/file`. Then run `/path/to/file`.
 
-```
-wget https://raw.githubusercontent.com/dabbu-knowledge-platform/cli/main/scripts/install -O - | bash
-```
-
-Then type `dabbu-cli` to run Dabbu.
-
-To reinstall or update the server, simply run the script again.
-
-#### **Advanced options**
-
-To simply do a dry run, save the install script and then run it with the -d option:
-
-```
-wget https://raw.githubusercontent.com/dabbu-knowledge-platform/cli/main/scripts/install
-./install -d
-```
-
-### Windows
-
-<sub>**An installer script for windows is in progress**</sub>
-
-To install Dabbu on your computer, you can simply download the latest version of it [here](https://github.com/dabbu-knowledge-platform/dabbu-cli/releases/latest).
-
-> Note: It is **recommended** that you move the executable to a separate folder and run it from there. This is because Dabbu will create a folder `_dabbu` which contains several important files. When moving the executable anywhere else, make sure you move the `_dabbu` folder as well.
->
-> Windows users will currently **be unable to** access or create files on their hard drive. This will be fixed with the addition of the installer script. A workaround is to use the Linux/MacOS installer script on WSL2.
-
-Once download, simply double click the file to run it (it will be a `.exe`). Read on to know how to setup and use your first drive!
-
-If you run into any problems while installing or using Dabbu, feel free to ask [here](https://github.com/dabbu-knowledge-platform/cli/discussions/categories/q-a). We'll only be glad to help :)
+If you run into any problems while installing or using Dabbu, feel free to ask [here](https://github.com/dabbu-knowledge-platform/cli/discussions/readegories/q-a). We'll only be glad to help :)
 
 ## Getting started
 
 ### Setup
 
-Once Dabbu is started for the first time, it will ask you for a server URL (**Only on Windows**). Please enter `https://dabbu-server.herokuapp.com`.
+Once Dabbu is started for the first time, it will ask you for a server URL. Please enter `https://dabbu-server.herokuapp.com`.
 
 Then, Dabbu will ask you to setup your first 'drive'. A drive is just like a usb drive attached to your computer - `c:`, `d:`, `e:`, etc - but instead of showing files from the USB drive, it shows you files and folders from a certain provider (Gmail, Google Drive, OneDrive, ...). Follow the instructions Dabbu shows you to setup the drive.
 
@@ -106,45 +77,45 @@ To move back into the root folder (`/`), type in `cd ..` (remember that `.` refe
 To switch to another drive, type in the following and hit `enter`:
 
 ```
-<drive name>:
+cd <drive name>:
 ```
 
 Notice the colon at the end - it tells Dabbu that you are talking about a drive.
 
-To create a new drive, simply type in `::` and hit enter.
+To create a new drive, simply type in `new-drive` and hit enter.
 
 #### **Listing files and folders**
 
-To list files and folders within the your current working directory, type in `ls`. For example, if I am in the `Work` directory, typing in `ls` will show you a list of the files and folders within the `Work` directory.
+To list files and folders within the your current working directory, type in `list`. For example, if I am in the `Work` directory, typing in `list` will show you a list of the files and folders within the `Work` directory.
 
-Optionally, you can specify which directory's files and folders to list using `ls <directory whose files and folders to list>`. For example, if I am in the root (`/`) directory, I can list files from the `Work` directory by typing `ls Work/` and hitting `enter`.
+Optionally, you can specify which directory's files and folders to list using `list <directory whose files and folders to list>`. For example, if I am in the root (`/`) directory, I can list files from the `Work` directory by typing `list Work/` and hitting `enter`.
 
-The `ls` command prints the number of files in that folder (if there are less than 50 files) and a table of the files and folders. The table has 4 columns: `Name`, `Size`, `Type`,`Last Modified Time` and `Actions`. The file/folder name is coloured blue if it is a folder (it also has the words folder written in brackets next to the name) and magenta if it is a file. The size and last modified time are formatted into human readable formats. The type column shows the type of the file. The actions column contains a link that opens the file in the provider's preferred editor. This means that if you click on a link for a from Google Drive, it will open the Google Drive File Viewer to display the file. Use the `cat` command to download and view the file on your computer.
+The `list` command prints the number of files in that folder (if there are less than 50 files) and a table of the files and folders. The table has 4 columns: `Name`, `Size`, `Type`,`Last Modified Time` and `Actions`. The file/folder name is coloured blue if it is a folder (it also has the words folder written in brackets next to the name) and magenta if it is a file. The size and last modified time are formatted into human readable formats. The type column shows the type of the file. The actions column contains a link that opens the file in the provider's preferred editor. This means that if you click on a link for a from Google Drive, it will open the Google Drive File Viewer to display the file. Use the `read` command to download and view the file on your computer.
 
 #### **Downloading and viewing files**
 
-To download a file to your computer and open it up, type in `cat <path to file>` and hit `enter`. This will download the file temporarily on your computer and open it using the default app to open that file on your computer. The file will be deleted once Dabbu is closed. For example, to download the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
+To download a file to your computer and open it up, type in `read <path to file>` and hit `enter`. This will download the file temporarily on your computer and open it using the default app to open that file on your computer. The file will be deleted once Dabbu is closed. For example, to download the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
 
 ```
-cat "Work/Dabbu Design Document"
+read "Work/Dabbu Design Document"
 ```
 
 Notice that the path to the file is surrounded by quotes (`"`). This is only required if the file/folder name contains spaces.
 
-If you want to save the file to your hard drive or to another drive, use the `cp` (copy) command as mentioned below.
+If you want to save the file to your hard drive or to another drive, use the `copy` (copy) command as mentioned below.
 
 #### **Copying/moving files**
 
-To copy a file from one drive to another drive, use the `cp` (short form for **c**o**p**y) command as follows:
+To copy a file from one drive to another drive, use the `copy` (short form for **c**o**p**y) command as follows:
 
 ```
-cp <path to file that you want to copy> <path to destination folder>
+copy <path to file that you want to copy> <path to destination folder>
 ```
 
 For example, if I want to copy a file (say, `School Project.docx`) from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive), I would type the following and hit `enter`:
 
 ```
-cp "g:/Personal/School Project.docx" c:/Work/
+copy "g:/Personal/School Project.docx" c:/Work/
 ```
 
 Notice two things:
@@ -154,21 +125,21 @@ Notice two things:
 If I want to copy the file `School Project.docx` from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive) and rename it to `MyProject.docx`, I would type the following and hit `enter`:
 
 ```
-cp "g:/Personal/School Project.docx" c:/Work/MyProject.docx
+copy "g:/Personal/School Project.docx" c:/Work/MyProject.docx
 ```
 
 Notice two things:
 - One, the path to the `School Project.docx` file is surrounded by squotes. This is because the file name contains spaces.
 - Two, the path to the destination does not end with a `/`. This i because we are copying the file to another file, and not another folder.
 
-To rename a file without copying it, or to move a file instead of copying it, just use `mv` instead of `cp`.
+To rename a file without copying it, or to move a file instead of copying it, just use `mv` instead of `copy`.
 
 #### **Deleting files**
 
-To delete a file on a certain drive, use the `rm` ((short form for **r**e**m**ove)) command. For example, to delete the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
+To delete a file on a certain drive, use the `del` ((short form for **r**e**m**ove)) command. For example, to delete the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
 
 ```
-rm "Work/Dabbu Design Document"
+del "Work/Dabbu Design Document"
 ```
 
 Notice that the path to the file is surrounded by quotes (`"`). This is only required if the file/folder name contains spaces.
@@ -176,20 +147,12 @@ Notice that the path to the file is surrounded by quotes (`"`). This is only req
 To delete the entire work folder:
 
 ```
-rm Work/
+del Work/
 ```
 
 Notice that the path to the `Work` folder ends with a `/`. This is to tell Dabbu that `Work` is a folder.
 
-Be careful while using the `rm` command as it usually permanently deletes files and folders.
-
-### Knowledge Drive
-
-The latest version of Dabbu CLI also supports a special `knowledge` drive. This drive will, on startup, **'index'** all your files - it will extract topics, people and places from all the files in the selected drives. It will then treat these topics/people/places as folders, that you can move into using `cd <topic/person/place name>` and view which files are related to which topic.
-
-To setup the `knowledge` drive, simply type in `::` into the Dabbu CLI command prompt and choose `knowledge` as the provider. Follow the instructions on screen to select which drives' files you wish to index. Once the indexing process is over, you may list out the files related to a certain topic/person/place and view the files too.
-
-If any files have changed, you will have to recreate the drive to see the changes. This is being fixed (refer to issue [cli#21](https://github.com/dabbu-knowledge-platform/cli/issues/21) on Github).
+Be careful while using the `del` command as it usually permanently deletes files and folders.
 
 ### A Brief Summary of CLI Commands
 
@@ -203,17 +166,15 @@ If any files have changed, you will have to recreate the drive to see the change
 **Commands:**
 
 - `pwd` - Know your current drive and folder
+- `cd <drive name>:` - Switch drives (Notice the colon at the end of the drive name)
 - `cd <relative path to folder>` - Move into a folder
-- `ls [relative path to folder]` - List files in a folder (default is current folder)
-- `cat <relative path to file>` - Download and open a file
-- `cp <relative path to file> <relative path to place to copy to>` - Copy a file from one place to another
-- `mv <relative path to file> <relative path to place to copy to>` - Move a file from one place to another
-- `rm <relative path to file>` - Delete a file
-- `sync <relative path to folder> <relative path to folder to sync files to>` - Sync files from one folder to another efficiently
-- `<drive name>:` - Switch drives (Notice the colon at the end of the drive name)
-- `::` - Create a new drive
+- `list [relative path to folder]` - List files in a folder (default is current folder)
+- `read <relative path to file>` - Download and open a file
+- `copy <relative path to file> <relative path to place to copy to>` - Copy a file from one place to another
+- `del <relative path to file>` - Delete a file
+- `new-drive` - Create a new drive
 - `clear` - Clear the screen
-- `CTRL+C` - Exit
+- `CTRL+C OR exit` - Exit
 
 Typing any of the above and then hitting enter will allow you to execute that command and get a result.
 
@@ -232,11 +193,7 @@ If you want to create a client for a provider supported by the server but not th
 
 Please read [contributing.md](./contributing.md) for a detailed guide to setting up your environment and making changes to the code.
 
-Also, if you need any help on the code, please do ask on [this](https://github.com/dabbu-knowledge-platform/cli/discussions/categories/want-to-contribute) Github discussion. We will only be glad to help :)
-
-## Docs
-
-The documentation for the CLI can be found on the [website](https://dabbu-knowledge-platform.github.io/impls/cli). The source can be found [here](https://github.com/dabbu-knowledge-platform/dabbu-knowledge-platform.github.io/blob/main/index.md).
+Also, if you need any help on the code, please do ask on [this](https://github.com/dabbu-knowledge-platform/cli/discussions/readegories/want-to-contribute) Github discussion. We will only be glad to help :)
 
 ## Issues and pull requests
 
@@ -248,7 +205,7 @@ Please read [contributing.md](./contributing.md) for a detailed guide to setting
 
 ### License - GNU GPL v3
 
-Dabbu CLI - A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online.
+Dabbu CLI - a CLI that allows you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders.
 
 Copyright (C) 2021 Dabbu Knowledge Platform \<dabbuknowledgeplatform@gmail.com\>
 

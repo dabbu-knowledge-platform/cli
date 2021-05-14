@@ -1,0 +1,41 @@
+name: CI
+
+# Triggers the workflow on push or pull request events for any branch that has
+# this file
+on: [push, pull_request]
+
+# This workflow has only one job, since the three jobs are already combined into
+# the `yarn ci` command
+jobs:
+  ci:
+    name: Test and build on node ${{ matrix.node_version }}
+    # Run the job on an instance of Ubuntu
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Run on node 14
+        node_version: ['14.x']
+    steps:
+      # `git clone` the repo
+      - name: Check out repo
+        uses: actions/checkout@v1
+      # Setup the specified version of node
+      - name: Setup node ${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+      # Install dependencies and run the `yarn ci` command
+      - name: Test and build
+        run: |
+          yarn
+          yarn ci
+      # Save the built executables
+      - name: Uploading built executables
+        uses: actions/upload-artifact@v2
+        with:
+          name: Dabbu CLI Executables
+          path: |
+            execs/cli-alpine
+            execs/cli-linux
+            execs/cli-macos
+            execs/cli-win.exe
