@@ -33,7 +33,7 @@
 		"open": "^8.0.7",
 		"ora": "^5.4.0",
 		"readcommand": "0.3.0",
-		"terminal-link": "2.1.1",
+		"terminal-link": "3.0.0",
 		"winston": "^3.3.3"
 	},
 	"devDependencies": {
