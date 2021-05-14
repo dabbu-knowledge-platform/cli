@@ -1,8 +1,9 @@
 // Use axios to make network requests
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
 // Import all methods from config and utils
 import * as Config from './config.util'
+import { json } from './general.util'
 // Import the logger
 import Logger from './logger.util'
 
@@ -188,11 +189,23 @@ export function getRequestMetadata(
 	const providerId = Config.get(
 		`drives.${driveName}.provider`,
 	) as string
+
+	Logger.debug(
+		`util.provider.getRequestMetadata: getting request headers and body provider ID ${providerId}`,
+	)
+
 	// Get the stuff to send in the request body and headers for the given
 	// provider
 	const providerDetails: Provider = ProviderSpec.filter(
 		(providerDetails: Provider) => providerDetails.id === providerId,
 	)[0]
+
+	Logger.debug(
+		`util.provider.getRequestMetadata: providerDetails: ${json(
+			providerDetails,
+		)}`,
+	)
+
 	// Get the request body and headers
 	const requestBodyFields: Record<string, any> = {}
 	for (const field of providerDetails.requestBodyFields) {
@@ -200,12 +213,23 @@ export function getRequestMetadata(
 			`drives.${driveName}.${field.path}`,
 		)
 	}
+	Logger.debug(
+		`util.provider.getRequestMetadata: generated request body: ${json(
+			requestBodyFields,
+		)}`,
+	)
+
 	const requestHeaderFields: Record<string, any> = {}
 	for (const field of providerDetails.headerFields) {
 		requestHeaderFields[field.name] = Config.get(
 			`drives.${driveName}.${field.path}`,
 		)
 	}
+	Logger.debug(
+		`util.provider.getRequestMetadata: generated request headers: ${json(
+			requestHeaderFields,
+		)}`,
+	)
 
 	// Return everything
 	return { providerId, requestBodyFields, requestHeaderFields }
@@ -219,22 +243,47 @@ export async function refreshAccessToken(
 	const providerId = Config.get(
 		`drives.${driveName}.provider`,
 	) as string
+
+	Logger.debug(
+		`util.provider.refreshAccessToken: refreshing access token: drive: ${driveName}; provider ID: ${providerId}`,
+	)
+
 	// Get the stuff to send in the request body and headers for the given
 	// provider
 	const providerDetails: Provider = ProviderSpec.filter(
 		(providerDetails: Provider) => providerDetails.id === providerId,
 	)[0]
+	Logger.debug(
+		`util.provider.refreshAccessToken: providerDetails: ${json(
+			providerDetails,
+		)}`,
+	)
+
 	// Get the auth details
 	const authDetails = providerDetails.authDetails
+	Logger.debug(
+		`util.provider.refreshAccessToken: authDetails: ${json(
+			authDetails,
+		)}`,
+	)
+
 	// Get the refresh token
 	const refreshToken = Config.get(
 		`drives.${driveName}.auth.refreshToken`,
 	) as string | undefined
+	Logger.debug(
+		`util.provider.refreshAccessToken: refresh token: ${refreshToken}`,
+	)
+
 	// Make sure there is a refresh token and auth details and the auth process
 	// is OAuth2
 	if (authDetails && authDetails.process === 'oauth2' && refreshToken) {
-		// Make a request to refresh the token
-		const serverResponse = await axios({
+		Logger.debug(
+			`util.provider.refreshAccessToken: making request to server`,
+		)
+
+		// Define the request options
+		const requestOptions: AxiosRequestConfig = {
 			method: 'post',
 			url:
 				authDetails?.sendAuthMetadataIn === 'requestQueryParameters'
@@ -285,7 +334,22 @@ export async function refreshAccessToken(
 							grant_type: 'refresh_token',
 					  }
 					: {},
-		})
+		}
+
+		Logger.debug(
+			`util.provider.refreshAccessToken: request options: ${json(
+				requestOptions,
+			)}`,
+		)
+
+		// Make a request to refresh the token
+		const serverResponse = await axios(requestOptions)
+
+		Logger.debug(
+			`util.provider.refreshAccessToken: received server response: ${json(
+				serverResponse,
+			)}`,
+		)
 
 		// Store the result in the config
 		const result = {
@@ -296,6 +360,12 @@ export async function refreshAccessToken(
 			expiresAt:
 				Number(Date.now()) + serverResponse.data.expires_in * 1000,
 		}
+
+		Logger.debug(
+			`util.provider.refreshAccessToken: storing creds: ${json(
+				result,
+			)}`,
+		)
 
 		Config.set(`drives.${driveName}.auth`, result)
 	}

@@ -15,7 +15,8 @@
 		"clean": "yarn rimraf dist/ coverage/ execs/",
 		"build": "yarn clean && yarn tsc",
 		"execs": "yarn build && yarn pkg .",
-		"ci": "yarn lint && yarn test && yarn execs"
+		"ci": "yarn lint && yarn test && yarn execs",
+		"postinstall": "patch --forward node_modules/universalify/index.js < patches/universalify-undefined-fn.patch"
 	},
 	"dependencies": {
 		"axios": "^0.21.1",
@@ -26,6 +27,7 @@
 		"env-paths": "^2.2.1",
 		"figlet": "^1.5.0",
 		"file-type": "^16.4.0",
+		"form-data": "^4.0.0",
 		"fs-extra": "^10.0.0",
 		"nanoid": "^3.1.22",
 		"open": "^8.0.7",
@@ -40,6 +42,7 @@
 		"@types/env-paths": "^2.1.0",
 		"@types/figlet": "^1.5.0",
 		"@types/file-type": "^10.9.1",
+		"@types/form-data": "^2.5.0",
 		"@types/fs-extra": "^9.0.11",
 		"@types/jest": "^26.0.23",
 		"@types/node": "^14.14.41",

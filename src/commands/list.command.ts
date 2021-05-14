@@ -157,7 +157,7 @@ export const run = async (args: string[]): Promise<void> => {
 			// Whether it's a file or folder
 			const kind = statistics.isDirectory() ? 'folder' : 'file'
 			// Path to that file locally
-			const path = diskPath(basePath, folderPath, fileName)
+			const path = diskPath(folderPath, fileName)
 			// The mime type of the file
 			let mimeType: string
 			if (statistics.isDirectory()) {
@@ -214,13 +214,6 @@ export const run = async (args: string[]): Promise<void> => {
 		`command.list.run: refreshing access token, retrieving request body and headers`,
 	)
 
-	// Refresh the access token, if any
-	await ProviderUtils.refreshAccessToken(drive)
-	// Get the provider ID, request body and request headers of the drive
-	const requestMeta = ProviderUtils.getRequestMetadata(drive)
-
-	Logger.debug(`command.list.run: retrieved meta: ${json(requestMeta)}`)
-
 	// The list request requires pagination, which means results will be returned
 	// 50 at a time. The server will return a `nextSetToken` if there are more
 	// than 50 files in that folder. We need to make the same request and supply
@@ -228,6 +221,19 @@ export const run = async (args: string[]): Promise<void> => {
 	// and so on, until the server does not return a nextSetToken.
 	let nextSetToken: string | undefined = undefined
 	do {
+		Logger.debug(
+			`command.copy.listFiles: refreshing access token, retrieving request body and headers`,
+		)
+
+		// Refresh the access token, if any
+		await ProviderUtils.refreshAccessToken(drive)
+		// Get the provider ID, request body and request headers of the drive
+		const requestMeta = ProviderUtils.getRequestMetadata(drive)
+
+		Logger.debug(
+			`command.copy.listFiles: retrieved meta: ${json(requestMeta)}`,
+		)
+
 		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',

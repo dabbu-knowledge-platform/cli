@@ -141,10 +141,12 @@ export const getUserCommand = async (): Promise<{ args: string[] }> => {
 					// Get current history
 					let history = (Config.get('history') as Array<string>) || []
 
-					// Add the command
-					history = [...history, command]
-					// Set it in config
-					Config.set('history', history)
+					// Add the command if the last command is not the same
+					if (history[history.length - 1] !== command) {
+						history = [...history, command]
+						// Set it in config
+						Config.set('history', history)
+					}
 				}
 
 				// If there is an error, throw it

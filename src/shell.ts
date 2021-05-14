@@ -3,6 +3,7 @@ import { run as runCdCommand } from './commands/cd.command'
 import { run as runListCommand } from './commands/list.command'
 import { run as runReadCommand } from './commands/read.command'
 import { run as runDeleteCommand } from './commands/delete.command'
+import { run as runCopyCommand } from './commands/copy.command'
 import { run as runNewDriveCommand } from './commands/new-drive.command'
 import { run as runClearCommand } from './commands/clear.command'
 
@@ -61,6 +62,12 @@ export default class Shell {
 
 					await runReadCommand(args.slice(1))
 					break
+				case 'cp':
+				case 'copy':
+					Logger.debug(`shell.run: running cp: ${args.slice(1)}`)
+
+					await runCopyCommand(args.slice(1))
+					break
 				case 'rm':
 				case 'del':
 				case 'delete':
@@ -91,6 +98,8 @@ export default class Shell {
 					Logger.debug(`shell.run: running exit: []`)
 
 					process.exit(0)
+				default:
+					throw new Error('Invalid command')
 			}
 
 			// If the command executed successfully, set PROCESSING_COMMAND to false
