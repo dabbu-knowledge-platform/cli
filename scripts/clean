@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# clean
+# Deletes the all generated folders
+
+# Delete all files
+rm -rf dist/ coverage/

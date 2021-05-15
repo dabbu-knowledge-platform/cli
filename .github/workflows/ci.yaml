@@ -4,13 +4,14 @@ name: CI
 # this file
 on: [push, pull_request]
 
-# This workflow has only one job, since the three jobs are already combined into
-# the `yarn ci` command
+# This workflow has only one job, since the three jobs are already 
+# combined into the `yarn ci` command
 jobs:
   ci:
     name: Test and build on node ${{ matrix.node_version }}
-    # Run the job on an instance of Ubuntu
-    runs-on: ubuntu-latest
+    # Run the job on an instance of MacOS (not ubuntu because we need
+    # MacOS to build an osxpkg from the binary)
+    runs-on: macos-latest
     strategy:
       matrix:
         # Run on node 14
@@ -29,13 +30,19 @@ jobs:
         run: |
           yarn
           yarn ci
-      # Save the built executables
-      - name: Uploading built executables
+      # Save the built binaries
+      - name: Uploading built binaries
         uses: actions/upload-artifact@v2
         with:
-          name: Dabbu CLI Executables
+          name: Dabbu CLI Binaries
           path: |
-            execs/cli-alpine
-            execs/cli-linux
-            execs/cli-macos
-            execs/cli-win.exe
+            dist/binaries/cli-alpine
+            dist/binaries/cli-linux
+            dist/binaries/cli-macos
+            dist/binaries/cli-win.exe
+      # Save the built packages
+      - name: Uploading packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: Dabbu CLI Packages
+          path: dist/packages/

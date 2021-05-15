@@ -1,22 +1,21 @@
 {
 	"name": "cli",
 	"version": "3.0.0-alpha.0",
-	"main": "dist/index.js",
-	"bin": "dist/index.js",
+	"main": "dist/compiled/index.js",
+	"bin": "dist/compiled/index.js",
 	"repository": "https://github.com/dabbu-knowledge-platform/cli",
 	"author": "Vedant K (gamemaker1) <gamemaker0042@gmail.com>",
 	"license": "GPL-3.0-or-later",
 	"scripts": {
-		"start": "yarn build && node dist/index.js",
-		"test": "yarn build && yarn jest --test-timeout 30000",
-		"coverage": "yarn build && yarn test --coverage && echo 'View coverage report at http://localhost:23984' && python -m http.server --directory coverage/lcov-report/ 23984",
-		"lint": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts'",
-		"fix": "yarn build && yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix",
-		"clean": "yarn rimraf dist/ coverage/ execs/",
-		"build": "yarn clean && yarn tsc",
-		"execs": "yarn build && yarn pkg .",
-		"ci": "yarn lint && yarn test && yarn execs",
-		"postinstall": "patch --forward node_modules/universalify/index.js < patches/universalify-undefined-fn.patch"
+		"start": "./scripts/run",
+		"test": "./scripts/test",
+		"lint": "./scripts/lint",
+		"fix": "./scripts/fix-lint-errors",
+		"clean": "./scripts/clean",
+		"build": "./scripts/build",
+		"package": "./scripts/package",
+		"ci": "./scripts/ci",
+		"postinstall": "./scripts/patch-deps"
 	},
 	"dependencies": {
 		"axios": "^0.21.1",
@@ -60,7 +59,6 @@
 		"lint-staged": "^10.5.4",
 		"pkg": "^5.1.0",
 		"prettier": "^2.2.1",
-		"rimraf": "^3.0.2",
 		"ts-jest": "^26.5.5",
 		"typescript": "^4.2.4"
 	},
@@ -110,7 +108,7 @@
 		]
 	},
 	"pkg": {
-		"outputPath": "execs",
+		"outputPath": "dist/binaries/",
 		"scripts": [
 			"dist/**/*.js"
 		],

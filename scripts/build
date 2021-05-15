@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# build
+# Runs the Typescript Compiler on the code and output the compiled code
+# to ./dist/compiled/
+
+# Remove generated dirs first
+yarn clean
+# Then build it
+yarn tsc
+# Then copy the package.json file
+cp ./package.json ./dist/
