@@ -25,7 +25,21 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node_version }}
-      # Install dependencies and run the `yarn ci` command
+      # Setup ruby
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+      # Install the `fpm` gem to build packages
+      - name: Install fpm
+        run: |
+          gem install --nod-documents fpm
+          export PATH="$PATH:$HOME/.local/share/gem/ruby/3.0.0/bin"
+      # Install `fpm` dependencies
+      - name: Install fpm dependencies
+        run: |
+          brew install rpm
+      # Install `yarn` dependencies and run the `yarn ci` command
       - name: Test and build
         run: |
           yarn
