@@ -104,7 +104,7 @@ jobs:
           tag_name: ${{ steps.check-version.outputs.version }}
           prerelease: ${{ contains(steps.check-version.outputs.version, '-') }}
           name: Dabbu CLI ${{ steps.check-version.outputs.version }}
-          files: dist/rel/*
+          files: dist/rel/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: dabbu-knowledge-platform/cli
