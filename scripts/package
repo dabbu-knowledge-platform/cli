@@ -31,28 +31,28 @@ function help {
 function compile_linux_deb {
 	echo -e "${colour_blue}Compiling linux_deb${normal}"
 	
-	fpm -s dir -t deb -p dist/packages/dabbu-cli-`cat version`-linux-deb-amd64.deb --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1
+	fpm -s dir -t deb -p dist/packages/dabbu-cli-`cat version`-linux-deb-amd64.deb --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a rpm for linux
 function compile_linux_rpm {
 	echo -e "${colour_blue}Compiling linux_rpm${normal}"
 	
-	fpm -s dir -t rpm -p dist/packages/dabbu-cli-`cat version`-linux-rpm-amd64.rpm --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1
+	fpm -s dir -t rpm -p dist/packages/dabbu-cli-`cat version`-linux-rpm-amd64.rpm --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a pacman package for linux
 function compile_linux_pacman {
 	echo -e "${colour_blue}Compiling linux_pacman${normal}"
 	
-	fpm -s dir -t pacman -p dist/packages/dabbu-cli-`cat version`-linux-arch-amd64.tar.gz --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1
+	fpm -s dir -t pacman -p dist/packages/dabbu-cli-`cat version`-linux-arch-amd64.tar.gz --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a apk package for linux
 function compile_linux_apk {
 	echo -e "${colour_blue}Compiling linux_apk${normal}"
 	
-	fpm -s dir -t apk -p dist/packages/dabbu-cli-`cat version`-linux-alpine-amd64.apk --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1
+	fpm -s dir -t apk -p dist/packages/dabbu-cli-`cat version`-linux-alpine-amd64.apk --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a zip for linux
@@ -80,7 +80,7 @@ function compile_linux_zip {
 function compile_macos_pkg {
 	echo -e "${colour_blue}Compiling macos_pkg${normal}"
 	
-	fpm -s dir -t osxpkg -p dist/packages/dabbu-cli-`cat version`-macos-pkg-amd64.pkg --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1
+	fpm -s dir -t osxpkg -p dist/packages/dabbu-cli-`cat version`-macos-pkg-amd64.pkg --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a zip for macos
