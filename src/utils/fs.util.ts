@@ -6,9 +6,10 @@ import * as Config from '../utils/config.util'
 import Logger from '../utils/logger.util'
 
 // Parse the given path for the drive name and the folder path
-export function parseFolderPath(
-	rawPath: string | undefined,
-): { drive: string; folderPath: string } {
+export function parseFolderPath(rawPath: string | undefined): {
+	drive: string
+	folderPath: string
+} {
 	// The name of the drive
 	let drive = ''
 	// If there is no path, let the path be '.', or the current folder
@@ -47,9 +48,11 @@ export function parseFolderPath(
 }
 
 // Parse the given path for the drive name, the folder path and the file name
-export function parseFilePath(
-	rawPath: string | undefined,
-): { drive: string; folderPath: string; fileName: string } {
+export function parseFilePath(rawPath: string | undefined): {
+	drive: string
+	folderPath: string
+	fileName: string
+} {
 	// The name of the drive
 	let drive = ''
 	// If there is no path, let the path be '.', or the current folder

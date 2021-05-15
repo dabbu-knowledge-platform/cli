@@ -178,9 +178,7 @@ export const ProviderSpec: Array<Provider> = [
 
 // A function to return the provider ID, request body and request header for a
 // particular drive
-export function getRequestMetadata(
-	driveName: string,
-): {
+export function getRequestMetadata(driveName: string): {
 	providerId: string
 	requestBodyFields: Record<string, any>
 	requestHeaderFields: Record<string, any>

@@ -21,7 +21,6 @@ import * as ProviderUtils from '../utils/provider.util'
 import { print, json } from '../utils/general.util'
 // Import the logger
 import Logger from '../utils/logger.util'
-import { ParsedUrlQuery } from 'node:querystring'
 
 // Get all possible providers we can set up
 const getAvailableProviders = async (): Promise<Array<string>> => {
@@ -51,10 +50,11 @@ const setupDrive = async (
 
 	// Get the stuff to send in the request body and headers for the given
 	// provider
-	const providerDetails: ProviderUtils.Provider = ProviderUtils.ProviderSpec.filter(
-		(providerDetails: ProviderUtils.Provider) =>
-			providerDetails.id === providerId,
-	)[0]
+	const providerDetails: ProviderUtils.Provider =
+		ProviderUtils.ProviderSpec.filter(
+			(providerDetails: ProviderUtils.Provider) =>
+				providerDetails.id === providerId,
+		)[0]
 
 	Logger.debug(
 		`command.new-drive.setupDrives: fetched providerDetails: ${json(
@@ -137,20 +137,18 @@ const setupDrive = async (
 
 			// For OAuth2, we require a client ID and client secret. Get them from
 			// the user
-			const {
-				fieldValue: clientId,
-			} = await Prompts.getFieldValueFromUser(
-				'Enter the client ID:',
-				providerDetails.authDetails.instructions,
-				'string',
-			)
-			const {
-				fieldValue: clientSecret,
-			} = await Prompts.getFieldValueFromUser(
-				'Enter the client secret:',
-				undefined,
-				'string',
-			)
+			const { fieldValue: clientId } =
+				await Prompts.getFieldValueFromUser(
+					'Enter the client ID:',
+					providerDetails.authDetails.instructions,
+					'string',
+				)
+			const { fieldValue: clientSecret } =
+				await Prompts.getFieldValueFromUser(
+					'Enter the client secret:',
+					undefined,
+					'string',
+				)
 
 			Logger.debug(
 				`command.new-drive.setupDrives: storing client ID: ${clientId}; client secret: ${clientSecret}; redirect URI: ${providerDetails.authDetails.redirectUri}`,
@@ -214,9 +212,8 @@ const setupDrive = async (
 					`command.new-drive.setupDrive: localhost redirect uri`,
 				)
 
-				const port = providerDetails.authDetails.redirectUri.split(
-					':',
-				)[2]
+				const port =
+					providerDetails.authDetails.redirectUri.split(':')[2]
 				Logger.debug(
 					`command.new-drive.setupDrive: starting server on port ${port}`,
 				)
@@ -226,8 +223,10 @@ const setupDrive = async (
 				const code = await new Promise((resolve, reject) => {
 					const server = Http.createServer((request, result) => {
 						// Return the code only if there is no error and the state variable matches
-						const queryParams = UrlLib.parse(request.url || '', true)
-							.query
+						const queryParams = UrlLib.parse(
+							request.url || '',
+							true,
+						).query
 						Logger.debug(
 							`command.new-drive.setupDrive: server received request with params: ${json(
 								queryParams,
