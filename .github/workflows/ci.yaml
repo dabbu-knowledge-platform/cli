@@ -33,7 +33,7 @@ jobs:
       # Install the `fpm` gem to build packages
       - name: Install fpm
         run: |
-          gem install --nod-documents fpm
+          gem install fpm
           export PATH="$PATH:$HOME/.local/share/gem/ruby/3.0.0/bin"
       # Install `fpm` dependencies
       - name: Install fpm dependencies
