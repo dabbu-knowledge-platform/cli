@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# test
+# Runs all tests using jest
+
+# Run all the tests and generate a coverage report
+yarn jest --testTimeout 50000 --coverage

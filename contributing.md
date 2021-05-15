@@ -45,7 +45,7 @@ $ git fetch upstream
 
 ### Step 2: Build
 
-All you need to do to build is run `yarn execs`. If the command runs successfully, there should be 4 files (`dabbu-cli-alpine`, `dabbu-cli-linux`, `dabbu-cli-macos` and `dabbu-cli-win.exe`) in the `execs/` folder. These are the executables that can be run on alpine, linux, macos and windows respectively without installation of external dependencies.
+All you need to do to build is run `yarn package`. If the command runs successfully, you will be able to see the generated packages in the `dist/` folder.
 
 Once you've built the project locally, you're ready to start making changes!
 
@@ -76,7 +76,7 @@ The code is heavily commented to allow you to understand exactly what happens wh
 - `src/commands/*.ts` contain code that executes when a command is entered. Each file exports a `run` function that takes an array of string args required to run the command.
 - `src/utils/*.ts` contain utility functions regarding different things.
 
-To test a change without building the executables, you can type `yarn start` and it will run the CLI directly.
+To test a change without building the binaries, you can type `yarn start` and it will run the CLI directly.
 
 > While running the CLI for the first time, you will be asked to enter the URL to a Dabbu Server. For testing and development purposes, you may use the server hosted on Heroku - https://dabbu-server.herokuapp.com - but for continued use, it is recommended to setup your own server following the instructions [here](https://dabbu-knowledge-platform.github.io/impls/server).
 

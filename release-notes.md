@@ -1,1 +1,6 @@
-Merged refactor/typescript branch into develop. Now all commits will be made on the develop branch.
+## Changes
+
+- Typescript rewrite
+- Uses v3 of the files-api-server
+- Knowledge drive removed, is a work in progress
+- Packages will be built for different OSs and released

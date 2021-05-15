@@ -3,7 +3,7 @@
 		"declaration": true,
 		"strict": true,
 		"target": "esnext",
-		"outDir": "dist",
+		"outDir": "dist/compiled",
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"esModuleInterop": true,
@@ -20,7 +20,6 @@
 	"exclude": [
 		"tests",
 		"dist",
-		"execs",
 		"node_modules"
 	]
 }

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# run
+# Runs the Typescript Compiler on the code and output the compiled code
+# to ./dist/compiled/. Then runs the CLI in development mode
+
+# First build it
+yarn build
+
+# Then run it
+env NODE_ENV=development node ./dist/compiled/index.js
