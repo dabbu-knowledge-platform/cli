@@ -71,7 +71,9 @@ function compile_linux_zip {
 
 	cp ./dist/binaries/cli-linux ./dist/generated/linux-zip/dabbu-cli
 
-	zip -9 ./dist/packages/dabbu-cli-`cat version`-linux-generic-amd64.zip ./dist/generated/linux-zip/*
+	cd ./dist/generated/linux-zip/
+	zip -9 ../../packages/dabbu-cli-`cat version`-linux-generic-amd64.zip ./*
+	cd ../../../
 }
 
 # Compile a osxpkg package for linux
@@ -97,7 +99,9 @@ function compile_macos_zip {
 
 	cp ./dist/binaries/cli-macos ./dist/generated/macos-zip/dabbu-cli
 
-	zip -9 ./dist/packages/dabbu-cli-`cat version`-macos-generic-amd64.zip ./dist/generated/macos-zip/*
+	cd ./dist/generated/macos-zip/
+	zip -9 ../../packages/dabbu-cli-`cat version`-macos-generic-amd64.zip ./*
+	cd ../../../
 }
 
 # Compile a zip for win
@@ -111,12 +115,14 @@ function compile_win_zip {
 	cp ./version ./dist/generated/win-zip/
 
 	cp ./assets/logo.png ./dist/generated/win-zip/
-	cp ./assets/packaging/dabbu-cli.1 ./dist/generated/win-zip/
-	cp ./assets/packaging/dabbu-cli.desktop ./dist/generated/macos-zip
+	cp ./assets/packaging/dabbu-cli.1 ./dist/generated/win-zip/dabbu-cli.manualpage
+	cp ./assets/packaging/dabbu-cli.desktop ./dist/generated/win-zip/
 
-	cp ./dist/binaries/cli-win.exe ./dist/generated/win-zip/dabbu-cli
+	cp ./dist/binaries/cli-win.exe ./dist/generated/win-zip/dabbu-cli.exe
 
-	zip -9 ./dist/packages/dabbu-cli-`cat version`-win-generic-amd64.zip ./dist/generated/win-zip/*
+	cd ./dist/generated/win-zip/
+	zip -9 ../../packages/dabbu-cli-`cat version`-windows-generic-amd64.zip ./*
+	cd ../../../
 }
 
 
