@@ -1,6 +1,6 @@
 {
 	"name": "cli",
-	"version": "3.0.0",
+	"version": "3.0.1",
 	"main": "dist/compiled/index.js",
 	"bin": "dist/compiled/index.js",
 	"repository": "https://github.com/dabbu-knowledge-platform/cli",
@@ -110,7 +110,7 @@
 	"pkg": {
 		"outputPath": "dist/binaries/",
 		"scripts": [
-			"dist/**/*.js"
+			"dist/compiled/**/*.js"
 		],
 		"assets": [
 			"node_modules/figlet/fonts/Standard.flf"

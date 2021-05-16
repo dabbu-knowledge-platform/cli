@@ -4,6 +4,9 @@
 # Runs the Typescript Compiler on the code and output the compiled code
 # to ./dist/compiled/
 
+# Fail fast
+set -e
+
 # Remove generated dirs first
 yarn clean
 # Then build it

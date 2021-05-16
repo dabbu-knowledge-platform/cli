@@ -3,5 +3,8 @@
 # fix-lint-errors
 # Runs ESLint on the code to fix format errors
 
+# Fail fast
+set -e
+
 # Fix errors
 yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix

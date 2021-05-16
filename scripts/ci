@@ -3,6 +3,9 @@
 # ci
 # Runs the Typescript Compiler, then the linter, then all tests, and finally builds the packages
 
+# Fail fast
+set -e
+
 # Build the CLI
 yarn build
 # Run the linter
