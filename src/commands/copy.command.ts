@@ -585,9 +585,9 @@ export const run = async (args: string[]): Promise<void> => {
 
 		// Show a loading indicator
 		Spinner.start(
-			`Copying all files from folder ${diskPath(
+			`Copying all files from folder ${fromDrive}:${diskPath(
 				fromFolderPath,
-			)} to ${diskPath(toFolderPath)}`,
+			)} to ${toDrive}:${diskPath(toFolderPath)}`,
 		)
 
 		// Define the callback to be run every fifty files
@@ -649,9 +649,11 @@ export const run = async (args: string[]): Promise<void> => {
 					Spinner.start(
 						Chalk.yellow(
 							`Copying file ${Chalk.keyword('orange')(
-								diskPath(fromFolderPath, fromFileName),
+								fromDrive +
+									':' +
+									diskPath(fromFolderPath, fromFileName),
 							)} to ${Chalk.keyword('orange')(
-								diskPath(toFolderPath, fromFileName),
+								toDrive + ':' + diskPath(toFolderPath, fromFileName),
 							)}`,
 						),
 					)
@@ -683,9 +685,11 @@ export const run = async (args: string[]): Promise<void> => {
 						print(
 							Chalk.yellow(
 								`Copied file ${Chalk.keyword('orange')(
-									diskPath(fromFolderPath, fromFileName),
+									fromDrive +
+										':' +
+										diskPath(fromFolderPath, fromFileName),
 								)} to ${Chalk.keyword('orange')(
-									diskPath(toFolderPath, fromFileName),
+									toDrive + ':' + diskPath(toFolderPath, fromFileName),
 								)}`,
 							),
 						)
@@ -706,9 +710,11 @@ export const run = async (args: string[]): Promise<void> => {
 						print(
 							Chalk.red(
 								`Error copying file ${Chalk.keyword('orange')(
-									diskPath(fromFolderPath, fromFileName),
+									fromDrive +
+										':' +
+										diskPath(fromFolderPath, fromFileName),
 								)} to ${Chalk.keyword('orange')(
-									diskPath(toFolderPath, fromFileName),
+									toDrive + ':' + diskPath(toFolderPath, fromFileName),
 								)}: ${ErrorUtils.getErrorMessage(error)}`,
 							),
 						)
@@ -745,10 +751,10 @@ export const run = async (args: string[]): Promise<void> => {
 
 		// Show a loading indicator
 		Spinner.start(
-			`Copying file ${diskPath(
+			`Copying file ${fromDrive}:${diskPath(
 				fromFolderPath,
 				fromFileName,
-			)} to ${diskPath(toFolderPath, fromFileName)}`,
+			)} to ${toDrive}:${diskPath(toFolderPath, fromFileName)}`,
 		)
 
 		// Copy the file
@@ -773,9 +779,9 @@ export const run = async (args: string[]): Promise<void> => {
 		print(
 			Chalk.yellow(
 				`Copied file ${Chalk.keyword('orange')(
-					diskPath(fromFolderPath, fromFileName),
+					fromDrive + ':' + diskPath(fromFolderPath, fromFileName),
 				)} to ${Chalk.keyword('orange')(
-					diskPath(toFolderPath, fromFileName),
+					toDrive + ':' + diskPath(toFolderPath, fromFileName),
 				)}`,
 			),
 		)
@@ -790,10 +796,10 @@ export const run = async (args: string[]): Promise<void> => {
 
 		// Show a loading indicator
 		Spinner.start(
-			`Copying file ${diskPath(
+			`Copying file ${fromDrive}:${diskPath(
 				fromFolderPath,
-				toFileName,
-			)} to ${diskPath(toFolderPath, toFileName)}`,
+				fromFileName,
+			)} to ${toDrive}:${diskPath(toFolderPath, toFileName)}`,
 		)
 
 		// Copy the file
@@ -818,9 +824,9 @@ export const run = async (args: string[]): Promise<void> => {
 		print(
 			Chalk.yellow(
 				`Copied file ${Chalk.keyword('orange')(
-					diskPath(fromFolderPath, fromFileName),
+					fromDrive + ':' + diskPath(fromFolderPath, fromFileName),
 				)} to ${Chalk.keyword('orange')(
-					diskPath(toFolderPath, toFileName),
+					toDrive + ':' + diskPath(toFolderPath, toFileName),
 				)}`,
 			),
 		)
