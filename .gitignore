@@ -1,4 +1,8 @@
-node_modules/
+.vscode
+*.log
+
+logs/
 dist/
-creds/
-_dabbu/
+ignore/
+coverage/
+node_modules/

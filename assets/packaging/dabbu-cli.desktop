@@ -1,0 +1,14 @@
+[Desktop Entry]
+Encoding=UTF-8
+
+Name=Dabbu CLI
+Comment=A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders
+
+Icon=dabbu-cli
+Type=Application
+Categories=Utility
+Keywords=cli;filesystem;gmail;google-drive;file-manager;filestorage;hard-drive;dabbu;dabbu-api;dabbu-server;one-drive;dabbu-cli
+
+Exec=dabbu-cli
+StartupNotify=false
+Terminal=true

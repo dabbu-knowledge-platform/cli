@@ -14,7 +14,7 @@ This guide assumes you are familiar with Github and the command line. If not, [h
 
 ### Step 0: Environment
 
-Install `git`, `nodejs` and `npm`.
+Install `git`, `nodejs` and `yarn`.
 
 #### Git
 
@@ -23,12 +23,12 @@ Install `git`, `nodejs` and `npm`.
 - To check if git is already installed, type `git --version` in terminal/command prompt. You should see a version number displayed after running this command.
 - [Here](https://github.com/git-guides/install-git) are the official instructions to install git for all platforms in case you haven't installed it already.
 
-#### NodeJS and NPM
+#### NodeJS and Yarn
 
-`nodejs` and `npm` **must** be installed to run the CLI locally.
+`nodejs` and `yarn` **must** be installed to run the CLI locally.
 
-- To check if NodeJS and NPM already installed, type `node --version && npm --version` in terminal/command prompt. You should see two version numbers displayed after running this command. For developing Dabbu CLI, we use the LTS version of NodeJS (v14.x)
-- [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install NodeJS and NPM for all platforms in case you haven't installed it already.
+- To check if NodeJS and Yarn already installed, type `node --version && yarn --version` in terminal/command prompt. You should see two version numbers displayed after running this command. For developing Dabbu CLI, we use the latest version of Typescript, which compiles to CommonJS code.
+- [Here](https://nodejs.org/en/download/package-manager/) are the official instructions to install NodeJS and Yarn for all platforms in case you haven't installed it already.
 
 ### Step 1: Fork
 
@@ -45,7 +45,7 @@ $ git fetch upstream
 
 ### Step 2: Build
 
-All you need to do to build is run `npm run build`. If the command runs successfully, there should be 4 files (`dabbu-cli-alpine`, `dabbu-cli-linux`, `dabbu-cli-macos` and `dabbu-cli-win.exe`) in the `dist/` folder. These are the executables that can be run on alpine, linux, macos and windows respectively without installation of external dependencies.
+All you need to do to build is run `yarn package`. If the command runs successfully, you will be able to see the generated packages in the `dist/` folder.
 
 Once you've built the project locally, you're ready to start making changes!
 
@@ -60,7 +60,6 @@ To keep your development environment organized, create local branches to hold yo
 - `refactor/`: A code change that neither fixes a bug nor adds a feature
 - `test/`: A change to the tests
 - `style/`: Changes that do not affect the meaning of the code (linting)
-- `build/`: Bumping a dependency like node or express
 
 ```sh
 $ git checkout -b feature/add-awesome-new-feature -t upstream/develop
@@ -70,44 +69,28 @@ $ git checkout -b feature/add-awesome-new-feature -t upstream/develop
 
 The code is heavily commented to allow you to understand exactly what happens where.
 
-- `src/index.js` contains UI code.
-- `src/client.js` contains code that runs when you type a command into the CLI.
-- `src/knowledge.js` contains code related to the special knowledge drive.
-- `src/utils.js` contains common functions used by the above files.
-- `src/mimes.json` contains data related to the file type you see when you list files in the CLI.
+- `src/index.ts` contains UI and startup code.
+- `src/shell.ts` contains code that handles command parsing for the shell.
+- `src/ui/spinner.ts` contains code that handles the showing and hiding of the spinner.
+- `src/ui/prompts.ts` contains code that handles asking the user for any kind of input. The `readcommand` library is used to read commands when in the shell, while the `enquirer` libary is used to ask any other type of questions.
+- `src/commands/*.ts` contain code that executes when a command is entered. Each file exports a `run` function that takes an array of string args required to run the command.
+- `src/utils/*.ts` contain utility functions regarding different things.
 
-To test a change without building the executables, you can type `npm start` and it will run the CLI directly.
+To test a change without building the binaries, you can type `yarn start` and it will run the CLI directly.
 
 > While running the CLI for the first time, you will be asked to enter the URL to a Dabbu Server. For testing and development purposes, you may use the server hosted on Heroku - https://dabbu-server.herokuapp.com - but for continued use, it is recommended to setup your own server following the instructions [here](https://dabbu-knowledge-platform.github.io/impls/server).
-
-Remember to always format the code using `xo` once you're done.
 
 ### Step 5: Document
 
 Once your changes are ready to go, begin the process of documenting your code. The code **must** be heavily commented, so future contributors can move around and make changes easily.
 
-If you are adding new features, or making changes to the behaviour of existing features, make sure you create a separate pull request in the [user docs repository](https://github.com/dabbu-knowledge-platform/dabbu-knowledge-platform.github.io/), and add relevant info to the `impls/cli.md` page. Also add the same changes to the `readme.md` file.
-
-The documentation uses jekyll. To set up jekyll on your computer and make changes to the documentation, follow [this](https://docs.github.com/en/github/working-with-github-pages/testing-your-github-pages-site-locally-with-jekyll) guide.
+If you are adding new features, or making changes to the behaviour of existing features, make sure to add relevant info to the `readme.md` file.
 
 ### Step 6: Test
 
-Before submitting your changes, please run the linter (`xo`):
+Before submitting your changes, please run the command `yarn ci`.
 
-```
-npm test
-```
-
-Please ensure that:
-
-- your code passes all lint checks (`xo`)
-- your code passes all format checks (`prettier` run by xo) 
-
-If the linter points out errors, try fixing them automatically by running:
-
-```
-npm run format
-```
+If the linter points out errors, try fixing them automatically by running `yarn fix`.
 
 The linter will try its best to fix all issues, but certain issues require you to fix them manually.
 
@@ -145,9 +128,9 @@ Before a pull request can be merged, it **must** have a pull request title with 
 
 Examples of commit messages with semantic prefixes:
 
-- `fix: don't reload config everytime`
-- `feat: add MS OneDrive provider`
-- `docs: fix typo in APIs.md`
+- `fix(perf): don't reload config everytime`
+- `feat(copy): add copy command`
+- `docs(readme): fix typo in readme.md`
 
 Common prefixes:
 

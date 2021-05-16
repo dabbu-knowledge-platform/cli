@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# patch-deps
+# Patches any dependencies that break the build
+
+patch --forward node_modules/universalify/index.js < patches/universalify-undefined-fn.patch

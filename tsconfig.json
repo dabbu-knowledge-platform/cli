@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"strict": true,
+		"target": "esnext",
+		"outDir": "dist/compiled",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"removeComments": true,
+		"lib": [
+			"esnext"
+		],
+		"rootDir": "src"
+	},
+	"include": [
+		"src"
+	],
+	"exclude": [
+		"tests",
+		"dist",
+		"node_modules"
+	]
+}

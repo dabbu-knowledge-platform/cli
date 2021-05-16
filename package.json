@@ -1,81 +1,125 @@
 {
-	"name": "dabbu-cli",
-	"version": "2.7.1",
-	"description": "A CLI that leverages the Dabbu API and neatly retrieves your files and folders scattered online",
-	"main": "src/index.js",
-	"scripts": {
-		"start": "node src/index.js",
-		"clean": "rm -r dist/ && mkdir dist/",
-		"format": "xo --fix",
-		"prebuild": "npm run test",
-		"build": "npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
-		"ci-build": "npm prune --production && npx pkg --output dist/dabbu-cli . --targets node14.4.0-win-x64,node14.4.0-macos-x64,node14.4.0-linux-x64,node14.4.0-alpine-x64",
-		"test": "xo"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/dabbu-knowledge-platform/cli.git"
-	},
-	"author": "gamemaker1",
+	"name": "cli",
+	"version": "3.0.0",
+	"main": "dist/compiled/index.js",
+	"bin": "dist/compiled/index.js",
+	"repository": "https://github.com/dabbu-knowledge-platform/cli",
+	"author": "Vedant K (gamemaker1) <gamemaker0042@gmail.com>",
 	"license": "GPL-3.0-or-later",
-	"bugs": {
-		"url": "https://github.com/dabbu-knowledge-platform/cli/issues"
+	"scripts": {
+		"start": "./scripts/run",
+		"test": "./scripts/test",
+		"lint": "./scripts/lint",
+		"fix": "./scripts/fix-lint-errors",
+		"clean": "./scripts/clean",
+		"build": "./scripts/build",
+		"package": "./scripts/package",
+		"ci": "./scripts/ci",
+		"postinstall": "./scripts/patch-deps"
 	},
-	"homepage": "https://github.com/dabbu-knowledge-platform/cli#readme",
 	"dependencies": {
 		"axios": "^0.21.1",
 		"chalk": "^4.1.0",
 		"cli-table3": "^0.6.0",
 		"conf": "^9.0.2",
-		"express": "^4.17.1",
+		"enquirer": "^2.3.6",
+		"env-paths": "^2.2.1",
 		"figlet": "^1.5.0",
+		"file-type": "^16.4.0",
 		"form-data": "^4.0.0",
-		"fs-extra": "^9.1.0",
+		"fs-extra": "^10.0.0",
 		"nanoid": "^3.1.22",
-		"open": "^8.0.5",
+		"open": "^8.0.7",
 		"ora": "^5.4.0",
-		"readcommand": "^0.3.0",
-		"terminal-link": "^2.1.1"
+		"readcommand": "0.3.0",
+		"terminal-link": "2.1.1",
+		"winston": "^3.3.3"
 	},
 	"devDependencies": {
-		"pkg": "^4.5.1",
-		"xo": "^0.38.2"
+		"@types/axios": "^0.14.0",
+		"@types/chalk": "^2.2.0",
+		"@types/env-paths": "^2.1.0",
+		"@types/figlet": "^1.5.0",
+		"@types/file-type": "^10.9.1",
+		"@types/form-data": "^2.5.0",
+		"@types/fs-extra": "^9.0.11",
+		"@types/jest": "^26.0.23",
+		"@types/node": "^14.14.41",
+		"@types/open": "^6.2.1",
+		"@types/ora": "^3.2.0",
+		"@types/terminal-link": "^1.2.0",
+		"@types/winston": "^2.4.4",
+		"@typescript-eslint/eslint-plugin": "^4.22.0",
+		"@typescript-eslint/parser": "^4.22.0",
+		"eslint": "^7.24.0",
+		"eslint-config-prettier": "^8.2.0",
+		"eslint-plugin-prettier": "^3.4.0",
+		"husky": "^6.0.0",
+		"jest": "^26.6.3",
+		"lint-staged": "^10.5.4",
+		"pkg": "^5.1.0",
+		"prettier": "^2.2.1",
+		"ts-jest": "^26.5.5",
+		"typescript": "^4.2.4"
 	},
-	"bin": "src/index.js",
-	"pkg": {
-		"scripts": [
-			"src/**/*"
-		],
-		"assets": [
-			"node_modules/**/*"
+	"jest": {
+		"transform": {
+			"^.+\\.ts$": "ts-jest"
+		},
+		"testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+		"moduleFileExtensions": [
+			"ts",
+			"js",
+			"json"
 		]
 	},
 	"prettier": {
 		"semi": false,
-		"useTabs": true,
-		"trailingComma": "none",
+		"trailingComma": "all",
 		"singleQuote": true,
-		"bracketSpacing": true,
-		"jsxBracketSameLine": false
+		"printWidth": 72,
+		"useTabs": true,
+		"tabWidth": 2
 	},
-	"xo": {
-		"semicolon": false,
-		"prettier": true,
-		"rules": {
-			"complexity": 0,
-			"no-unused-vars": 0,
-			"max-params": 0,
-			"max-depth": 0,
-			"object-curly-spacing": 0,
-			"unicorn/no-nested-ternary": 0
+	"eslintConfig": {
+		"parser": "@typescript-eslint/parser",
+		"parserOptions": {
+			"ecmaVersion": "next",
+			"sourceType": "module"
 		},
-		"ignores": [
-			"node_modules/",
-			"creds/",
-			"dist/",
-			"_dabbu/",
-			".git/",
-			".heroku/"
+		"extends": [
+			"plugin:@typescript-eslint/recommended",
+			"plugin:prettier/recommended"
+		],
+		"rules": {
+			"@typescript-eslint/no-non-null-assertion": 0,
+			"@typescript-eslint/no-explicit-any": 0,
+			"@typescript-eslint/no-unused-vars": 0
+		}
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*.ts": [
+			"yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix"
+		]
+	},
+	"pkg": {
+		"outputPath": "dist/binaries/",
+		"scripts": [
+			"dist/**/*.js"
+		],
+		"assets": [
+			"node_modules/figlet/fonts/Standard.flf"
+		],
+		"targets": [
+			"node14-win-x64",
+			"node14-macos-x64",
+			"node14-linux-x64",
+			"node14-alpine-x64"
 		]
 	}
 }

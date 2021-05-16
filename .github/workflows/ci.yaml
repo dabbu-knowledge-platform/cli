@@ -1,0 +1,110 @@
+name: CI
+
+# Triggers the workflow on push or pull request events for any branch that has
+# this file
+on: [push, pull_request]
+
+# This workflow has only two jobs - testing and building (combined into
+# one) and uploading the release to github
+jobs:
+  ci:
+    name: Test and build on node ${{ matrix.node_version }}
+    # Run the job on an instance of MacOS (not ubuntu because we need
+    # MacOS to build an osxpkg from the binary)
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        # Run on node 14
+        node_version: ['14.x']
+    steps:
+      # `git clone` the repo
+      - name: Check out repo
+        uses: actions/checkout@v1
+      # Setup the specified version of node
+      - name: Setup node ${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+      # Setup ruby
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+      # Install the `fpm` gem to build packages
+      - name: Install fpm
+        run: |
+          gem install fpm
+          export PATH="$PATH:$HOME/.local/share/gem/ruby/3.0.0/bin"
+      # Install `fpm` dependencies
+      - name: Install fpm dependencies
+        run: |
+          brew install rpm
+      # Install `yarn` dependencies and run the `yarn ci` command
+      - name: Test and build
+        run: |
+          yarn
+          yarn ci
+      # Compress the binaries and the packages as a tar.gz file
+      - name: Compress binaries and packages
+        run: |
+          tar cf dabbu-cli-binaries.tar.gz dist/binaries/*
+          tar cf dabbu-cli-packages.tar.gz dist/packages/*
+      # Save the built binaries
+      - name: Uploading built binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: dabbu-cli-binaries.tar.gz
+          path: dabbu-cli-binaries.tar.gz
+      # Save the built packages
+      - name: Uploading packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: dabbu-cli-packages.tar.gz
+          path: dabbu-cli-packages.tar.gz
+
+  # Upload the release
+  release:
+    name: Upload release
+    # Make sure the ci task has succeeded before uploading a release
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      # `git clone` the repo
+      - name: Check out repo
+        uses: actions/checkout@v1
+      # Download the packages
+      - name: Downloading built packages
+        uses: actions/download-artifact@v2
+        with:
+          name: dabbu-cli-packages.tar.gz
+      # Unzip the downloaded package
+      - name: Unzip downloaded packages
+        run: |
+          mkdir -p dist/rel/
+          tar -xf dabbu-cli-packages.tar.gz -C dist/rel/
+      # Check if the version is different from the last uploaded release
+      - name: Check version
+        run: |
+          revision=`git rev-list --tags --max-count=1`
+          version_name=`cat version`
+          previous_version_name=`git describe --tags --abbrev=0`
+
+          echo "Uploading version: $version_name"
+          echo "Previous version: $previous_version_name"
+          
+          echo "::set-output name=version::$version_name"
+          echo "::set-output name=previous_version::$previous_version_name"
+        id: check-version
+      - name: Create release
+        # Run it only if the version has been changed
+        if: ${{ steps.check-version.outputs.version != steps.check-version.outputs.previous_version && github.ref == 'refs/heads/develop' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release-notes.md
+          tag_name: ${{ steps.check-version.outputs.version }}
+          prerelease: ${{ contains(steps.check-version.outputs.version, '-') }}
+          name: Dabbu CLI ${{ steps.check-version.outputs.version }}
+          files: dist/rel/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: dabbu-knowledge-platform/cli
