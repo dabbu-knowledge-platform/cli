@@ -110,7 +110,7 @@
 	"pkg": {
 		"outputPath": "dist/binaries/",
 		"scripts": [
-			"dist/**/*.js"
+			"dist/compiled/**/*.js"
 		],
 		"assets": [
 			"node_modules/figlet/fonts/Standard.flf"
