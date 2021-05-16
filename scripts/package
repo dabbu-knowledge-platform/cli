@@ -3,7 +3,7 @@
 # package
 # Builds packages for linux (deb, rpm, pacman, apk, zip), macos (pkg, zip) and win (zip)
 # 
-# Usage: scripts/package [<new-version> | major | minor | patch | premajor | preminor | prepatch | prerelease]
+# Usage: scripts/package
 # 
 # Remember to run this script from the root of the project!
 
