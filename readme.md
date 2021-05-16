@@ -11,7 +11,9 @@ With the Dabbu Knowledge Platform, we aim to rethink the way we organize and tra
 
 Dabbu allows you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders from Dabbu CLI. 
 
-[![Dabbu CLI in action](./assets/cli-demo.png)](./assets/cli-demo.png)
+<div align="center">
+	<img src="assets/cli-demo.png" alt="Dabbu CLI in action">
+</div>
 
 It not only allows you to seamlessly search/traverse your information across these sources (as simple as `cd`, `list`), but also move information around between drives (`copy`) - yes even your Gmail messages in a thread get copied to your hard drive as `.md` files in a zip if you do a `harddrive:/$ cp gmail:/INBOX/ ./"My Emails"`.
 
