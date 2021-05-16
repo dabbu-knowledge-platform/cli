@@ -3,5 +3,8 @@
 # test
 # Runs all tests using jest
 
+# Fail fast
+set -e
+
 # Run all the tests and generate a coverage report
 yarn jest --testTimeout 50000 --coverage

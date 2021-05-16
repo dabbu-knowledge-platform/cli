@@ -7,6 +7,9 @@
 # 
 # Remember to run this script from the root of the project!
 
+# Fail fast
+set -e
+
 # ANSI colour codes so we can highlight text in the terminal
 colour_red="\033[0;31m"
 colour_green="\033[0;32m"

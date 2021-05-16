@@ -4,6 +4,9 @@
 # Runs the Typescript Compiler on the code and output the compiled code
 # to ./dist/compiled/. Then runs the CLI in development mode
 
+# Fail fast
+set -e
+
 # First build it
 yarn build
 

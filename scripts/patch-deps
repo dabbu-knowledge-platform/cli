@@ -3,4 +3,7 @@
 # patch-deps
 # Patches any dependencies that break the build
 
+# Fail fast
+set -e
+
 patch --forward node_modules/universalify/index.js < patches/universalify-undefined-fn.patch
