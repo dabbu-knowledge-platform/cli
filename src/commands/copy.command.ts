@@ -196,10 +196,40 @@ async function uploadFile(
 		await Fs.ensureDir(diskPath(basePath, folderPath))
 
 		// Copy the file's contents over
-		await Fs.copyFile(
-			pathToLocalFile,
-			diskPath(basePath, folderPath, fileName),
-		)
+		// Keep trying (6 times) before giving up, sometimes files (when
+		// copying from one disk/partition to another) get copied properly
+		// only the second or third time
+		let tries = 0
+		const copyHardDriveFile = async () => {
+			await new Promise<void>((resolve, reject) => {
+				Fs.copy(
+					pathToLocalFile,
+					diskPath(basePath, folderPath, fileName),
+					{
+						recursive: true,
+						overwrite: true,
+						dereference: true,
+					},
+					async (error) => {
+						if (error) {
+							tries++
+							Logger.debug(
+								`command.copy.uploadFile: copying hard drive file: try #${tries}; error: ${json(
+									error,
+								)}`,
+							)
+
+							await copyHardDriveFile()
+						}
+
+						resolve()
+					},
+				)
+			})
+		}
+
+		// Run the function
+		await copyHardDriveFile()
 
 		// Return
 		return
