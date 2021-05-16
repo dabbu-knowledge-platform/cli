@@ -100,15 +100,15 @@ function push_to_git {
 	# Get the new version
 	local new_release_tag=`cat version`
 	# Add the changed files
-	git add version package.json package-lock.json release-notes.md
+	git add version package.json release-notes.md
 
 	# Commit it as a prerelease or a release
 	# NOTE: Do not tag the commit, as the CI will then not create a release
 	# Pre-releases will contain a dash in their version
 	if [[ $new_release_tag =~ "-" ]]; then
-		git commit -m "chore(release): prerelease $new_release_tag"
+		git commit -m "chore(rel): prerelease $new_release_tag"
 	else
-		git commit -m "chore(release): release $new_release_tag"
+		git commit -m "chore(rel): release $new_release_tag"
 	fi
 	
 	# Push the changes
