@@ -602,7 +602,10 @@ export const run = async (args: string[]): Promise<void> => {
 					if (fromFilePathArray) {
 						// Set the file path and name accordingly
 						fromFileName = fromFilePathArray.pop()
-						fromFolderPath = fromFilePathArray.length > 1 ? fromFilePathArray.join('/') : '/'
+						fromFolderPath =
+							fromFilePathArray.length > 1
+								? fromFilePathArray.join('/')
+								: '/'
 					} else {
 						throw new Error('Invalid file path received from server')
 					}
