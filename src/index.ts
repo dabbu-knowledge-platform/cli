@@ -82,114 +82,6 @@ const checkConfig = async (): Promise<void> => {
 		)
 	}
 
-	Logger.debug(`startup.checkConfig: checking client ID - API key pair`)
-
-	// Check if the credentials exist
-	// The creds object will be of the following format: {
-	//	 clientId: '...',
-	//   apiKey: '...',
-	//   token: '...'
-	// }
-	const creds = Config.get('creds')
-
-	Logger.debug(`startup.checkConfig: creds: ${json(creds)}`)
-
-	// Make a request to the server to check the creds
-	// If they are invalid, set this variable to true to force a refresh
-	// in the next step
-	let invalidCreds = false
-	if (creds && creds.token) {
-		Logger.debug(
-			`startup.checkConfig: making test request for creds validity`,
-		)
-
-		// Define the request options
-		const requestOptions: AxiosRequestConfig = {
-			method: 'GET',
-			baseURL: Config.get('serverUrl') as string,
-			url: '/files-api/v3/providers/',
-			headers: {
-				'X-Credentials': creds.token as string,
-			},
-		}
-
-		Logger.debug(
-			`startup.checkConfig: making get request for creds check: ${json(
-				requestOptions,
-			)}`,
-		)
-
-		// Make the request using axios
-		try {
-			const { data } = await axios(requestOptions)
-
-			Logger.debug(
-				`startup.checkConfig: creds valid; response received: ${json(
-					data,
-				)}`,
-			)
-		} catch (error) {
-			if (
-				error.response.data &&
-				error.response.data.error &&
-				error.response.data.error.reason === 'invalidCredentials'
-			) {
-				Logger.debug(
-					`startup.checkConfig: creds invalid; error received: ${json(
-						error.response.data,
-					)}`,
-				)
-
-				invalidCreds = true
-			}
-		}
-	}
-
-	// If they are undefined or invalid, get the credentials
-	if (!creds || !creds.clientId || !creds.apiKey || invalidCreds) {
-		Logger.debug(
-			`startup.checkConfig: missing or invalid creds; registering new client with server`,
-		)
-
-		// Make a request to the server to register a client
-		// Define the request options
-		const requestOptions: AxiosRequestConfig = {
-			method: 'POST',
-			baseURL: Config.get('serverUrl') as string,
-			url: '/files-api/v3/clients/',
-		}
-
-		Logger.debug(
-			`startup.checkConfig: making post request: ${json(
-				requestOptions,
-			)}`,
-		)
-
-		// Make the request using axios
-		const { data } = await axios(requestOptions)
-
-		Logger.debug(
-			`startup.checkConfig: response received: ${json(data)}`,
-		)
-
-		// Store the received client ID and API key
-		Config.set('creds.clientId', data.content.id)
-		Config.set('creds.apiKey', data.content.apiKey)
-		// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
-		Config.set(
-			'creds.token',
-			Buffer.from(`${data.content.id}:${data.content.apiKey}`).toString(
-				'base64',
-			),
-		)
-
-		Logger.debug(
-			`startup.checkConfig: credentials obtained - ${json(
-				Config.get('creds'),
-			)}`,
-		)
-	}
-
 	Logger.debug(`startup.checkConfig: checking drives`)
 
 	// Now check if there are any drives
@@ -212,6 +104,121 @@ const checkConfig = async (): Promise<void> => {
 			)}`,
 		)
 	}
+
+	const checkCreds = async () => {
+		Logger.debug(
+			`startup.checkConfig: checking client ID - API key pair`,
+		)
+
+		// Check if the credentials exist
+		// The creds object will be of the following format: {
+		//	 clientId: '...',
+		//   apiKey: '...',
+		//   token: '...'
+		// }
+		const creds = Config.get('creds')
+
+		Logger.debug(`startup.checkConfig: creds: ${json(creds)}`)
+
+		// Make a request to the server to check the creds
+		// If they are invalid, set this variable to true to force a refresh
+		// in the next step
+		let invalidCreds = false
+		if (creds && creds.token) {
+			Logger.debug(
+				`startup.checkConfig: making test request for creds validity`,
+			)
+
+			// Define the request options
+			const requestOptions: AxiosRequestConfig = {
+				method: 'GET',
+				baseURL: Config.get('serverUrl') as string,
+				url: '/files-api/v3/providers/',
+				headers: {
+					'X-Credentials': creds.token as string,
+				},
+			}
+
+			Logger.debug(
+				`startup.checkConfig: making get request for creds check: ${json(
+					requestOptions,
+				)}`,
+			)
+
+			// Make the request using axios
+			try {
+				const { data } = await axios(requestOptions)
+
+				Logger.debug(
+					`startup.checkConfig: creds valid; response received: ${json(
+						data,
+					)}`,
+				)
+			} catch (error) {
+				if (
+					error.response.data &&
+					error.response.data.error &&
+					error.response.data.error.reason === 'invalidCredentials'
+				) {
+					Logger.debug(
+						`startup.checkConfig: creds invalid; error received: ${json(
+							error.response.data,
+						)}`,
+					)
+
+					invalidCreds = true
+				}
+			}
+		}
+
+		// If they are undefined or invalid, get the credentials
+		if (!creds || !creds.clientId || !creds.apiKey || invalidCreds) {
+			Logger.debug(
+				`startup.checkConfig: missing or invalid creds; registering new client with server`,
+			)
+
+			// Make a request to the server to register a client
+			// Define the request options
+			const requestOptions: AxiosRequestConfig = {
+				method: 'POST',
+				baseURL: Config.get('serverUrl') as string,
+				url: '/files-api/v3/clients/',
+			}
+
+			Logger.debug(
+				`startup.checkConfig: making post request: ${json(
+					requestOptions,
+				)}`,
+			)
+
+			// Make the request using axios
+			const { data } = await axios(requestOptions)
+
+			Logger.debug(
+				`startup.checkConfig: response received: ${json(data)}`,
+			)
+
+			// Store the received client ID and API key
+			Config.set('creds.clientId', data.content.id)
+			Config.set('creds.apiKey', data.content.apiKey)
+			// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+			Config.set(
+				'creds.token',
+				Buffer.from(
+					`${data.content.id}:${data.content.apiKey}`,
+				).toString('base64'),
+			)
+
+			Logger.debug(
+				`startup.checkConfig: credentials obtained - ${json(
+					Config.get('creds'),
+				)}`,
+			)
+		}
+	}
+
+	// Check creds in the background, don't block the CLI on this
+	checkCreds()
 }
 
 // Start the Dabbu shell
