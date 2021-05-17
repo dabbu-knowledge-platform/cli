@@ -1,4 +1,5 @@
 // Import all commands
+import { run as runPwdCommand } from './commands/pwd.command'
 import { run as runCdCommand } from './commands/cd.command'
 import { run as runListCommand } from './commands/list.command'
 import { run as runReadCommand } from './commands/read.command'
@@ -39,6 +40,14 @@ export default class Shell {
 			process.env.PROCESSING_COMMAND = 'true'
 
 			switch (args[0]) {
+				case 'pwd':
+				case 'whereami':
+				case 'location':
+				case 'loc':
+					Logger.debug(`shell.run: running pwd: ${args.slice(1)}`)
+
+					await runPwdCommand(args.slice(1))
+					break
 				case 'cd':
 					Logger.debug(`shell.run: running cd: ${args.slice(1)}`)
 
