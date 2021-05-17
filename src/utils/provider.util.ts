@@ -125,7 +125,7 @@ export const ProviderSpec: Array<Provider> = [
 			'https://www.googleapis.com/auth/drive',
 			'http://localhost:8081',
 			'requestQueryParameters',
-			'Open "https://developers.google.com/drive/api/v3/quickstart/nodejs#step_1_turn_on_the" in a web browser. Then follow these steps:\n  - Click on the blue "Enable Drive API" button,\n  - Fill in the following text boxes with these values,\n    - Name: Dabbu CLI,\n    - Type: Web Server,\n    - Redirect URI: http://localhost:8081,\n  - Copy the client ID and secret given there and paste it here.',
+			'Follow the instructions given on this page - https://gist.github.com/gamemaker1/01eb0e7b7b1dd89ae536942c75896e60. Then copy the client ID and secret you get and paste them here.',
 		),
 	),
 	new Provider(
@@ -148,7 +148,7 @@ export const ProviderSpec: Array<Provider> = [
 			'https://www.googleapis.com/auth/gmail.modify',
 			'http://localhost:8081',
 			'requestQueryParameters',
-			'Open "https://developers.google.com/gmail/api/quickstart/nodejs#step_1_turn_on_the" in a web browser. Then follow these steps:\n  - Click on the blue "Enable Drive API" button,\n  - Fill in the following text boxes with these values,\n    - Name: Dabbu CLI,\n    - Type: Web Server,\n    - Redirect URI: http://localhost:8081,\n  - Copy the client ID and secret given there and paste it here.',
+			'Follow the instructions given on this page - https://gist.github.com/gamemaker1/01eb0e7b7b1dd89ae536942c75896e60. Then copy the client ID and secret you get and paste them here.',
 		),
 	),
 	new Provider(

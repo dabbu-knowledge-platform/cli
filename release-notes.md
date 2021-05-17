@@ -1,18 +1,12 @@
-## Fixes
+## Features added
 
-- fix(copy): wrong file name displayed in loading indicator [5ad094b]
-- fix(auth): register a new client if server does not recognise creds [0aeb411]
-- fix(copy): error when copying files on hard drive from disk to disk [918c853]
-  - fixes itself when trying the same operation again once or twice
-- fix(copy): 404 when copying a file from the root of a drive [c6920ef]
+- Add `pwd` command [3610074]
+  - shows current drive name, provider and path
+  - also displays list of drives
 
-## Builds/CI
+## Fixes/changes
 
-- fix(build): add fail fast flag to all bash scripts except the package script [b3c2557, 9a0a2f2]
-- fix(build): incorrect path to compiled js files [e598e43]
-- fix(package script): copy-paste error in comments [9696392]
-- fix(bump version script): remove package-lock.json from git add command [3149ecb]
-
-## Docs
-
-- change(logo): use a different logo [2ee8cf2]
+- Check creds in the background on startup [d05ea92]
+  - it used to block the shell for a few seconds on startup
+- Move instructions for creating oauth client to gist [b5bdf63]
+  - direct users to follow the instructions in the gist, then copy-paste the client ID and secret into the CLI
