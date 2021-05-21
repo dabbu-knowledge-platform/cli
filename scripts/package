@@ -35,28 +35,28 @@ function help {
 function compile_linux_deb {
 	echo -e "${colour_blue}Compiling linux_deb${normal}"
 	
-	fpm -s dir -t deb -p dist/packages/dabbu-cli-`cat version`-linux-deb-amd64.deb --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
+	fpm -s dir -t deb -p dist/packages/dabbu-cli-linux-deb-amd64.deb --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a rpm for linux
 function compile_linux_rpm {
 	echo -e "${colour_blue}Compiling linux_rpm${normal}"
 	
-	fpm -s dir -t rpm -p dist/packages/dabbu-cli-`cat version`-linux-rpm-amd64.rpm --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
+	fpm -s dir -t rpm -p dist/packages/dabbu-cli-linux-rpm-amd64.rpm --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a pacman package for linux
 function compile_linux_pacman {
 	echo -e "${colour_blue}Compiling linux_pacman${normal}"
 	
-	fpm -s dir -t pacman -p dist/packages/dabbu-cli-`cat version`-linux-arch-amd64.tar.gz --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
+	fpm -s dir -t pacman -p dist/packages/dabbu-cli-linux-arch-amd64.tar.gz --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-linux=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a apk package for linux
 function compile_linux_apk {
 	echo -e "${colour_blue}Compiling linux_apk${normal}"
 	
-	fpm -s dir -t apk -p dist/packages/dabbu-cli-`cat version`-linux-alpine-amd64.apk --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-alpine=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
+	fpm -s dir -t apk -p dist/packages/dabbu-cli-linux-alpine-amd64.apk --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-alpine=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a zip for linux
@@ -76,7 +76,7 @@ function compile_linux_zip {
 	cp ./dist/binaries/cli-linux ./dist/generated/linux-zip/dabbu-cli
 
 	cd ./dist/generated/linux-zip/
-	zip -9 ../../packages/dabbu-cli-`cat version`-linux-generic-amd64.zip ./*
+	zip -9 ../../packages/dabbu-cli-linux-generic-amd64.zip ./*
 	cd ../../../
 }
 
@@ -84,7 +84,7 @@ function compile_linux_zip {
 function compile_macos_pkg {
 	echo -e "${colour_blue}Compiling macos_pkg${normal}"
 	
-	fpm -s dir -t osxpkg -p dist/packages/dabbu-cli-`cat version`-macos-pkg-amd64.pkg --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-macos=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
+	fpm -s dir -t osxpkg -p dist/packages/dabbu-cli-macos-pkg-amd64.pkg --name dabbu-cli --license gpl3 --version `cat version` --description "A CLI that enables you to access any of your personal information (Gmail, Google Drive, OneDrive, your hard drive, ...) as simple files and folders" --url "https://dabbu-knowledge-platform.github.io" --maintainer "Vedant K (gamemaker1) <dabbuknowledgeplatform@gmail.com>" ./dist/binaries/cli-macos=/usr/bin/dabbu-cli ./assets/packaging/dabbu-cli.1=/usr/share/man/man1/dabbu-cli.1 ./assets/logo.png=/usr/share/icons/dabbu-cli.png ./assets/packaging/dabbu-cli.desktop=/usr/share/applications/dabbu-cli.desktop
 }
 
 # Compile a zip for macos
@@ -104,7 +104,7 @@ function compile_macos_zip {
 	cp ./dist/binaries/cli-macos ./dist/generated/macos-zip/dabbu-cli
 
 	cd ./dist/generated/macos-zip/
-	zip -9 ../../packages/dabbu-cli-`cat version`-macos-generic-amd64.zip ./*
+	zip -9 ../../packages/dabbu-cli-macos-generic-amd64.zip ./*
 	cd ../../../
 }
 
@@ -125,7 +125,7 @@ function compile_win_zip {
 	cp ./dist/binaries/cli-win.exe ./dist/generated/win-zip/dabbu-cli.exe
 
 	cd ./dist/generated/win-zip/
-	zip -9 ../../packages/dabbu-cli-`cat version`-windows-generic-amd64.zip ./*
+	zip -9 ../../packages/dabbu-cli-windows-generic-amd64.zip ./*
 	cd ../../../
 }
 
