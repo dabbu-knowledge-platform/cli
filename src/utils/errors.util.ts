@@ -14,6 +14,12 @@ export const getErrorMessage = (
 		`util.error.getErrorMessage: received error: ${json(error)}`,
 	)
 
+	// Print out the error as is if the PRINT_ERRORS environment variable
+	// is non null
+	if (process.env.PRINT_ERRORS) {
+		console.error(error)
+	}
+
 	// If the error is a string, return it as is
 	if (typeof error === 'string') {
 		Logger.debug(

@@ -11,4 +11,4 @@ set -e
 yarn build
 
 # Then run it
-env NODE_ENV=development node ./dist/compiled/index.js
+env NODE_ENV=development PRINT_ERRORS=true node ./dist/compiled/index.js
