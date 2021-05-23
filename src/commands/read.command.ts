@@ -142,7 +142,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// just in case Authorization is required)
 	// First check that the resource returned - exists, is not a folder,
 	// and has a content URI
-	if (!data.content || !data.content.contentUri) {
+	if (!data.content || !data.content.contentUri || !data.content.name) {
 		throw new Error('Invalid response from Files API Server')
 	}
 	if (data.content.kind === 'folder') {
@@ -174,7 +174,7 @@ export const run = async (args: string[]): Promise<void> => {
 	Logger.debug(`command.read.run: response stream receieved`)
 
 	// The path where the file will be temporarily downloaded
-	const cacheFilePath = `${cachePath}/${Nanoid()}-${fileName}`
+	const cacheFilePath = `${cachePath}/${Nanoid()}::${data.content.name}`
 
 	// Create the file
 	await Fs.createFile(cacheFilePath)

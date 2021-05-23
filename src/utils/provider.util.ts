@@ -171,7 +171,7 @@ export const ProviderSpec: Array<Provider> = [
 			'offline_access https://graph.microsoft.com/Files.ReadWrite.All',
 			'http://localhost:8081',
 			'requestBodyString',
-			'Open "https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps" in a web browser. Then do the following:\n  - Click on the "New Registration" button.\n  - Fill in the following text boxes with these values\n    - Name: Dabbu CLI\n    - Type: Web\n    - Accounts: Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)\n    - Redirect URI: http://localhost:8081\n  - Then click on the "Register app" button. Copy the client ID you get and enter it here.\n  - Then go to "APIs permissions" and click on "Add a permission" > "Microsoft Graph API" > "Delegated permissions" > select "Offline access" and "Files.ReadWrite.All". Then click on "Add permission".\n  - Then go to "Certificates and Secrets and create a new secret and set expiry date to "Never". Copy the client secret you get on that webpage and enter it here.',
+			'Follow the instructions given on this page - https://gist.github.com/gamemaker1/01eb0e7b7b1dd89ae536942c75896e60. Then copy the client ID and secret you get and paste them here.',
 		),
 	),
 ]

@@ -156,6 +156,7 @@ const checkConfig = async (): Promise<void> => {
 				)
 			} catch (error) {
 				if (
+					error.response &&
 					error.response.data &&
 					error.response.data.error &&
 					error.response.data.error.reason === 'invalidCredentials'
