@@ -78,7 +78,7 @@ The code is heavily commented to allow you to understand exactly what happens wh
 
 To test a change without building the binaries, you can type `yarn start` and it will run the CLI directly.
 
-> While running the CLI for the first time, you will be asked to enter the URL to a Dabbu Server. For testing and development purposes, you may use the server hosted on Heroku - https://dabbu-server.herokuapp.com - but for continued use, it is recommended to setup your own server following the instructions [here](https://dabbu-knowledge-platform.github.io/impls/server).
+> While running the CLI for the first time, you will be asked to enter the URL to a Dabbu Server. For testing and development purposes, you may use the server hosted on Heroku - https://dabbu-server.herokuapp.com - but for continued use, it is recommended to setup your own server following the instructions [here](https://github.com/dabbu-knowledge-platform/files-api-server/blob/develop/docs/running-the-server.md).
 
 ### Step 5: Document
 

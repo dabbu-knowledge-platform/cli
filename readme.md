@@ -23,7 +23,7 @@ The only way to use Dabbu (at the moment) is through a command-line interface (C
 
 ## Installation and getting started
 
-Go [here](https://dabbu-knowledge-platform.github.io/docs) for instructions on how to setup and use Dabbu CLI.
+Go [here](https://dabbu-knowledge-platform.github.io) for instructions on how to setup and use Dabbu CLI.
 
 ## Providers supported
 
