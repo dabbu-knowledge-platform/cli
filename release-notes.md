@@ -1,19 +1,30 @@
 ## Features added
 
-- Add the PRINT_ERRORS environment variable for printing errors to console [dc2b6b3]
+- feat(config): add ability to change defaults using the config command [c66d753]
 
-## Bug Fixes
+- feat(defaults): add default value feature [dcc7e10]
+	- when creating a new drive, the values entered the first time are preserved
+	- when you create a new drive with the same provider, the default values are used to fill in the fields (such as base path, client ID, client secret, etc)
 
-- Use the name returned by server for downloaded file [3b12a8d]
-	- this is because some providers (like google drive/gmail) add an extension to the file name (e.g. docx or zip) so it can be opened on the user's computer through the file manager (most file managers associate apps with file extensions)
-- Fix crash on startup when checking creds and server url is null [efcd2bf]
+- feat(help): add help command [ef9aad2]
 
-## Changes
+- feat(config): add config command [4e2baff]
+	- alias: config, conf or cfg
+	- usage: config <get | set | del> <field name> [value to set]
+	  - you can get any field, nested fields accessed using dots
+	  - you can set only current drive and server URL
+	  - you can delete only history or a specific drive
+	- added a del() method to utils/config.util.ts
 
-- Change logo (again! it will probably go through a few more iterations until we are happy with it, PRs welcome!) [f799b61]
-- Add instructions for creating oauth client for google drive, gmail and one drive to a single detailed gist and direct users to that [3e7dc67]
+## Bug fixes
+
+- fix(new-drive): close oauth callback server once response is received [c7c2f71]
+
+## Documentation
+
+- Change logo (final one!) [6008d33]
+- Make readme concise, update links [c488d3b, 3bf308c, d702775, 3fc6c42]
 
 ## Builds/CI
 
-- Don't add version to artifact name [7de6fe8]
-	- it confuses some linux distros while parsing the package name
+- fix(scripts): add colours and .sh extensions to scripts [37b28fd]
