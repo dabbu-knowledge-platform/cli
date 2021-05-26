@@ -24,7 +24,7 @@ normal="\e[0m"
 function bump {
 	# Check if NPM is installed
 	local npm_command=$(which npm)
-	if [ -z "$npm_command" || "$npm_command" == "npm not found" ]; then
+	if [[ -z "$npm_command" || "$npm_command" == "npm not found" ]]; then
 		# If not, throw an error
 		echo -e "${colour_red}NodeJS and NPM must be installed!${colour_red}"
 		exit 1
@@ -54,7 +54,7 @@ function bump {
 function add_release_notes {
 	# Check if Git is installed
 	local git_command=$(which git)
-	if [ -z "$git_command" || "$git_command" == "git not found" ]; then
+	if [[ -z "$git_command" || "$git_command" == "git not found" ]]; then
 		# If not, throw an error
 		echo -e "${colour_red}Git must be installed!${colour_red}"
 		exit 1
@@ -107,8 +107,8 @@ function push_to_git {
 
 # Run the script
 # If there is no preid, use alpha by default
-local preid=
-if [ -z "$2" ]; then
+preid=
+if [[ -z "$2" ]]; then
 	preid="alpha"
 else
 	preid="$2"
