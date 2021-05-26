@@ -6,6 +6,7 @@ import { run as runReadCommand } from './commands/read.command'
 import { run as runDeleteCommand } from './commands/delete.command'
 import { run as runCopyCommand } from './commands/copy.command'
 import { run as runNewDriveCommand } from './commands/new-drive.command'
+import { run as runConfigCommand } from './commands/config.command'
 import { run as runClearCommand } from './commands/clear.command'
 
 // Use the chalk library to write colourful text
@@ -92,6 +93,13 @@ export default class Shell {
 					Logger.debug(`shell.run: running new-drive: []`)
 
 					await runNewDriveCommand()
+					break
+				case 'config':
+				case 'cfg':
+				case 'conf':
+					Logger.debug(`shell.run: running config: ${args.slice(1)}`)
+
+					await runConfigCommand(args.slice(1))
 					break
 				case 'clear':
 				case 'cls':

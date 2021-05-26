@@ -30,9 +30,7 @@ You can use several commands to tell Dabbu what you want to do. Read on to know 
 
 Once a drive is created, you will see something called a 'prompt' on the screen. It looks like this:
 
-```
-<drive name>:/$ 
-```
+.I <drive name>:/$ 
 
 > For those who are already familiar with the bash shell: Dabbu is sort of a shell, and its commands are very similar to bash commands. Take a look at the [summary of CLI commands](#a-brief-summary-of-cli-commands) for a quick summary of all the commands you can run.
 
@@ -44,31 +42,23 @@ Dabbu has a notion of the _current working directory_, which refers to what fold
 
 The current path is always shown in the prompt after the drive name:
 
-```
-<drive name>:<path to folder you are in>$
-```
+.I <drive name>:<path to folder you are in>$
 
 The topmost folder is always called `/` (forward slash). To change folders, type in `cd <folder to move to>/` (`cd` is short form for **C**hange **D**irectory) and hit `enter`. For example, the following command will move you into the directory `Work`:
 
-```
-cd Work/
-```
+.I cd Work/
 
 **Note**: The forward slash at the end is required - it tells Dabbu that we are talking about a folder.
 
 Now that you have moved into the folder `Work`, the prompt will change to update your current working directory:
 
-```
-<drive name>:/Work$
-```
+.I <drive name>:/Work$
 
 To move back into the root folder (`/`), type in `cd ..` (remember that `.` refers to the current working directory, while `..` refers to the parent directory) and hit `enter`. This should move you to the root folder and also update your prompt to show `/` as the current path.
 
 To switch to another drive, type in the following and hit `enter`:
 
-```
-cd <drive name>:
-```
+.I cd <drive name>:
 
 Notice the colon at the end - it tells Dabbu that you are talking about a drive.
 
@@ -86,9 +76,7 @@ The `list` command prints the number of files in that folder (if there are less 
 
 To download a file to your computer and open it up, type in `read <path to file>` and hit `enter`. This will download the file temporarily on your computer and open it using the default app to open that file on your computer. The file will be deleted once Dabbu is closed. For example, to download the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
 
-```
-read "Work/Dabbu Design Document"
-```
+.I read "Work/Dabbu Design Document"
 
 Notice that the path to the file is surrounded by quotes (`"`). This is only required if the file/folder name contains spaces.
 
@@ -98,15 +86,11 @@ If you want to save the file to your hard drive or to another drive, use the `co
 
 To copy a file from one drive to another drive, use the `copy` (short form for **c**o**p**y) command as follows:
 
-```
-copy <path to file that you want to copy> <path to destination folder>
-```
+.I copy <path to file that you want to copy> <path to destination folder>
 
 For example, if I want to copy a file (say, `School Project.docx`) from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive), I would type the following and hit `enter`:
 
-```
-copy "g:/Personal/School Project.docx" c:/Work/
-```
+.I copy "g:/Personal/School Project.docx" c:/Work/
 
 Notice two things:
 - One, the path to the `School Project.docx` file is surrounded by quotes. This is because the file name contains spaces.
@@ -114,12 +98,12 @@ Notice two things:
 
 If I want to copy the file `School Project.docx` from my `Personal` folder on `g:` (where I have set up a Google Drive account) to the `Work` folder on `c:` (where I have set up my hard drive) and rename it to `MyProject.docx`, I would type the following and hit `enter`:
 
-```
-copy "g:/Personal/School Project.docx" c:/Work/MyProject.docx
-```
+.Icopy "g:/Personal/School Project.docx" c:/Work/MyProject.docx
 
 Notice two things:
+
 - One, the path to the `School Project.docx` file is surrounded by squotes. This is because the file name contains spaces.
+
 - Two, the path to the destination does not end with a `/`. This i because we are copying the file to another file, and not another folder.
 
 To rename a file without copying it, or to move a file instead of copying it, just use `mv` instead of `copy`.
@@ -128,17 +112,13 @@ To rename a file without copying it, or to move a file instead of copying it, ju
 
 To delete a file on a certain drive, use the `del` ((short form for **r**e**m**ove)) command. For example, to delete the file `Dabbu Design Document` in the `Work` folder, type in the following and hit `enter`:
 
-```
-del "Work/Dabbu Design Document"
-```
+.I del "Work/Dabbu Design Document"
 
 Notice that the path to the file is surrounded by quotes (`"`). This is only required if the file/folder name contains spaces.
 
 To delete the entire work folder:
 
-```
-del Work/
-```
+.I del Work/
 
 Notice that the path to the `Work` folder ends with a `/`. This is to tell Dabbu that `Work` is a folder.
 
@@ -148,32 +128,36 @@ Be careful while using the `del` command as it usually permanently deletes files
 
 .B Note
 
-\- Anything in <> must be mentioned, while if it is in [], it is optional.
-\- All file/folder paths may include drive names.
-\- While specifying a folder, please add a / at the end of the folder name.
-\- Escape spaces in the file name by surrounding it in quotes.
+.nf
+- Anything in <> must be mentioned, while if it is in [], it is optional.
+- All file/folder paths may include drive names.
+- While specifying a folder, please add a / at the end of the folder name.
+- Escape spaces in the file name by surrounding it in quotes.
 
 .B Commands
 
-\- `pwd` - Know your current drive and folder
-\- `cd <drive name>:` - Switch drives (Notice the colon at the end of the drive name)
-\- `cd <relative path to folder>` - Move into a folder
-\- `list [relative path to folder]` - List files in a folder (default is current folder)
-\- `read <relative path to file>` - Download and open a file
-\- `copy <relative path to file> <relative path to place to copy to>` - Copy a file from one place to another
-\- `del <relative path to file>` - Delete a file
-\- `new-drive` - Create a new drive
-\- `clear` - Clear the screen
-\- `CTRL+C OR exit` - Exit
+.nf
+- `pwd` - Know your current drive and folder
+- `cd <drive name>:` - Switch drives (Notice the colon at the end of the drive name)
+- `cd <relative path to folder>` - Move into a folder
+- `list [relative path to folder]` - List files in a folder (default is current folder)
+- `read <relative path to file>` - Download and open a file
+- `copy <relative path to file> <relative path to place to copy to>` - Copy a file from one place to another
+- `del <relative path to file>` - Delete a file
+- `new-drive` - Create a new drive
+- `config <get | set | del> <field path> [value to set]` - View/set/delete a field in the config file
+- `clear` - Clear the screen
+- `CTRL+C OR exit` - Exit
 
 Typing any of the above and then hitting enter will allow you to execute that command and get a result.
 
 .SH SUPPORTED PROVIDERS
 
-\- Hard drive
-\- Google drive
-\- Gmail
-\- One Drive
+.nf
+- Hard drive
+- Google drive
+- Gmail
+- One Drive
 
 .SH Issues and pull requests
 

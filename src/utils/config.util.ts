@@ -19,25 +19,6 @@ const config = new Conf({
 	accessPropertiesByDotNotation: true,
 	// Automatically deletes invalid values
 	clearInvalidConfig: true,
-	// The schema
-	schema: {
-		serverUrl: {
-			type: 'string',
-			format: 'uri',
-		},
-		currentDrive: {
-			type: 'string',
-		},
-		drives: {
-			type: 'object',
-		},
-		history: {
-			type: 'array',
-		},
-		creds: {
-			type: 'object',
-		},
-	},
 })
 
 // Export the Conf class's methods
@@ -63,4 +44,11 @@ export const set = (path: string, value: any): void => {
 	)
 
 	return config.set(path, value)
+}
+
+// Get the value of a key
+export const del = (path: string): any => {
+	Logger.debug(`util.config.del: deleting path ${path}`)
+
+	return config.delete(path)
 }
