@@ -270,6 +270,7 @@ const setupDrive = async (
 								result.end(
 									'Thank you for authorising Dabbu CLI. Please close this window and go back to the CLI to complete the new drive setup.',
 								)
+								server.close()
 								resolve(queryParams.code)
 							} else {
 								Logger.debug(
@@ -280,6 +281,7 @@ const setupDrive = async (
 								result.end(
 									'Error: URL state does not match. Please try again.',
 								)
+								server.close()
 								reject(
 									new Error(
 										'Error: URL state does not match. Please try again.',
