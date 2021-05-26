@@ -24,9 +24,9 @@ echo -e "${bold}${colour_blue}job: start; status: running${normal}"
 
 # Then run it
 if [[ "$1" == "prod" ]]; then
-  env NODE_ENV=production node ./dist/compiled/server.js
+  env NODE_ENV=production node ./dist/compiled/index.js
 else
-  env PORT=8000 NODE_ENV=development node ./dist/compiled/server.js
+  env PORT=8000 NODE_ENV=development node ./dist/compiled/index.js
 fi
 
 echo -e "${bold}${colour_green}job: start; status: done${normal}"
