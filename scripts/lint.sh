@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# clean
-# Deletes the all generated folders
+# lint
+# Runs ESLint on the code to find errors
 
 # Fail fast
 set -e
@@ -16,7 +16,7 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-echo -e "${bold}${colour_blue}Cleaning old dirs...${normal}"
-
-# Delete all files
-rm -rf dist/ coverage/
+echo -e "${bold}${colour_blue}job: lint; status: running${normal}"
+# Run the linter
+yarn eslint 'src/**/*.ts' 'tests/**/*.ts'
+echo -e "${bold}${colour_green}job: lint; status: done${normal}"

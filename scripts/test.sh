@@ -16,8 +16,9 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-echo -e "${bold}${colour_blue}Running tests...${normal}"
+echo -e "${bold}${colour_blue}job: test; status: running${normal}"
+
 # Run all the tests and generate a coverage report
 yarn jest --testTimeout 50000 --coverage
 
-echo -e "${bold}${colour_green}Done!${normal}"
+echo -e "${bold}${colour_green}job: test; status: done${normal}"

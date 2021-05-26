@@ -16,20 +16,11 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-echo -e "${bold}${colour_blue}Running build...${normal}"
-# Build the CLI
-yarn build
-
-echo -e "${bold}${colour_blue}Running linter...${normal}"
+echo -e "${bold}${colour_green}job: ci; status: running${normal}"
 # Run the linter
 yarn lint
-
-echo -e "${bold}${colour_blue}Running tests...${normal}"
 # Run all tests
 yarn test
-
-echo -e "${bold}${colour_blue}Generating packages...${normal}"
 # Build packages
 yarn package
-
-echo -e "${bold}${colour_green}Done!${normal}"
+echo -e "${bold}${colour_green}job: ci; status: done${normal}"

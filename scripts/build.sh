@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# run
+# build
 # Runs the Typescript Compiler on the code and output the compiled code
-# to ./dist/compiled/. Then runs the CLI in development mode
+# to ./dist/compiled/
 
 # Fail fast
 set -e
@@ -17,9 +17,11 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-# First build it
-yarn build
-
-echo -e "${bold}${colour_blue}Running CLI...${normal}"
-# Then run it
-env NODE_ENV=development PRINT_ERRORS=true node ./dist/compiled/index.js
+# Remove generated dirs first
+yarn clean
+echo -e "${bold}${colour_blue}job: build; status: running${normal}"
+# Then build it
+yarn tsc
+# Then copy the package.json file
+cp ./package.json ./dist/
+echo -e "${bold}${colour_green}job: build; status: done${normal}"

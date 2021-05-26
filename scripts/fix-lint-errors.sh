@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# lint
-# Runs ESLint on the code to find errors
+# fix-lint-errors
+# Runs ESLint on the code to fix format errors
 
 # Fail fast
 set -e
@@ -16,5 +16,7 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-# Find errors
-yarn eslint 'src/**/*.ts' 'tests/**/*.ts'
+echo -e "${bold}${colour_blue}job: fix-lint-errors; status: running${normal}"
+# Fix errors
+yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix
+echo -e "${bold}${colour_green}job: fix-lint-errors; status: done${normal}"

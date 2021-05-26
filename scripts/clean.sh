@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# fix-lint-errors
-# Runs ESLint on the code to fix format errors
+# clean
+# Deletes the all generated folders
 
 # Fail fast
 set -e
@@ -16,8 +16,7 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-echo -e "${bold}${colour_blue}Fixing lint errors...${normal}"
-# Fix errors
-yarn eslint 'src/**/*.ts' 'tests/**/*.ts' --fix
-
-echo -e "${bold}${colour_green}Done!${normal}"
+echo -e "${bold}${colour_blue}job: clean; status: running${normal}"
+# Delete all files
+rm -rf dist/ coverage/
+echo -e "${bold}${colour_green}job: clean; status: done${normal}"

@@ -20,21 +20,11 @@ colour_cyan="\033[0;36m"
 bold="\e[1m"
 normal="\e[0m"
 
-# Display a help message
-function help {
-	echo -e "${colour_cyan}${bold}bump-version${normal}"
-	echo -e "${colour_blue}Bumps the version in package.json, package-lock.json and version${normal}"
-	echo -e ""
-	echo -e "Usage: ${colour_cyan}scripts/bump-version${normal} ${bold}[<new-version> | major | minor | patch | premajor | preminor | prepatch | prerelease]${normal}"
-	echo -e ""
-	echo -e "${colour_cyan}Remember to run this script from the root of the project!${normal}"
-}
-
 # Bump the version using `npm version`
 function bump {
 	# Check if NPM is installed
 	local npm_command=$(which npm)
-	if [ -z npm_command ]; then
+	if [ -z "$npm_command" || "$npm_command" == "npm not found" ]; then
 		# If not, throw an error
 		echo -e "${colour_red}NodeJS and NPM must be installed!${colour_red}"
 		exit 1
@@ -64,7 +54,7 @@ function bump {
 function add_release_notes {
 	# Check if Git is installed
 	local git_command=$(which git)
-	if [ -z git_command ]; then
+	if [ -z "$git_command" || "$git_command" == "git not found" ]; then
 		# If not, throw an error
 		echo -e "${colour_red}Git must be installed!${colour_red}"
 		exit 1
@@ -115,31 +105,19 @@ function push_to_git {
 	git push
 }
 
-# Main function
-function main {
-	# If there are no arguments, or the first argument is help, show help and exit
-	if [ -z "$1" ] || [ "$1" = "help" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-		help
-		exit
-	fi
+# Run the script
+# If there is no preid, use alpha by default
+local preid=
+if [ -z "$2" ]; then
+	preid="alpha"
+else
+	preid="$2"
+fi
 
-	# Else run the script
-	# If there is no preid, use alpha by default
-	local preid=
-	if [ -z "$2" ]; then
-		preid="alpha"
-	else
-		preid="$2"
-	fi
-
-	# Run the functions one by one
-	# First bump the version
-	bump "$1" "$preid"
-	# Then ask the user to edit the release notes
-	add_release_notes
-	# Push it to github
-	push_to_git
-}
-
-# Run the script, accepting only the first two arguments
-main "$1" "$2"
+# Run the functions one by one
+# First bump the version
+bump "$1" "$preid"
+# Then ask the user to edit the release notes
+add_release_notes
+# Push it to github
+push_to_git
