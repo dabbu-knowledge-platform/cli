@@ -94,6 +94,26 @@ export const run = async (args: string[]): Promise<void> => {
 			}
 		}
 
+		// Set a default for some provider
+		if (args[1].startsWith('defaults')) {
+			// If a default for some provider is non null, set it in the config file
+			if (args[2]) {
+				Config.set(args[1], args[2])
+				print(
+					Chalk.yellow(
+						`Set default ${Chalk.keyword('orange')(
+							args[1],
+						)} to ${Chalk.keyword('orange')(args[2])}`,
+					),
+				)
+
+				return
+			} else {
+				// Else throw an error
+				throw new Error(`Invalid drive: ${args[2]}`)
+			}
+		}
+
 		throw new Error(
 			'Invalid field to set: you can only set the current drive and server URL using the `config set` command',
 		)
@@ -114,6 +134,14 @@ export const run = async (args: string[]): Promise<void> => {
 		if (args[1] === 'history' || args[1] === 'hist') {
 			Config.set('history', [])
 			print(Chalk.yellow('Cleared history'))
+
+			return
+		}
+
+		// Clear defaults
+		if (args[1].startsWith('defaults')) {
+			Config.del(args[1])
+			print(Chalk.yellow(`Cleared default ${args[1]}`))
 
 			return
 		}
