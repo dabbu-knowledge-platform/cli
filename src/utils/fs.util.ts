@@ -2,8 +2,6 @@
 
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
-// Import the logger
-import Logger from '../utils/logger.util'
 
 // Parse the given path for the drive name and the folder path
 export function parseFolderPath(rawPath: string | undefined): {

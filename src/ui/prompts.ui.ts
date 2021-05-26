@@ -11,7 +11,7 @@ import Chalk from 'chalk'
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
 // Import the print statement
-import { print, json } from '../utils/general.util'
+import { print } from '../utils/general.util'
 // Import the logger
 import Logger from '../utils/logger.util'
 

@@ -201,7 +201,7 @@ async function uploadFile(
 		// only the second or third time
 		let tries = 0
 		const copyHardDriveFile = async () => {
-			await new Promise<void>((resolve, reject) => {
+			await new Promise<void>((resolve) => {
 				Fs.copy(
 					pathToLocalFile,
 					diskPath(basePath, folderPath, fileName),

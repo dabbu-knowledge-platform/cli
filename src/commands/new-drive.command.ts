@@ -12,8 +12,6 @@ import * as UrlLib from 'url'
 
 // Import all prompts from prompts.ts
 import * as Prompts from '../ui/prompts.ui'
-// Import the spinner
-import * as Spinner from '../ui/spinner.ui'
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
 import * as ProviderUtils from '../utils/provider.util'

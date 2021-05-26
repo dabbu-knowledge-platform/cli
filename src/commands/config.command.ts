@@ -5,7 +5,6 @@ import Chalk from 'chalk'
 
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
-import * as FsUtils from '../utils/fs.util'
 import { json, print } from '../utils/general.util'
 // Import the logger
 import Logger from '../utils/logger.util'
