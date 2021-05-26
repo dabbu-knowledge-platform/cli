@@ -92,6 +92,7 @@ const setupDrive = async (
 					field.prompt!,
 					field.description,
 					field.type,
+					Config.get(`defaults.${providerId}.${field.path}`),
 				)
 
 				Logger.debug(
@@ -100,6 +101,9 @@ const setupDrive = async (
 
 				// Store it in the configuration file
 				Config.set(`drives.${driveName}.${field.path}`, fieldValue)
+
+				// Also store it as the default value
+				Config.set(`defaults.${providerId}.${field.path}`, fieldValue)
 
 				Logger.debug(
 					`command.new-drive.setupDrives: set value ${Config.get(
@@ -140,12 +144,14 @@ const setupDrive = async (
 					'Enter the client ID:',
 					providerDetails.authDetails.instructions,
 					'string',
+					Config.get(`defaults.${providerId}.authMeta.clientId`),
 				)
 			const { fieldValue: clientSecret } =
 				await Prompts.getFieldValueFromUser(
 					'Enter the client secret:',
 					undefined,
 					'string',
+					Config.get(`defaults.${providerId}.authMeta.clientSecret`),
 				)
 
 			Logger.debug(
@@ -161,6 +167,13 @@ const setupDrive = async (
 			Config.set(
 				`drives.${driveName}.authMeta.redirectUri`,
 				providerDetails.authDetails.redirectUri,
+			)
+
+			// Also store them as defaults if defaults do not exist
+			Config.set(`defaults.${providerId}.authMeta.clientId`, clientId)
+			Config.set(
+				`defaults.${providerId}.authMeta.clientSecret`,
+				clientSecret,
 			)
 
 			Logger.debug(

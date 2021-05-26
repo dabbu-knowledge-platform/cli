@@ -73,9 +73,10 @@ export const getFieldValueFromUser = (
 	ps: string,
 	description: string | undefined,
 	type: 'string' | 'number',
+	defaultValue: string | undefined = undefined,
 ): Promise<{ fieldValue: string }> => {
 	Logger.debug(
-		`ui.prompts.getFieldValueFromUser: requesting user to enter field value: prompt: ${ps}; description: ${description}; type: ${type}`,
+		`ui.prompts.getFieldValueFromUser: requesting user to enter field value: prompt: ${ps}; description: ${description}; type: ${type}; defaultValue: ${defaultValue}`,
 	)
 
 	let promptType: string
@@ -94,6 +95,7 @@ export const getFieldValueFromUser = (
 		type: promptType,
 		name: 'fieldValue',
 		message: Chalk.keyword('orange')(ps),
+		initial: defaultValue,
 	})
 }
 
