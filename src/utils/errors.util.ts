@@ -10,9 +10,7 @@ import Logger from '../utils/logger.util'
 export const getErrorMessage = (
 	error: string | Record<string, any>,
 ): string => {
-	Logger.debug(
-		`util.error.getErrorMessage: received error: ${json(error)}`,
-	)
+	Logger.debug(`util.error.getErrorMessage: received error: ${error}`)
 
 	// Print out the error as is if the PRINT_ERRORS environment variable
 	// is non null

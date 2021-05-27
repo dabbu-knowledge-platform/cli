@@ -21,7 +21,7 @@ export const json = (value: any): string => {
 }
 
 // Join folder path and file name without multiple consecutive slashes
-export const path = (...paths: Array<string | undefined>): string => {
+export const path = (...paths: (string | undefined)[]): string => {
 	// Return the path, joined by /s and replace any duplicate slash
 	return paths.join('/').replace(/\/+/g, '/')
 }

@@ -112,7 +112,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// Define the options for the request
 	const requestOptions: AxiosRequestConfig = {
 		method: 'DELETE',
-		baseURL: Config.get('serverUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') as string,
 		url: `/files-api/v3/data/${encodeURIComponent(folderPath)}/${
 			fileName ? encodeURIComponent(fileName) : ''
 		}`,
@@ -122,7 +122,9 @@ export const run = async (args: string[]): Promise<void> => {
 		data: requestMeta.requestBodyFields,
 		headers: {
 			...requestMeta.requestHeaderFields,
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 	}
 

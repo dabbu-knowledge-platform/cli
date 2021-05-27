@@ -12,6 +12,8 @@ import * as UrlLib from 'url'
 
 // Import all prompts from prompts.ts
 import * as Prompts from '../ui/prompts.ui'
+// Import the intel setup function
+import { run as runIntelSetup } from '../intel/index-files.intel'
 // Import all methods from config and utils
 import * as Config from '../utils/config.util'
 import * as ProviderUtils from '../utils/provider.util'
@@ -21,12 +23,13 @@ import { print, json } from '../utils/general.util'
 import Logger from '../utils/logger.util'
 
 // Get all possible providers we can set up
-const getAvailableProviders = async (): Promise<Array<string>> => {
+const getAvailableProviders = async (): Promise<string[]> => {
 	const availableProviders = [
 		'harddrive',
 		'googledrive',
 		'gmail',
 		'onedrive',
+		'knowledge',
 	]
 
 	Logger.debug(
@@ -46,6 +49,11 @@ const setupDrive = async (
 		`command.new-drive.setupDrives: drive: ${driveName}; providerId: ${providerId}`,
 	)
 
+	// If we are creating a knowledge drive, handle it differently
+	if (providerId === 'knowledge') {
+		return runIntelSetup([driveName])
+	}
+
 	// Get the stuff to send in the request body and headers for the given
 	// provider
 	const providerDetails: ProviderUtils.Provider =
@@ -62,7 +70,7 @@ const setupDrive = async (
 
 	// Check if there are any fields in the request body or header that require
 	// user input
-	const fields: Array<ProviderUtils.Field> = [
+	const fields: ProviderUtils.Field[] = [
 		...providerDetails.requestBodyFields,
 		...providerDetails.headerFields,
 	]

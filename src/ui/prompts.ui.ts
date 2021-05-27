@@ -20,7 +20,7 @@ export const getServerUrl = (): Promise<{ serverUrl: string }> => {
 	Logger.debug(
 		`ui.prompts.getServerUrl: requesting user to enter serverUrl`,
 	)
-	return prompt({
+	return prompt<{ serverUrl: string }>({
 		type: 'input',
 		name: 'serverUrl',
 		message: Chalk.keyword('orange')(
@@ -47,12 +47,12 @@ export const getDriveProviderAndName = (
 		`ui.prompts.getDriveProviderAndName: requesting user to enter provider ID and drive name`,
 	)
 
-	return prompt([
+	return prompt<{ selectedProvider: string; driveName: string }>([
 		{
 			type: 'select',
 			name: 'selectedProvider',
 			message: Chalk.keyword('orange')(
-				'Which provider do you want to connect with this drive?',
+				'Which provider do you want to connect with this drive? (enter to select the drive, arrow keys to move)',
 			),
 			choices: providers,
 		},
@@ -60,7 +60,7 @@ export const getDriveProviderAndName = (
 			type: 'input',
 			name: 'driveName',
 			message: Chalk.keyword('orange')('Enter the name of the drive:'),
-			initial: 'C:',
+			initial: 'c:',
 			validate: (text: string): boolean => {
 				return RegExp(/[a-zA-Z0-9]/).test(text) && text.length < 10
 			},
@@ -91,7 +91,7 @@ export const getFieldValueFromUser = (
 
 	if (description) print(Chalk.yellow(description))
 
-	return prompt({
+	return prompt<{ fieldValue: string }>({
 		type: promptType,
 		name: 'fieldValue',
 		message: Chalk.keyword('orange')(ps),
@@ -99,8 +99,54 @@ export const getFieldValueFromUser = (
 	})
 }
 
+// Ask the drives to index files from
+export const getDrivesToIndex = (
+	driveNames: string[],
+): Promise<{
+	drives: string[]
+}> => {
+	Logger.debug(
+		`ui.prompts.getDrivesToIndex: requesting user to choose drives to index`,
+	)
+
+	print(
+		Chalk.yellow(
+			'The knowledge drive uses the Dabbu Intel API to extract topics, people and places from the information stored in your drives. It will then allow you to view all files regarding a certain topic or regarding a certain person. Pick the drives whose files we should extract topics, people and places from.',
+		),
+	)
+
+	return prompt<{ drives: string[] }>({
+		type: 'multiselect',
+		name: 'drives',
+		message: Chalk.keyword('orange')(
+			'Which drives do you want to extract information from? (space to select the drive, arrow keys to move)',
+		),
+		choices: driveNames,
+	})
+}
+
+// Ask the path within the drives to index files from
+export const getPathToIndex = (
+	driveName: string,
+): Promise<{
+	path: string
+}> => {
+	Logger.debug(
+		`ui.prompts.getPathToIndex: requesting user to choose path to index`,
+	)
+
+	return prompt<{ path: string }>({
+		type: 'input',
+		name: 'path',
+		message: Chalk.keyword('orange')(
+			`Enter the absolute path within ${driveName}: to take files from (e.g.: \`/FolderWithDataToExtract\`)`,
+		),
+		initial: '/',
+	})
+}
+
 // Read the user's command
-export const getUserCommand = async (): Promise<{ args: string[] }> => {
+export const getUserCommand = (): Promise<{ args: string[] }> => {
 	Logger.debug(
 		`ui.prompts.getUserCommand: requesting user to enter command`,
 	)
@@ -117,7 +163,7 @@ export const getUserCommand = async (): Promise<{ args: string[] }> => {
 					}$ `,
 				),
 				// Access previous commands by pressing the up arraw key
-				history: (Config.get('history') || []) as Array<string>,
+				history: (Config.get('history') || []) as string[],
 			},
 			(error: Error, args: string[]) => {
 				// First store the command in the config file
@@ -141,7 +187,7 @@ export const getUserCommand = async (): Promise<{ args: string[] }> => {
 					)
 
 					// Get current history
-					let history = (Config.get('history') as Array<string>) || []
+					let history = (Config.get('history') as string[]) || []
 
 					// Add the command if the last command is not the same
 					if (history[history.length - 1] !== command) {

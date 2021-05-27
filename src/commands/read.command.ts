@@ -114,7 +114,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// Define the options for the request
 	let requestOptions: AxiosRequestConfig = {
 		method: 'GET',
-		baseURL: Config.get('serverUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') as string,
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,
@@ -125,7 +125,9 @@ export const run = async (args: string[]): Promise<void> => {
 		data: requestMeta.requestBodyFields,
 		headers: {
 			...requestMeta.requestHeaderFields,
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 	}
 
@@ -157,7 +159,9 @@ export const run = async (args: string[]): Promise<void> => {
 		headers: {
 			Authorization:
 				requestMeta.requestHeaderFields['X-Provider-Credentials'] || '',
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 		// Return the response as a stream
 		responseType: 'stream',

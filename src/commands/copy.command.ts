@@ -88,7 +88,7 @@ async function downloadFile(
 	// Define the options for the request
 	let requestOptions: AxiosRequestConfig = {
 		method: 'GET',
-		baseURL: Config.get('serverUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') as string,
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,
@@ -99,7 +99,9 @@ async function downloadFile(
 		data: requestMeta.requestBodyFields,
 		headers: {
 			...requestMeta.requestHeaderFields,
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 	}
 
@@ -133,7 +135,9 @@ async function downloadFile(
 		headers: {
 			Authorization:
 				requestMeta.requestHeaderFields['X-Provider-Credentials'] || '',
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 		// Return the response as a stream
 		responseType: 'stream',
@@ -270,7 +274,7 @@ async function uploadFile(
 	// The final request payload
 	let requestOptions: AxiosRequestConfig = {
 		method: 'POST',
-		baseURL: Config.get('serverUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') as string,
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,
@@ -281,7 +285,9 @@ async function uploadFile(
 		headers: {
 			...requestMeta.requestHeaderFields,
 			...formData.getHeaders(),
-			'X-Credentials': Config.get('creds.token') as string,
+			'X-Credentials': Config.get(
+				'creds.filesApiServer.token',
+			) as string,
 		},
 	}
 
@@ -332,7 +338,7 @@ async function uploadFile(
 			// Replace the POST with PUT, else make an identical request
 			requestOptions = {
 				method: 'PUT',
-				baseURL: Config.get('serverUrl') as string,
+				baseURL: Config.get('defaults.filesApiServerUrl') as string,
 				url: `/files-api/v3/data/${encodeURIComponent(
 					folderPath,
 				)}/${encodeURIComponent(fileName)}`,
@@ -343,7 +349,9 @@ async function uploadFile(
 				headers: {
 					...updateFormData.getHeaders(),
 					...requestMeta.requestHeaderFields,
-					'X-Credentials': Config.get('creds.token') as string,
+					'X-Credentials': Config.get(
+						'creds.filesApiServer.token',
+					) as string,
 				},
 			}
 
@@ -382,7 +390,7 @@ async function listFiles(
 	drive: string,
 	folderPath: string,
 	callback: (
-		files: Array<Record<string, any>> | undefined,
+		files: Record<string, any>[] | undefined,
 	) => void | Promise<void>,
 ): Promise<void> {
 	// If the provider is harddrive, then manually list files from the hard drive
@@ -403,7 +411,7 @@ async function listFiles(
 		// List the files and folders at that location
 		const files = await Fs.readdir(diskPath(basePath, folderPath))
 
-		const parsedFiles: Array<Record<string, any>> = []
+		const parsedFiles: Record<string, any>[] = []
 
 		// Then loop through the list of files
 		for (let i = 0, { length } = files; i < length; i++) {
@@ -496,7 +504,7 @@ async function listFiles(
 		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',
-			baseURL: Config.get('serverUrl') as string,
+			baseURL: Config.get('defaults.filesApiServerUrl') as string,
 			url: `/files-api/v3/data/${encodeURIComponent(folderPath)}`,
 			params: {
 				providerId: requestMeta.providerId,
@@ -506,7 +514,9 @@ async function listFiles(
 			data: requestMeta.requestBodyFields,
 			headers: {
 				...requestMeta.requestHeaderFields,
-				'X-Credentials': Config.get('creds.token') as string,
+				'X-Credentials': Config.get(
+					'creds.filesApiServer.token',
+				) as string,
 			},
 		}
 
@@ -592,7 +602,7 @@ export const run = async (args: string[]): Promise<void> => {
 
 		// Define the callback to be run every fifty files
 		const copyFilesCallback = async (
-			files: Array<Record<string, any>> | undefined,
+			files: Record<string, any>[] | undefined,
 		) => {
 			Logger.debug(
 				`command.copy.run.listFilesCallback: received files: ${json(
@@ -698,9 +708,7 @@ export const run = async (args: string[]): Promise<void> => {
 							`command.copy.run: error copying file ${diskPath(
 								fromFolderPath,
 								fromFileName,
-							)} to ${diskPath(toFolderPath, fromFileName)}: ${json(
-								error,
-							)}`,
+							)} to ${diskPath(toFolderPath, fromFileName)}: ${error}`,
 						)
 
 						// Stop loading

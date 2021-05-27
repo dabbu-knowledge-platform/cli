@@ -128,7 +128,7 @@ export default class Shell {
 			// If the command executed successfully, set PROCESSING_COMMAND to false
 			process.env.PROCESSING_COMMAND = 'false'
 		} catch (error) {
-			Logger.debug(`shell.run: error ${json(error)}`)
+			Logger.debug(`shell.run: error ${error}`)
 
 			// First stop the spinner
 			if (Spinner.isActive()) {
