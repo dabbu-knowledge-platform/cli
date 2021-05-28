@@ -394,10 +394,21 @@ async function extractInfo(
 	)
 
 	// Write it to the knowledge file
-	let knowledgeJson = { topics: {}, people: {} }
+	let knowledgeJson: Record<string, any> = {
+		topics: {},
+		people: {},
+		files: {},
+	}
 	// First read the data
 	try {
-		knowledgeJson = await Fs.readJson(`${configPath}/knowledge.json`)
+		// In case the file is empty, make sure the topics, people and files
+		// fields exist to avoid 'Cannot read property ... of undefined'.
+		knowledgeJson = {
+			topics: {},
+			people: {},
+			files: {},
+			...(await Fs.readJson(`${configPath}/knowledge.json`)),
+		}
 
 		Logger.debug(
 			`intel.index-files.extractInfo: existing knowledge json: ${json(
@@ -419,26 +430,52 @@ async function extractInfo(
 		}
 	}
 
+	// Store the topics in the knowledge files
 	const topics: Record<string, any> = {}
 	for (const topic of Object.keys(data.content.topics)) {
 		topics[topic] = (data.content.topics[topic] as string[]).map(
 			(fileName) => fileName.replace(/%2F/g, '/'),
 		)
 	}
-	knowledgeJson['topics'] = {
-		...knowledgeJson['topics'],
+	knowledgeJson.topics = {
+		...knowledgeJson.topics,
 		...topics,
 	}
 
+	// Store the people in the knowledge files
 	const people: Record<string, any> = {}
 	for (const person of Object.keys(data.content.people)) {
 		people[person] = (data.content.people[person] as string[]).map(
 			(fileName) => fileName.replace(/%2F/g, '/'),
 		)
 	}
-	knowledgeJson['people'] = {
-		...knowledgeJson['people'],
+	knowledgeJson.people = {
+		...knowledgeJson.people,
 		...people,
+	}
+
+	// For each file, get a list of topics and people and put it in the
+	// knowledge file. This way, we can find all the topics related to
+	// one file without having to compute it every time
+	for (const topic of Object.keys(knowledgeJson.topics)) {
+		// Get a list of files
+		for (const file of knowledgeJson.topics[topic]) {
+			// For each file, add that topic to the list
+			knowledgeJson.files[file] = Array.from(
+				new Set([...(knowledgeJson.files[file] || []), topic]),
+			)
+		}
+	}
+
+	// Do the same for people
+	for (const person of Object.keys(knowledgeJson.people)) {
+		// Get a list of files
+		for (const file of knowledgeJson.people[person]) {
+			// For each file, add that person to the list
+			knowledgeJson.files[file] = Array.from(
+				new Set([...(knowledgeJson.files[file] || []), person]),
+			)
+		}
 	}
 
 	Logger.debug(
@@ -592,7 +629,7 @@ export const run = async (args: string[]): Promise<void> => {
 							Chalk.red(
 								`Error extracting information from file ${Chalk.keyword(
 									'orange',
-								)(drive + ':' + file.path)}`,
+								)(drive + ':' + file.path)}: ${error}`,
 							),
 						)
 					}

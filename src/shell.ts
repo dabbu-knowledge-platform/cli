@@ -2,6 +2,7 @@
 import { run as runPwdCommand } from './commands/pwd.command'
 import { run as runCdCommand } from './commands/cd.command'
 import { run as runListCommand } from './commands/list.command'
+import { run as runIntelListCommand } from './intel/list.intel'
 import { run as runReadCommand } from './commands/read.command'
 import { run as runDeleteCommand } from './commands/delete.command'
 import { run as runCopyCommand } from './commands/copy.command'
@@ -17,6 +18,7 @@ import * as Prompts from './ui/prompts.ui'
 // Import the spinner
 import * as Spinner from './ui/spinner.ui'
 // Import all methods from config and utils
+import * as Config from './utils/config.util'
 import * as ErrorUtils from './utils/errors.util'
 // Import the print statement
 import { print, json } from './utils/general.util'
@@ -61,9 +63,38 @@ export default class Shell {
 				case 'la':
 				case 'lf':
 				case 'list':
-					Logger.debug(`shell.run: running ls: ${args.slice(1)}`)
+					// Check if we are running ls for the knowledge drive or any
+					// other drive
+					const currentDrive = Config.get('currentDrive')
+					if (currentDrive) {
+						if (
+							Config.get(`drives.${currentDrive}.provider`) ===
+							'knowledge'
+						) {
+							Logger.debug(
+								`shell.run: running intel ls: ${args.slice(1)}`,
+							)
 
-					await runListCommand(args.slice(1))
+							await runIntelListCommand(args.slice(1))
+						} else {
+							Logger.debug(
+								`shell.run: running normal ls: ${args.slice(1)}`,
+							)
+
+							await runListCommand(args.slice(1))
+						}
+					} else {
+						Logger.debug(
+							`shell.run: invalid current drive while running ls: ${args.slice(
+								1,
+							)}`,
+						)
+
+						throw new Error(
+							`Invalid current drive. Use cd to switch to a new drive, like this: \`cd <drive name>:\``,
+						)
+					}
+
 					break
 				case 'cat':
 				case 'dl':
