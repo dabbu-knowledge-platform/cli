@@ -351,6 +351,7 @@ async function downloadFile(
 // information from the file
 async function extractInfo(
 	pathToLocalFile: string,
+	drive: string,
 	fullPath: string,
 ): Promise<void> {
 	// The server to use
@@ -407,7 +408,7 @@ async function extractInfo(
 			topics: {},
 			people: {},
 			files: {},
-			...(await Fs.readJson(`${configPath}/knowledge.json`)),
+			...(await Fs.readJson(`${configPath}/knowledge/${drive}.json`)),
 		}
 
 		Logger.debug(
@@ -424,7 +425,7 @@ async function extractInfo(
 			Logger.debug(
 				`intel.index-files.extractInfo: file not found, creating file`,
 			)
-			await Fs.createFile(`${configPath}/knowledge.json`)
+			await Fs.createFile(`${configPath}/knowledge/${drive}.json`)
 		} else {
 			throw error
 		}
@@ -484,7 +485,10 @@ async function extractInfo(
 		)}`,
 	)
 
-	await Fs.writeJson(`${configPath}/knowledge.json`, knowledgeJson)
+	await Fs.writeJson(
+		`${configPath}/knowledge/${drive}.json`,
+		knowledgeJson,
+	)
 }
 
 // The new intel drive command
@@ -598,6 +602,7 @@ export const run = async (args: string[]): Promise<void> => {
 						// for extracting topics and people
 						await extractInfo(
 							await downloadFile(drive, folderPath, file.name),
+							drive,
 							drive + ':' + file.path,
 						)
 
@@ -629,7 +634,10 @@ export const run = async (args: string[]): Promise<void> => {
 							Chalk.red(
 								`Error extracting information from file ${Chalk.keyword(
 									'orange',
-								)(drive + ':' + file.path)}: ${error}`,
+								)(drive + ':' + file.path)}: ${
+									error?.response?.data?.error?.message ||
+									'unknown error'
+								}`,
 							),
 						)
 					}

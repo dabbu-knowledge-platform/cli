@@ -86,7 +86,7 @@ export const run = async (args: string[]): Promise<void> => {
 				topics: {},
 				people: {},
 				files: {},
-				...(await Fs.readJson(`${configPath}/knowledge.json`)),
+				...(await Fs.readJson(`${configPath}/knowledge/${drive}.json`)),
 			}
 
 			Logger.debug(
