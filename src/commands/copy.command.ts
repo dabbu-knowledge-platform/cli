@@ -88,7 +88,7 @@ async function downloadFile(
 	// Define the options for the request
 	let requestOptions: AxiosRequestConfig = {
 		method: 'GET',
-		baseURL: Config.get('defaults.filesApiServerUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com',
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,
@@ -274,7 +274,7 @@ async function uploadFile(
 	// The final request payload
 	let requestOptions: AxiosRequestConfig = {
 		method: 'POST',
-		baseURL: Config.get('defaults.filesApiServerUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,
@@ -338,7 +338,7 @@ async function uploadFile(
 			// Replace the POST with PUT, else make an identical request
 			requestOptions = {
 				method: 'PUT',
-				baseURL: Config.get('defaults.filesApiServerUrl') as string,
+				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 				url: `/files-api/v3/data/${encodeURIComponent(
 					folderPath,
 				)}/${encodeURIComponent(fileName)}`,
@@ -504,7 +504,7 @@ async function listFiles(
 		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',
-			baseURL: Config.get('defaults.filesApiServerUrl') as string,
+			baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 			url: `/files-api/v3/data/${encodeURIComponent(folderPath)}`,
 			params: {
 				providerId: requestMeta.providerId,

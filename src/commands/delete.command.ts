@@ -112,7 +112,7 @@ export const run = async (args: string[]): Promise<void> => {
 	// Define the options for the request
 	const requestOptions: AxiosRequestConfig = {
 		method: 'DELETE',
-		baseURL: Config.get('defaults.filesApiServerUrl') as string,
+		baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com',
 		url: `/files-api/v3/data/${encodeURIComponent(folderPath)}/${
 			fileName ? encodeURIComponent(fileName) : ''
 		}`,

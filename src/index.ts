@@ -57,7 +57,7 @@ const checkConfig = async (): Promise<void> => {
 	Logger.debug(`startup.checkConfig: checking serverUrl`)
 
 	// Check if the server url exists
-	const serverUrl = Config.get('defaults.filesApiServerUrl')
+	const serverUrl = Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'
 
 	Logger.debug(`startup.checkConfig: serverUrl: ${serverUrl}`)
 
@@ -132,7 +132,7 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'POST',
-				baseURL: Config.get('defaults.intelApiServerUrl') as string,
+				baseURL: Config.get('defaults.intelApiServerUrl') || 'https://dabbu-intel.herokuapp.com',
 				url: '/intel-api/v1/extract-info/',
 				headers: {
 					'X-Credentials': creds.intelApiServer.token as string,
@@ -199,28 +199,32 @@ const checkConfig = async (): Promise<void> => {
 			)
 
 			// Make the request using axios
-			const { data } = await axios(requestOptions)
+			try {
+				let { data } = await axios(requestOptions)
 
-			Logger.debug(
-				`startup.checkConfig: response received: ${json(data)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: response received: ${json(data)}`,
+				)
 
-			// Store the received client ID and API key
-			Config.set('creds.intelApiServer.clientId', data.content.id)
-			Config.set('creds.intelApiServer.apiKey', data.content.apiKey)
-			// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
-			Config.set(
-				'creds.intelApiServer.token',
-				Buffer.from(
-					`${data.content.id}:${data.content.apiKey}`,
-				).toString('base64'),
-			)
+				// Store the received client ID and API key
+				Config.set('creds.intelApiServer.clientId', data.content.id)
+				Config.set('creds.intelApiServer.apiKey', data.content.apiKey)
+				// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+				Config.set(
+					'creds.intelApiServer.token',
+					Buffer.from(
+						`${data.content.id}:${data.content.apiKey}`,
+					).toString('base64'),
+				)
 
-			Logger.debug(
-				`startup.checkConfig: credentials obtained - ${json(
-					Config.get('creds'),
-				)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: credentials obtained - ${json(
+						Config.get('creds'),
+					)}`,
+				)
+			} catch (error) {
+				Logger.error(`startup.checkConfig: error while registering client with intel-api-server, skipping: ${error}`)
+			}
 		}
 
 		// Check if the credentials exist for the Files API server
@@ -245,7 +249,7 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'GET',
-				baseURL: Config.get('defaults.filesApiServerUrl') as string,
+				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 				url: '/files-api/v3/providers/',
 				headers: {
 					'X-Credentials': creds.filesApiServer.token as string,
@@ -301,7 +305,7 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'POST',
-				baseURL: Config.get('defaults.filesApiServerUrl') as string,
+				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 				url: '/files-api/v3/clients/',
 			}
 
@@ -312,28 +316,32 @@ const checkConfig = async (): Promise<void> => {
 			)
 
 			// Make the request using axios
-			const { data } = await axios(requestOptions)
+			try {
+				const { data } = await axios(requestOptions)
 
-			Logger.debug(
-				`startup.checkConfig: response received: ${json(data)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: response received: ${json(data)}`,
+				)
 
-			// Store the received client ID and API key
-			Config.set('creds.filesApiServer.clientId', data.content.id)
-			Config.set('creds.filesApiServer.apiKey', data.content.apiKey)
-			// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
-			Config.set(
-				'creds.filesApiServer.token',
-				Buffer.from(
-					`${data.content.id}:${data.content.apiKey}`,
-				).toString('base64'),
-			)
+				// Store the received client ID and API key
+				Config.set('creds.filesApiServer.clientId', data.content.id)
+				Config.set('creds.filesApiServer.apiKey', data.content.apiKey)
+				// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+				Config.set(
+					'creds.filesApiServer.token',
+					Buffer.from(
+						`${data.content.id}:${data.content.apiKey}`,
+					).toString('base64'),
+				)
 
-			Logger.debug(
-				`startup.checkConfig: credentials obtained - ${json(
-					Config.get('creds'),
-				)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: credentials obtained - ${json(
+						Config.get('creds'),
+					)}`,
+				)
+			} catch (error) {
+				Logger.error(`startup.checkConfig: error while registering client with files-api-server, skipping: ${error}`)
+			}
 		}
 	}
 
