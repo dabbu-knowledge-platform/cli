@@ -70,15 +70,16 @@ export const run = async (args: string[]): Promise<void> => {
 
 		// Set the server URl
 		if (
+			args[1] === 'defaults.filesApiServerUrl' ||
+			args[1] === 'filesApiServerUrl' ||
 			args[1] === 'serverUrl' ||
-			args[1] === 'serverurl' ||
 			args[1] === 'server' ||
 			args[1] === 'server-url' ||
 			args[1] === 'url'
 		) {
 			// If the server URL is non null, set it in the config file
 			if (args[2]) {
-				Config.set('serverUrl', args[2])
+				Config.set('defaults.filesApiServerUrl', args[2])
 				print(
 					Chalk.yellow(
 						`Set server URL to ${Chalk.keyword('orange')(

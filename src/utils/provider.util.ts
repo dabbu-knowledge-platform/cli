@@ -10,14 +10,14 @@ import Logger from './logger.util'
 // A Provider is represented by the following class
 export class Provider {
 	id: string
-	requestBodyFields: Array<Field>
-	headerFields: Array<Field>
+	requestBodyFields: Field[]
+	headerFields: Field[]
 	authDetails: AuthDetails | undefined
 
 	constructor(
 		id: string,
-		requestBodyFields: Array<Field>,
-		headerFields: Array<Field>,
+		requestBodyFields: Field[],
+		headerFields: Field[],
 		authDetails: AuthDetails | undefined,
 	) {
 		this.id = id
@@ -89,7 +89,7 @@ export class AuthDetails {
 }
 
 // A list of providers supported by the CLI
-export const ProviderSpec: Array<Provider> = [
+export const ProviderSpec: Provider[] = [
 	new Provider(
 		'harddrive',
 		[

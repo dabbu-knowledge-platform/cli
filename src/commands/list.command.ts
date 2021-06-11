@@ -26,7 +26,7 @@ import Logger from '../utils/logger.util'
 
 // A function to print out the files received as a table
 function printFiles(
-	files: Array<Record<string, any>>,
+	files: Record<string, any>[],
 	printHeaders = true,
 ): void {
 	// Create a table with the headers (headers should be shown only the first
@@ -138,7 +138,7 @@ export const run = async (args: string[]): Promise<void> => {
 		// List the files and folders at that location
 		const files = await Fs.readdir(diskPath(basePath, folderPath))
 
-		const parsedFiles: Array<Record<string, any>> = []
+		const parsedFiles: Record<string, any>[] = []
 
 		// Then loop through the list of files
 		for (let i = 0, { length } = files; i < length; i++) {
@@ -237,7 +237,7 @@ export const run = async (args: string[]): Promise<void> => {
 		// Define the options for the request
 		const requestOptions: AxiosRequestConfig = {
 			method: 'GET',
-			baseURL: Config.get('serverUrl') as string,
+			baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com',
 			url: `/files-api/v3/data/${encodeURIComponent(folderPath)}`,
 			params: {
 				providerId: requestMeta.providerId,
@@ -247,7 +247,9 @@ export const run = async (args: string[]): Promise<void> => {
 			data: requestMeta.requestBodyFields,
 			headers: {
 				...requestMeta.requestHeaderFields,
-				'X-Credentials': Config.get('creds.token') as string,
+				'X-Credentials': Config.get(
+					'creds.filesApiServer.token',
+				) as string,
 			},
 		}
 

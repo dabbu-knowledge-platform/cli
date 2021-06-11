@@ -57,7 +57,7 @@ const checkConfig = async (): Promise<void> => {
 	Logger.debug(`startup.checkConfig: checking serverUrl`)
 
 	// Check if the server url exists
-	const serverUrl = Config.get('serverUrl')
+	const serverUrl = Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'
 
 	Logger.debug(`startup.checkConfig: serverUrl: ${serverUrl}`)
 
@@ -73,11 +73,11 @@ const checkConfig = async (): Promise<void> => {
 		)
 
 		// Once we get it, set it
-		Config.set('serverUrl', serverUrl)
+		Config.set('defaults.filesApiServerUrl', serverUrl)
 
 		Logger.debug(
 			`startup.checkConfig: set serverUrl to ${Config.get(
-				'serverUrl',
+				'defaults.filesApiServerUrl',
 			)}`,
 		)
 	}
@@ -110,13 +110,13 @@ const checkConfig = async (): Promise<void> => {
 			`startup.checkConfig: checking client ID - API key pair`,
 		)
 
-		// Check if the credentials exist
-		// The creds object will be of the following format: {
+		// Check if the credentials exist for the Intel API server
+		// The creds.intelApiServer object will be of the following format: {
 		//	 clientId: '...',
 		//   apiKey: '...',
 		//   token: '...'
 		// }
-		const creds = Config.get('creds')
+		let creds = Config.get('creds.intelApiServer')
 
 		Logger.debug(`startup.checkConfig: creds: ${json(creds)}`)
 
@@ -124,18 +124,18 @@ const checkConfig = async (): Promise<void> => {
 		// If they are invalid, set this variable to true to force a refresh
 		// in the next step
 		let invalidCreds = false
-		if (creds && creds.token) {
+		if (creds && creds.intelApiServer && creds.intelApiServer.token) {
 			Logger.debug(
 				`startup.checkConfig: making test request for creds validity`,
 			)
 
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
-				method: 'GET',
-				baseURL: Config.get('serverUrl') as string,
-				url: '/files-api/v3/providers/',
+				method: 'POST',
+				baseURL: Config.get('defaults.intelApiServerUrl') || 'https://dabbu-intel.herokuapp.com',
+				url: '/intel-api/v1/extract-info/',
 				headers: {
-					'X-Credentials': creds.token as string,
+					'X-Credentials': creds.intelApiServer.token as string,
 				},
 			}
 
@@ -173,7 +173,13 @@ const checkConfig = async (): Promise<void> => {
 		}
 
 		// If they are undefined or invalid, get the credentials
-		if (!creds || !creds.clientId || !creds.apiKey || invalidCreds) {
+		if (
+			!creds ||
+			!creds.intelApiServer ||
+			!creds.intelApiServer.clientId ||
+			!creds.intelApiServer.apiKey ||
+			invalidCreds
+		) {
 			Logger.debug(
 				`startup.checkConfig: missing or invalid creds; registering new client with server`,
 			)
@@ -182,7 +188,124 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'POST',
-				baseURL: Config.get('serverUrl') as string,
+				baseURL: Config.get('defaults.intelApiServerUrl') as string,
+				url: '/intel-api/v1/clients/',
+			}
+
+			Logger.debug(
+				`startup.checkConfig: making post request: ${json(
+					requestOptions,
+				)}`,
+			)
+
+			// Make the request using axios
+			try {
+				let { data } = await axios(requestOptions)
+
+				Logger.debug(
+					`startup.checkConfig: response received: ${json(data)}`,
+				)
+
+				// Store the received client ID and API key
+				Config.set('creds.intelApiServer.clientId', data.content.id)
+				Config.set('creds.intelApiServer.apiKey', data.content.apiKey)
+				// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+				Config.set(
+					'creds.intelApiServer.token',
+					Buffer.from(
+						`${data.content.id}:${data.content.apiKey}`,
+					).toString('base64'),
+				)
+
+				Logger.debug(
+					`startup.checkConfig: credentials obtained - ${json(
+						Config.get('creds'),
+					)}`,
+				)
+			} catch (error) {
+				Logger.error(`startup.checkConfig: error while registering client with intel-api-server, skipping: ${error}`)
+			}
+		}
+
+		// Check if the credentials exist for the Files API server
+		// The creds.filesApiServer object will be of the following format: {
+		//	 clientId: '...',
+		//   apiKey: '...',
+		//   token: '...'
+		// }
+		creds = Config.get('creds.filesApiServer')
+
+		Logger.debug(`startup.checkConfig: creds: ${json(creds)}`)
+
+		// Make a request to the server to check the creds
+		// If they are invalid, set this variable to true to force a refresh
+		// in the next step
+		invalidCreds = false
+		if (creds && creds.filesApiServer && creds.filesApiServer.token) {
+			Logger.debug(
+				`startup.checkConfig: making test request for creds validity`,
+			)
+
+			// Define the request options
+			const requestOptions: AxiosRequestConfig = {
+				method: 'GET',
+				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
+				url: '/files-api/v3/providers/',
+				headers: {
+					'X-Credentials': creds.filesApiServer.token as string,
+				},
+			}
+
+			Logger.debug(
+				`startup.checkConfig: making get request for creds check: ${json(
+					requestOptions,
+				)}`,
+			)
+
+			// Make the request using axios
+			try {
+				const { data } = await axios(requestOptions)
+
+				Logger.debug(
+					`startup.checkConfig: creds valid; response received: ${json(
+						data,
+					)}`,
+				)
+			} catch (error) {
+				if (
+					error.response &&
+					error.response.data &&
+					error.response.data.error &&
+					error.response.data.error.reason === 'invalidCredentials'
+				) {
+					Logger.debug(
+						`startup.checkConfig: creds invalid; error received: ${json(
+							error.response.data,
+						)}`,
+					)
+
+					invalidCreds = true
+				}
+			}
+		}
+
+		// If they are undefined or invalid, get the credentials
+		if (
+			!creds ||
+			!creds.filesApiServer ||
+			!creds.filesApiServer.clientId ||
+			!creds.filesApiServer.apiKey ||
+			invalidCreds
+		) {
+			Logger.debug(
+				`startup.checkConfig: missing or invalid creds; registering new client with server`,
+			)
+
+			// Make a request to the server to register a client
+			// Define the request options
+			const requestOptions: AxiosRequestConfig = {
+				method: 'POST',
+				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
 				url: '/files-api/v3/clients/',
 			}
 
@@ -193,28 +316,32 @@ const checkConfig = async (): Promise<void> => {
 			)
 
 			// Make the request using axios
-			const { data } = await axios(requestOptions)
+			try {
+				const { data } = await axios(requestOptions)
 
-			Logger.debug(
-				`startup.checkConfig: response received: ${json(data)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: response received: ${json(data)}`,
+				)
 
-			// Store the received client ID and API key
-			Config.set('creds.clientId', data.content.id)
-			Config.set('creds.apiKey', data.content.apiKey)
-			// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
-			Config.set(
-				'creds.token',
-				Buffer.from(
-					`${data.content.id}:${data.content.apiKey}`,
-				).toString('base64'),
-			)
+				// Store the received client ID and API key
+				Config.set('creds.filesApiServer.clientId', data.content.id)
+				Config.set('creds.filesApiServer.apiKey', data.content.apiKey)
+				// Compute the token [base64('<CLIENT ID>' + ':' + '<API KEY>')]
+				Config.set(
+					'creds.filesApiServer.token',
+					Buffer.from(
+						`${data.content.id}:${data.content.apiKey}`,
+					).toString('base64'),
+				)
 
-			Logger.debug(
-				`startup.checkConfig: credentials obtained - ${json(
-					Config.get('creds'),
-				)}`,
-			)
+				Logger.debug(
+					`startup.checkConfig: credentials obtained - ${json(
+						Config.get('creds'),
+					)}`,
+				)
+			} catch (error) {
+				Logger.error(`startup.checkConfig: error while registering client with files-api-server, skipping: ${error}`)
+			}
 		}
 	}
 
