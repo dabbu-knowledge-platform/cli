@@ -183,7 +183,7 @@ export const run = async (args: string[]): Promise<void> => {
 			let matchingFiles: string[] = []
 
 			// Get the number of times each file appears
-			let occurrences: Record<string, number> = {}
+			const occurrences: Record<string, number> = {}
 			for (const file of relatedFiles) {
 				occurrences[file] = ++occurrences[file] || 1
 			}

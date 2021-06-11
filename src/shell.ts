@@ -154,7 +154,8 @@ export default class Shell {
 					process.exit(0)
 				default:
 					// If the command is blank, let it pass; else throw an error
-					if (!new RegExp(/^\s*$/).test(args.join(' '))) throw new Error('Invalid command')
+					if (!new RegExp(/^\s*$/).test(args.join(' ')))
+						throw new Error('Invalid command')
 			}
 
 			// If the command executed successfully, set PROCESSING_COMMAND to false

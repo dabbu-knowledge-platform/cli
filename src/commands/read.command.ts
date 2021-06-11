@@ -114,7 +114,9 @@ export const run = async (args: string[]): Promise<void> => {
 	// Define the options for the request
 	let requestOptions: AxiosRequestConfig = {
 		method: 'GET',
-		baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com',
+		baseURL:
+			Config.get('defaults.filesApiServerUrl') ||
+			'https://dabbu-server.herokuapp.com',
 		url: `/files-api/v3/data/${encodeURIComponent(
 			folderPath,
 		)}/${encodeURIComponent(fileName)}`,

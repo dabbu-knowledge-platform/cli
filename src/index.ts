@@ -57,7 +57,9 @@ const checkConfig = async (): Promise<void> => {
 	Logger.debug(`startup.checkConfig: checking serverUrl`)
 
 	// Check if the server url exists
-	const serverUrl = Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'
+	const serverUrl =
+		Config.get('defaults.filesApiServerUrl') ||
+		'https://dabbu-server.herokuapp.com'
 
 	Logger.debug(`startup.checkConfig: serverUrl: ${serverUrl}`)
 
@@ -132,7 +134,9 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'POST',
-				baseURL: Config.get('defaults.intelApiServerUrl') || 'https://dabbu-intel.herokuapp.com',
+				baseURL:
+					Config.get('defaults.intelApiServerUrl') ||
+					'https://dabbu-intel.herokuapp.com',
 				url: '/intel-api/v1/extract-info/',
 				headers: {
 					'X-Credentials': creds.intelApiServer.token as string,
@@ -223,7 +227,9 @@ const checkConfig = async (): Promise<void> => {
 					)}`,
 				)
 			} catch (error) {
-				Logger.error(`startup.checkConfig: error while registering client with intel-api-server, skipping: ${error}`)
+				Logger.error(
+					`startup.checkConfig: error while registering client with intel-api-server, skipping: ${error}`,
+				)
 			}
 		}
 
@@ -249,7 +255,9 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'GET',
-				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
+				baseURL:
+					Config.get('defaults.filesApiServerUrl') ||
+					('https://dabbu-server.herokuapp.com' as string),
 				url: '/files-api/v3/providers/',
 				headers: {
 					'X-Credentials': creds.filesApiServer.token as string,
@@ -305,7 +313,9 @@ const checkConfig = async (): Promise<void> => {
 			// Define the request options
 			const requestOptions: AxiosRequestConfig = {
 				method: 'POST',
-				baseURL: Config.get('defaults.filesApiServerUrl') || 'https://dabbu-server.herokuapp.com'as string,
+				baseURL:
+					Config.get('defaults.filesApiServerUrl') ||
+					('https://dabbu-server.herokuapp.com' as string),
 				url: '/files-api/v3/clients/',
 			}
 
@@ -340,7 +350,9 @@ const checkConfig = async (): Promise<void> => {
 					)}`,
 				)
 			} catch (error) {
-				Logger.error(`startup.checkConfig: error while registering client with files-api-server, skipping: ${error}`)
+				Logger.error(
+					`startup.checkConfig: error while registering client with files-api-server, skipping: ${error}`,
+				)
 			}
 		}
 	}
