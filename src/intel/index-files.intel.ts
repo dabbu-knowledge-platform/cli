@@ -606,7 +606,7 @@ export const run = async (args: string[]): Promise<void> => {
 						// for extracting topics and people
 						await extractInfo(
 							await downloadFile(drive, folderPath, file.name),
-							drive,
+							driveName,
 							drive + ':' + file.path,
 						)
 
