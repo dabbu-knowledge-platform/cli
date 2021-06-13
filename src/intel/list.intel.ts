@@ -25,41 +25,68 @@ import Logger from '../utils/logger.util'
 // A function to print out the files received as a table
 function printFiles(
 	files: Record<string, any>[],
-	printHeaders = true,
+	tableFormat = true,
 ): void {
-	// Create a table with the headers (headers should be shown only the first
-	// time the operation is run, subsequently, only the files should be shown)
-	const table = new Table(
-		printHeaders
-			? {
-					head: [Chalk.green('Name')],
-					colWidths: [null],
-			  }
-			: undefined,
-	)
-	for (let i = 0, length = files.length; i < length; i++) {
-		const file = files[i]
+	// Create a table with the headers
+	if (tableFormat) {
+		const table = new Table({
+			head: [Chalk.green('Name')],
+			colWidths: [null],
+		})
+		for (let i = 0, length = files.length; i < length; i++) {
+			const file = files[i]
 
-		Logger.debug(`intel.list.printFiles: printing file: ${json(file)}`)
+			Logger.debug(
+				`intel.list.printFiles: printing file: ${json(file)}`,
+			)
 
-		// File name - blue if folder, magenta if file
-		const name = file.name
-		const fileName =
-			file.kind === 'folder'
-				? `${Chalk.blue(name)} (folder)`
-				: Chalk.magenta(name)
+			// File name - blue if folder, magenta if file
+			const name = file.name
+			const fileName =
+				file.kind === 'folder'
+					? `${Chalk.blue(name)} (topic)`
+					: Chalk.magenta(name)
 
-		table.push([fileName])
-	}
+			table.push([fileName])
+		}
 
-	// Print out the table
-	if (table.length > 0) {
-		if (printHeaders) print(`${table.length} related files/topics`)
-		print(table.toString())
+		// Print out the table
+		if (table.length > 0) {
+			print(`${table.length} related files/topics`)
+			print(table.toString())
+		} else {
+			Logger.debug(`intel.list.printFiles: no related files/topics`)
+
+			print(Chalk.yellow('No related files/topics'))
+		}
 	} else {
-		Logger.debug(`intel.list.printFiles: no related files/topics`)
+		const table: string[] = []
+		for (let i = 0, length = files.length; i < length; i++) {
+			const file = files[i]
 
-		print(Chalk.yellow('No related files/topics'))
+			Logger.debug(
+				`intel.list.printFiles: printing file: ${json(file)}`,
+			)
+
+			// File name - blue if folder, magenta if file
+			const name = file.name
+			const fileName =
+				file.kind === 'folder'
+					? `${Chalk.blue(name)}`
+					: Chalk.magenta(name)
+
+			table.push(fileName)
+		}
+
+		// Print out the table
+		if (table.length > 0) {
+			print(`${table.length} related files/topics`)
+			print(table.join('\t'))
+		} else {
+			Logger.debug(`intel.list.printFiles: no related files/topics`)
+
+			print(Chalk.yellow('No related files/topics'))
+		}
 	}
 }
 
@@ -118,7 +145,7 @@ export const run = async (args: string[]): Promise<void> => {
 			// Stop loading, we are done
 			Spinner.stop()
 			// Print it out
-			printFiles(files)
+			printFiles(files, false)
 			// And return
 			return
 		}
@@ -128,7 +155,7 @@ export const run = async (args: string[]): Promise<void> => {
 		// representing the root folder is split)
 		if (topics.length === 2) {
 			// First get all files related to that topic
-			const relatedFiles: string[] = knowledgeJson.topics[topics[1]]
+			let relatedFiles: string[] = knowledgeJson.topics[topics[1]]
 			if (relatedFiles) {
 				// Find all topics related to these files
 				let relatedTopics: string[] = []
@@ -137,19 +164,28 @@ export const run = async (args: string[]): Promise<void> => {
 						...relatedTopics,
 						...knowledgeJson.files[file],
 					]
+
+					for (const topic of knowledgeJson.files[file]) {
+						if (knowledgeJson.topics[topic]) {
+							relatedFiles = [
+								...relatedFiles,
+								...knowledgeJson.topics[topic],
+							]
+						}
+					}
 				}
 
 				// Stop loading, we are done
 				Spinner.stop()
 				// Print it out
 				printFiles([
-					...relatedTopics.map((topic) => {
+					...Array.from(new Set(relatedTopics)).map((topic) => {
 						return {
 							name: topic,
 							kind: 'folder',
 						}
 					}),
-					...relatedFiles.map((file) => {
+					...Array.from(new Set(relatedFiles)).map((file) => {
 						return {
 							name: file,
 							kind: 'file',
@@ -205,19 +241,28 @@ export const run = async (args: string[]): Promise<void> => {
 						...relatedTopics,
 						...knowledgeJson.files[file],
 					]
+
+					for (const topic of knowledgeJson.files[file]) {
+						if (knowledgeJson.topics[topic]) {
+							relatedFiles = [
+								...relatedFiles,
+								...knowledgeJson.topics[topic],
+							]
+						}
+					}
 				}
 
 				// Stop loading, we are done
 				Spinner.stop()
 				// Print it out
 				printFiles([
-					...relatedTopics.map((topic) => {
+					...Array.from(new Set(relatedTopics)).map((topic) => {
 						return {
 							name: topic,
 							kind: 'folder',
 						}
 					}),
-					...matchingFiles.map((file) => {
+					...Array.from(new Set(matchingFiles)).map((file) => {
 						return {
 							name: file,
 							kind: 'file',
